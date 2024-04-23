@@ -42,5 +42,4 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   assets:
-    - images/checkmk-icon-green.png
-    - images/checkmk-icon-white.png
+    - images/

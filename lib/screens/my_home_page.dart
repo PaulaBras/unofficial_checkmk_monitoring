@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ptp_4_monitoring_app/widgets/Settings.dart';
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
+  static const String id = 'my_home_page';
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -31,7 +29,21 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
+        leading: GestureDetector(
+          onTap: () {
+            setState(() {
+              _selectedIndex = 0;
+            });
+            _pageController.jumpToPage(0); // Navigate to 'Main' page
+          }, // Open the end drawer when the image is tapped
+          child: Container(
+            margin: EdgeInsets.all(10.0), // Add margin around the image
+            child: Image.asset(
+              'images/checkmk-icon-white.png',
+              fit: BoxFit.fill,
+            ),
+          ),
+        ),
       ),
       endDrawer: SettingsDrawer(),
       body: PageView(
