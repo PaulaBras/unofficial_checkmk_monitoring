@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ptp_4_monitoring_app/colors.dart';
+import 'package:ptp_4_monitoring_app/screens/my_home_page.dart';
 import 'package:ptp_4_monitoring_app/screens/user/login_screen.dart';
-import 'package:ptp_4_monitoring_app/screens/main/my_home_page.dart';
 import 'package:ptp_4_monitoring_app/screens/user/registration_screen.dart';
 import 'package:ptp_4_monitoring_app/screens/user/welcome_screen.dart';
 

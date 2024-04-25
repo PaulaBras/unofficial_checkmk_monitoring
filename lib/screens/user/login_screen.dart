@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:ptp_4_monitoring_app/screens/main/my_home_page.dart';
 import 'package:ptp_4_monitoring_app/widgets/custom_text_field.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -11,6 +10,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
+  String _server = '';
   String _username = '';
   String _password = '';
 
@@ -18,9 +18,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       // Überprüfe die Zugangsdaten
-      if (_username == 'test' && _password == 'test') {
+      if (_username == 'test' && _password == 'test' && _server == 'test') {
         // Weiterleitung zur nächsten Route
-        Navigator.pushNamed(context, MyHomePage.id);
+        Navigator.pushNamed(context, 'home_screen');
       } else {
         // Fehlermeldung anzeigen
         ScaffoldMessenger.of(context).showSnackBar(
@@ -44,6 +44,17 @@ class _LoginScreenState extends State<LoginScreen> {
           key: _formKey,
           child: Column(
             children: [
+              CustomTextField(
+                labelText: 'Server (Domain oder IP)',
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'Bitte geben Sie einen Server ein';
+                  }
+                  return null;
+                },
+                onSaved: (value) => _server = value!,
+              ),
+              const SizedBox(height: 16.0),
               CustomTextField(
                 labelText: 'Benutzername',
                 validator: (value) {
