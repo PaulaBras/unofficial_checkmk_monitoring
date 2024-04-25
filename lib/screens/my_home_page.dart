@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ptp_4_monitoring_app/screens/login_screen.dart';
 import 'package:ptp_4_monitoring_app/widgets/Settings.dart';
 
 class MyHomePage extends StatefulWidget {
@@ -20,9 +21,22 @@ class _MyHomePageState extends State<MyHomePage> {
     Center(child: Text('Content for Tab 3')),
   ];
 
-  void _onItemTapped(int index) {
-    _pageController.jumpToPage(index);
+void _onItemTapped(int index) {
+  switch (index) {
+    case 0:
+      Navigator.pushNamed(context, MyHomePage.id);
+      break;
+    case 1:
+      // TODO: Handle this case.
+      break;
+    case 2:
+      // TODO: Handle this case.
+      break;
+    case 3:
+      Navigator.pushNamed(context, LoginScreen.id);
+      break;
   }
+}
 
   @override
   Widget build(BuildContext context) {
