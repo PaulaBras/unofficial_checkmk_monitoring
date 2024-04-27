@@ -29,7 +29,7 @@ class _MyHomePageState extends State<MyHomePage> {
             endDrawer: SettingsDrawer(),
             body: IndexedStack(
               index: myHomePageLogic.currentIndex,
-              children: const [
+              children: [
                 MainScreen(),
                 MonitorScreen(),
                 CustomizeScreen(),
@@ -39,11 +39,6 @@ class _MyHomePageState extends State<MyHomePage> {
             bottomNavigationBar: BottomNavigationWidget(
               currentIndex: myHomePageLogic.currentIndex,
               onItemTapped: (index) => myHomePageLogic.handleBottomNavigation(index),
-            ),
-            floatingActionButton: FloatingActionButton(
-              onPressed: () {},
-              tooltip: 'Increment',
-              child: const Icon(Icons.add),
             ),
           );
         },

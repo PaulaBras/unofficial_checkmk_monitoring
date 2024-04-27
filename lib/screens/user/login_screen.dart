@@ -21,11 +21,11 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       // Save the credentials to secure storage
-      // await secureStorage.writeSecureData('server', _server);
-      // await secureStorage.writeSecureData('username', _username);
-      // await secureStorage.writeSecureData('password', _password);
-      // await secureStorage.writeSecureData('site', _site);
-      // await secureStorage.writeSecureData('ignoreCertificate', _ignoreCertificate.toString());
+      await secureStorage.writeSecureData('server', _server);
+      await secureStorage.writeSecureData('username', _username);
+      await secureStorage.writeSecureData('password', _password);
+      await secureStorage.writeSecureData('site', _site);
+      await secureStorage.writeSecureData('ignoreCertificate', _ignoreCertificate.toString());
       // Navigate to the welcome screen
       Navigator.pushNamed(context, 'home_screen');
     }
