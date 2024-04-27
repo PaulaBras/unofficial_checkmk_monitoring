@@ -1,34 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:ptp_4_monitoring_app/widgets/custom_text_field.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+import '../../models/credentials.dart';
 
+class LoginScreen extends StatefulWidget {
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
+  var secureStorage = SecureStorage();
   String _server = '';
   String _username = '';
   String _password = '';
+  String _site = '';
+  bool _ignoreCertificate = false;
+  final _formKey = GlobalKey<FormState>();
 
-  void _login() {
+  void _saveCredentials() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      // Überprüfe die Zugangsdaten
-      if (_username == 'test' && _password == 'test' && _server == 'test') {
-        // Weiterleitung zur nächsten Route
-        Navigator.pushNamed(context, 'home_screen');
-      } else {
-        // Fehlermeldung anzeigen
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Ungültige Zugangsdaten'),
-          ),
-        );
-      }
+      // Save the credentials to secure storage
+      // await secureStorage.writeSecureData('server', _server);
+      // await secureStorage.writeSecureData('username', _username);
+      // await secureStorage.writeSecureData('password', _password);
+      // await secureStorage.writeSecureData('site', _site);
+      // await secureStorage.writeSecureData('ignoreCertificate', _ignoreCertificate.toString());
+      // Navigate to the welcome screen
+      Navigator.pushNamed(context, 'home_screen');
     }
   }
 
@@ -45,10 +44,10 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             children: [
               CustomTextField(
-                labelText: 'Server (Domain oder IP)',
+                labelText: 'Server (Domain or IP)',
                 validator: (value) {
                   if (value!.isEmpty) {
-                    return 'Bitte geben Sie einen Server ein';
+                    return 'Please enter a server';
                   }
                   return null;
                 },
@@ -56,10 +55,21 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 16.0),
               CustomTextField(
-                labelText: 'Benutzername',
+                labelText: 'Site Name',
                 validator: (value) {
                   if (value!.isEmpty) {
-                    return 'Bitte geben Sie einen Benutzernamen ein';
+                    return 'Please enter a site name';
+                  }
+                  return null;
+                },
+                onSaved: (value) => _site = value!,
+              ),
+              const SizedBox(height: 16.0),
+              CustomTextField(
+                labelText: 'Username',
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'Please enter a username';
                   }
                   return null;
                 },
@@ -67,20 +77,30 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 16.0),
               CustomTextField(
-                labelText: 'Passwort',
+                labelText: 'Password',
                 obscureText: true,
                 validator: (value) {
                   if (value!.isEmpty) {
-                    return 'Bitte geben Sie ein Passwort ein';
+                    return 'Please enter a password';
                   }
                   return null;
                 },
                 onSaved: (value) => _password = value!,
               ),
+              const SizedBox(height: 16.0),
+              SwitchListTile(
+                title: const Text('Ignore Certificate Warnings'),
+                value: _ignoreCertificate,
+                onChanged: (bool value) {
+                  setState(() {
+                    _ignoreCertificate = value;
+                  });
+                },
+              ),
               const SizedBox(height: 24.0),
               ElevatedButton(
-                onPressed: _login,
-                child: const Text('Anmelden'),
+                onPressed: _saveCredentials,
+                child: const Text('Login'),
               ),
             ],
           ),
