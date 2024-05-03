@@ -10,10 +10,10 @@ class SetupScreen extends StatefulWidget {
 
 class _SetupScreenState extends State<SetupScreen> {
   var secureStorage = SecureStorage();
-  String _server = '';
-  String _username = '';
-  String _password = '';
-  String _site = '';
+  final _serverController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _siteController = TextEditingController();
   bool _ignoreCertificate = false;
   final _formKey = GlobalKey<FormState>();
 
@@ -24,10 +24,10 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   void _loadCredentials() async {
-    _server = await secureStorage.readSecureData('server') ?? '';
-    _username = await secureStorage.readSecureData('username') ?? '';
-    _password = await secureStorage.readSecureData('password') ?? '';
-    _site = await secureStorage.readSecureData('site') ?? '';
+    _serverController.text = await secureStorage.readSecureData('server') ?? '';
+    _usernameController.text = await secureStorage.readSecureData('username') ?? '';
+    _passwordController.text = await secureStorage.readSecureData('password') ?? '';
+    _siteController.text = await secureStorage.readSecureData('site') ?? '';
     _ignoreCertificate = (await secureStorage.readSecureData('ignoreCertificate'))?.toLowerCase() == 'true' ?? false;
     setState(() {});
   }
@@ -35,10 +35,10 @@ class _SetupScreenState extends State<SetupScreen> {
   void _saveCredentials() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      await secureStorage.writeSecureData('server', _server);
-      await secureStorage.writeSecureData('username', _username);
-      await secureStorage.writeSecureData('password', _password);
-      await secureStorage.writeSecureData('site', _site);
+      await secureStorage.writeSecureData('server', _serverController.text);
+      await secureStorage.writeSecureData('username', _usernameController.text);
+      await secureStorage.writeSecureData('password', _passwordController.text);
+      await secureStorage.writeSecureData('site', _siteController.text);
       await secureStorage.writeSecureData('ignoreCertificate', _ignoreCertificate.toString());
       Navigator.pop(context);
     }
@@ -58,33 +58,33 @@ class _SetupScreenState extends State<SetupScreen> {
           child: Column(
             children: <Widget>[
               TextFormField(
-                initialValue: _server,
+                controller: _serverController,
                 decoration: InputDecoration(
                   labelText: 'Server',
                 ),
-                onSaved: (value) => _server = value!,
+                onSaved: (value) => _serverController.text = value!,
               ),
               TextFormField(
-                initialValue: _username,
+                controller: _usernameController,
                 decoration: InputDecoration(
                   labelText: 'Username',
                 ),
-                onSaved: (value) => _username = value!,
+                onSaved: (value) => _usernameController.text = value!,
               ),
               TextFormField(
-                initialValue: _password,
+                controller: _passwordController,
                 decoration: InputDecoration(
                   labelText: 'Password',
                 ),
                 obscureText: true,
-                onSaved: (value) => _password = value!,
+                onSaved: (value) => _passwordController.text = value!,
               ),
               TextFormField(
-                initialValue: _site,
+                controller: _siteController,
                 decoration: InputDecoration(
                   labelText: 'Site',
                 ),
-                onSaved: (value) => _site = value!,
+                onSaved: (value) => _siteController.text = value!,
               ),
               SwitchListTile(
                 title: Text('Ignore Certificate Warnings'),

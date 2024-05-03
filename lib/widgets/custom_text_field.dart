@@ -11,7 +11,7 @@ class CustomTextField extends StatelessWidget {
     required this.labelText,
     required this.validator,
     required this.onSaved,
-    this.obscureText = false,
+    this.obscureText = false, required String initialValue,
   });
 
   @override

@@ -17,17 +17,39 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _ignoreCertificate = false;
   final _formKey = GlobalKey<FormState>();
 
+  @override
+  void initState() {
+    super.initState();
+    _loadCredentials();
+  }
+
+  void _loadCredentials() async {
+    _server = await secureStorage.readSecureData('server') ?? '';
+    _username = await secureStorage.readSecureData('username') ?? '';
+    _password = await secureStorage.readSecureData('password') ?? '';
+    _site = await secureStorage.readSecureData('site') ?? '';
+    _ignoreCertificate = (await secureStorage.readSecureData('ignoreCertificate'))?.toLowerCase() == 'true' ?? false;
+    if (_server.isNotEmpty && _username.isNotEmpty && _password.isNotEmpty && _site.isNotEmpty) {
+      _login();
+    } else {
+      setState(() {});
+    }
+  }
+
+  void _login() async {
+    // Implement your login logic here
+    Navigator.pushNamed(context, 'home_screen');
+  }
+
   void _saveCredentials() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      // Save the credentials to secure storage
       await secureStorage.writeSecureData('server', _server);
       await secureStorage.writeSecureData('username', _username);
       await secureStorage.writeSecureData('password', _password);
       await secureStorage.writeSecureData('site', _site);
       await secureStorage.writeSecureData('ignoreCertificate', _ignoreCertificate.toString());
-      // Navigate to the welcome screen
-      Navigator.pushNamed(context, 'home_screen');
+      _login();
     }
   }
 
@@ -44,6 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             children: [
               CustomTextField(
+                initialValue: _server,
                 labelText: 'Server (Domain or IP)',
                 validator: (value) {
                   if (value!.isEmpty) {
@@ -55,6 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 16.0),
               CustomTextField(
+                initialValue: _site,
                 labelText: 'Site Name',
                 validator: (value) {
                   if (value!.isEmpty) {
@@ -66,6 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 16.0),
               CustomTextField(
+                initialValue: _username,
                 labelText: 'Username',
                 validator: (value) {
                   if (value!.isEmpty) {
@@ -77,6 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 16.0),
               CustomTextField(
+                initialValue: _password,
                 labelText: 'Password',
                 obscureText: true,
                 validator: (value) {

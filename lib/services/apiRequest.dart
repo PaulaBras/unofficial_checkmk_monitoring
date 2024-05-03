@@ -21,8 +21,7 @@ class ApiRequest {
     // Construct the URL
     final url = Uri.parse('https://$server/$site/check_mk/api/1.0/' + apiRequestUri);
     // Encode the username and password in the format username:password
-    String basicAuth = 'Basic ' +
-        base64Encode(utf8.encode('$username:$password'));
+    String basicAuth = 'Basic ' + base64Encode(utf8.encode('$username:$password'));
 
     // Create an HttpClient
     final httpClient = HttpClient()

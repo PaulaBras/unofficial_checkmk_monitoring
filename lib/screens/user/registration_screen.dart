@@ -37,6 +37,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               CustomTextField(
+                initialValue: _username,
                 labelText: 'Benutzername',
                 validator: (value) {
                   if (value!.isEmpty) {
@@ -48,6 +49,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               ),
               const SizedBox(height: 16.0),
               CustomTextField(
+                initialValue: _email,
                 labelText: 'E-Mail',
                 validator: (value) {
                   if (value!.isEmpty || !value.contains('@')) {
@@ -59,6 +61,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               ),
               const SizedBox(height: 16.0),
               CustomTextField(
+                initialValue: _password,
                 labelText: 'Passwort',
                 obscureText: true,
                 validator: (value) {
