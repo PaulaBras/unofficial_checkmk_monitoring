@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ptp_4_monitoring_app/screens/my_home_page.dart';
 import 'package:ptp_4_monitoring_app/widgets/app_bar_widget.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HelpScreen extends StatefulWidget {
   const HelpScreen({super.key});
@@ -10,6 +11,15 @@ class HelpScreen extends StatefulWidget {
 }
 
 class _HelpScreenState extends State<HelpScreen> {
+  void _launchURL(String url) async {
+    var parsedUrl = Uri.parse(url);
+    if (await canLaunchUrl(parsedUrl)) {
+      await launchUrl(parsedUrl, mode: LaunchMode.platformDefault);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final myHomePageLogic = MyHomePageLogic();
@@ -23,57 +33,47 @@ class _HelpScreenState extends State<HelpScreen> {
           ListTile(
               title: Text(
             'Learning Checkmk',
-            style: TextStyle(fontSize: 20),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           )),
           // Headline
           GestureDetector(
-            onTap: () => Navigator.pushNamed(context, 'beginnersGuideScreenId'),
+            onTap: () =>
+                _launchURL('https://docs.checkmk.com/2.2.0/en/welcome.html'),
             child: ListTile(title: Text('Beginners Guide')),
           ),
           GestureDetector(
-            onTap: () => Navigator.pushNamed(context, 'userManualScreenId'),
+            onTap: () => _launchURL('https://docs.checkmk.com/2.2.0/en/'),
             child: ListTile(title: Text('User manual')),
           ),
           GestureDetector(
-            onTap: () => Navigator.pushNamed(context, 'videoTutorialsScreenId'),
+            onTap: () => _launchURL(
+                'https://www.youtube.com/playlist?list=PL8DfRO2DvOK1slgjfTu0hMOnepf1F7ssh'),
             child: ListTile(title: Text('Video Tutorials')),
           ),
           GestureDetector(
-            onTap: () => Navigator.pushNamed(context, 'communityForumScreenId'),
+            onTap: () => _launchURL('https://forum.checkmk.com/'),
             child: ListTile(title: Text('Community Forum')),
           ),
           ListTile(
               title: Text(
             'Developer resources',
-            style: TextStyle(fontSize: 20),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           )),
           // Headline
           GestureDetector(
-            onTap: () =>
-                Navigator.pushNamed(context, 'checkPluginApiIntroScreenId'),
+            onTap: () => _launchURL(
+                'https://docs.checkmk.com/2.2.0/en/devel_check_plugins.html'),
             child: ListTile(title: Text('Check plugin API introduction')),
           ),
           GestureDetector(
             onTap: () =>
-                Navigator.pushNamed(context, 'checkPluginApiRefScreenId'),
-            child: ListTile(title: Text('Check plugin API reference')),
-          ),
-          GestureDetector(
-            onTap: () => Navigator.pushNamed(context, 'restApiIntroScreenId'),
+                _launchURL('https://docs.checkmk.com/2.2.0/en/rest_api.html'),
             child: ListTile(title: Text('REST API introduction')),
-          ),
-          GestureDetector(
-            onTap: () => Navigator.pushNamed(context, 'restApiDocScreenId'),
-            child: ListTile(title: Text('REST API documentation')),
-          ),
-          GestureDetector(
-            onTap: () => Navigator.pushNamed(context, 'restApiGuiScreenId'),
-            child: ListTile(title: Text('REST API interactive GUI')),
           ),
           ListTile(
               title: Text(
             'About Checkmk',
-            style: TextStyle(fontSize: 20),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           )),
           // Headline
           GestureDetector(
