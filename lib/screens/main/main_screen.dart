@@ -27,7 +27,7 @@ class _MainScreenState extends State<MainScreen> {
     setState(() {
       _hosts = data['value'];
       // Sort the hosts so that the offline ones are at the top
-      _hosts.sort((a, b) => b['extensions']['is_offline'].compareTo(a['extensions']['is_offline']));
+      _hosts.sort((a, b) => (b['extensions']['is_offline'] == a['extensions']['is_offline']) ? 0 : (b['extensions']['is_offline'] ? -1 : 1));
     });
   }
 
