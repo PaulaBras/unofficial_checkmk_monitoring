@@ -34,9 +34,6 @@ class Downtime {
         "downtime_type": downtimeType,
         "host_name": hostName,
       },
-      headers: {
-        "Content-Type": "application/json",
-      },
     );
 
     if (data['result_code'] == 0) {

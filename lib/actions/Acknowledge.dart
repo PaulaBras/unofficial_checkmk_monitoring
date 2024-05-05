@@ -23,7 +23,8 @@ class _AcknowledgeServiceFormState extends State<AcknowledgeServiceForm> {
   void initState() {
     super.initState();
     _hostNameController.text = widget.service['extensions']['host_name'];
-    _serviceDescriptionController.text = widget.service['extensions']['description'];
+    _serviceDescriptionController.text =
+    widget.service['extensions']['description'];
   }
 
   Future<void> acknowledgeService() async {
@@ -39,9 +40,6 @@ class _AcknowledgeServiceFormState extends State<AcknowledgeServiceForm> {
         "comment": _commentController.text,
         "host_name": _hostNameController.text,
         "service_description": _serviceDescriptionController.text
-      },
-      headers: {
-        "Content-Type": "application/json",
       },
     );
 
@@ -67,11 +65,12 @@ class _AcknowledgeServiceFormState extends State<AcknowledgeServiceForm> {
               TextFormField(
                 controller: _commentController,
                 decoration: InputDecoration(labelText: 'Comment'),
-              ),
-              TextFormField(
-                controller: _hostNameController,
-                decoration: InputDecoration(labelText: 'Host Name'),
-                enabled: false,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a comment';
+                  }
+                  return null;
+                },
               ),
               TextFormField(
                 controller: _serviceDescriptionController,
@@ -105,17 +104,23 @@ class _AcknowledgeServiceFormState extends State<AcknowledgeServiceForm> {
                   });
                 },
               ),
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    acknowledgeService();
-                  }
-                },
-                child: Text('Submit'),
-              ),
             ],
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          if (_formKey.currentState != null &&
+              _formKey.currentState!.validate()) {
+            acknowledgeService();
+          }
+        },
+        tooltip: 'Submit',
+        child: const Icon(
+          Icons.check,
+          color: Colors.white,
+        ),
+        backgroundColor: Colors.green,
       ),
     );
   }

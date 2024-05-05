@@ -34,9 +34,6 @@ class _CommentServiceWidgetState extends State<CommentServiceWidget> {
         "comment_type": _commentType,
         "host_name": _hostNameController.text,
       },
-      headers: {
-        "Content-Type": "application/json",
-      },
     );
 
     if (data['result_code'] == 0) {
@@ -80,7 +77,7 @@ class _CommentServiceWidgetState extends State<CommentServiceWidget> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          if (_formKey.currentState!.validate()) {
+          if (_formKey.currentState != null && _formKey.currentState!.validate()) {
             _addComment();
           }
         },

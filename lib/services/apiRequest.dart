@@ -43,6 +43,7 @@ class ApiRequest {
         },
       );
     } else if (method == 'POST') {
+      print("POST");
       response = await ioClient.post(
         url,
         headers: headers ?? <String, String>{
@@ -50,7 +51,7 @@ class ApiRequest {
           'Accept': 'application/json',
           'Content-Type': 'application/json; charset=UTF-8'
         },
-        body: body,
+        body: jsonEncode(body),
       );
     } else {
       throw Exception('HTTP method $method not supported');

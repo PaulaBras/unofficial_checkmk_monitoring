@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:ptp_4_monitoring_app/screens/setup/HelpPage.dart';
-
 import 'package:ptp_4_monitoring_app/screens/setup/UserPage.dart';
 
 class SettingsDrawer extends StatelessWidget {
@@ -11,12 +10,7 @@ class SettingsDrawer extends StatelessWidget {
       child: Column(
         children: [
           DrawerHeader(
-            child: Column(
-              children: [
-                //Image.network('https://example.com/path/to/your/image.png'),
-                Text('Settings', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-              ],
-            ),
+            child: Text('Settings', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.onPrimary,
             ),
