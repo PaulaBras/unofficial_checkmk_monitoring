@@ -18,6 +18,7 @@ dependencies:
   flutter_local_notifications: ^17.1.1
   bcrypt: ^1.1.0
   url_launcher: ^6.2.0
+  flutter_svg: ^2.0.0
 
 dev_dependencies:
   flutter_launcher_icons: "^0.13.1"
