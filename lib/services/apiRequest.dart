@@ -2,7 +2,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 import 'dart:convert';
 import 'dart:io';
-import '../../models/credentials.dart';
+import 'package:ptp_4_monitoring_app/models/credentials.dart';
 
 class ApiRequest {
   bool _ignoreCertificate = false;

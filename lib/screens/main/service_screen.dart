@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../services/apiRequest.dart';
+import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
 
 class ServiceScreen extends StatefulWidget {
   final dynamic host;

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../services/apiRequest.dart';
+import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
 import 'package:ptp_4_monitoring_app/screens/main/ServiceActionScreen.dart';
 
 class CriticalScreen extends StatefulWidget {
@@ -76,7 +76,7 @@ class _CriticalScreenState extends State<CriticalScreen> {
                   color: Colors.grey.withOpacity(0.5),
                   spreadRadius: 5,
                   blurRadius: 7,
-                  offset: Offset(0, 3), // changes position of shadow
+                  offset: Offset(0, 3),
                 ),
               ],
             ),
