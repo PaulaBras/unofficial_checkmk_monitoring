@@ -17,6 +17,8 @@ dependencies:
   flutter_secure_storage: ^9.0.0
   flutter_local_notifications: ^17.1.1
   bcrypt: ^1.1.0
+  intl: ^0.19.0
+  flutter_datetime_picker: ^1.5.1
   url_launcher: ^6.2.0
 
 dev_dependencies:

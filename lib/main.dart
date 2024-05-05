@@ -5,6 +5,8 @@ import 'package:ptp_4_monitoring_app/screens/my_home_page.dart';
 import 'package:ptp_4_monitoring_app/screens/user/login_screen.dart';
 import 'package:ptp_4_monitoring_app/screens/user/registration_screen.dart';
 import 'package:ptp_4_monitoring_app/screens/user/welcome_screen.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 const String welcomeScreenId = 'welcome_screen';
 const String loginScreenId = 'login_screen';
@@ -13,7 +15,10 @@ const String homeScreenId = 'home_screen';
 const String helpScreenId = 'help_screen';
 
 void main() {
-  runApp(const MyApp());
+  initializeDateFormatting().then((_) {
+    Intl.defaultLocale = 'de_DE';
+    runApp(const MyApp());
+  });
 }
 
 class MyApp extends StatelessWidget {

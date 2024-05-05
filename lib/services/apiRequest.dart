@@ -1,3 +1,4 @@
+import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -7,7 +8,7 @@ class ApiRequest {
   bool _ignoreCertificate = false;
   var secureStorage = SecureStorage();
 
-  Future<dynamic> Request(String apiRequestUri) async {
+  Future<dynamic> Request(String apiRequestUri, {String method = 'GET', Map<String, String>? headers, Map<String, dynamic>? body}) async {
     // Retrieve the credentials from secure storage
     var server = await secureStorage.readSecureData('server');
     var username = await secureStorage.readSecureData('username');
@@ -21,8 +22,7 @@ class ApiRequest {
     // Construct the URL
     final url = Uri.parse('https://$server/$site/check_mk/api/1.0/' + apiRequestUri);
     // Encode the username and password in the format username:password
-    String basicAuth = 'Basic ' +
-        base64Encode(utf8.encode('$username:$password'));
+    String basicAuth = 'Basic ' + base64Encode(utf8.encode('$username:$password'));
 
     // Create an HttpClient
     final httpClient = HttpClient()
@@ -31,15 +31,31 @@ class ApiRequest {
     // Create an IOClient with the modified HttpClient
     final ioClient = IOClient(httpClient);
 
-    // Make the GET request
-    final response = await ioClient.get(
-      url,
-      headers: <String, String>{
-        'authorization': basicAuth,
-        'Accept': 'application/json',
-        'Content-Type': 'application/json; charset=UTF-8'
-      },
-    );
+    // Make the HTTP request
+    http.Response response;
+    if (method == 'GET') {
+      response = await ioClient.get(
+        url,
+        headers: headers ?? <String, String>{
+          'authorization': basicAuth,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json; charset=UTF-8'
+        },
+      );
+    } else if (method == 'POST') {
+      response = await ioClient.post(
+        url,
+        headers: headers ?? <String, String>{
+          'authorization': basicAuth,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json; charset=UTF-8'
+        },
+        body: body,
+      );
+    } else {
+      throw Exception('HTTP method $method not supported');
+    }
+
     // Check the status code of the response
     if (response.statusCode == 200) {
       // If the server returns a 200 OK response, then parse the JSON.
