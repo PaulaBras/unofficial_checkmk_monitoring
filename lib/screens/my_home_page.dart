@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ptp_4_monitoring_app/screens/main/main_screen.dart';
 import 'package:ptp_4_monitoring_app/screens/main/critical_services.dart';
-import 'package:ptp_4_monitoring_app/screens/customize/customize_screen.dart';
 import 'package:ptp_4_monitoring_app/screens/setup/setup_screen.dart';
 import 'package:ptp_4_monitoring_app/widgets/app_bar_widget.dart';
 import 'package:ptp_4_monitoring_app/widgets/bottom_navigation_widget.dart';
@@ -32,7 +31,6 @@ class _MyHomePageState extends State<MyHomePage> {
               children: [
                 MainScreen(),
                 CriticalScreen(),
-                CustomizeScreen(),
                 SetupScreen(),
               ],
             ),

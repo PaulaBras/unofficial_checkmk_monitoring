@@ -1,4 +1,4 @@
-import '../../services/apiRequest.dart';
+import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
 import 'package:flutter/material.dart';
 
 class Downtime {
@@ -8,6 +8,7 @@ class Downtime {
   final int duration;
   String comment;
   String downtimeType;
+  String serviceDescription;
   String hostName;
 
   Downtime({
@@ -17,6 +18,7 @@ class Downtime {
     this.duration = 0,
     required this.comment,
     required this.downtimeType,
+    required this.serviceDescription,
     required this.hostName,
   });
 
@@ -32,11 +34,12 @@ class Downtime {
         "duration": duration,
         "comment": comment,
         "downtime_type": downtimeType,
+        "service_descriptions": [serviceDescription],
         "host_name": hostName,
       },
     );
 
-    if (data['result_code'] == 0) {
+    if (data == true) {
       print("Downtime created successfully");
     } else {
       print("Failed to create downtime");
@@ -66,7 +69,8 @@ class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
       startTime: '',
       endTime: '',
       comment: '',
-      downtimeType: '',
+      downtimeType: 'service',
+      serviceDescription: '',
       hostName: _hostNameController.text,
     );
   }
@@ -101,10 +105,9 @@ class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
               },
             ),
             TextFormField(
-              decoration: InputDecoration(labelText: 'Downtime Type'),
-              onSaved: (value) {
-                _downtime?.downtimeType = value ?? '';
-              },
+              controller: _hostNameController,
+              decoration: InputDecoration(labelText: 'Service Description'),
+              enabled: false,
             ),
             TextFormField(
               controller: _hostNameController,

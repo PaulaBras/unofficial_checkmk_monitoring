@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/apiRequest.dart';
+import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
 
 class AcknowledgeServiceForm extends StatefulWidget {
   final dynamic service;
@@ -29,6 +29,7 @@ class _AcknowledgeServiceFormState extends State<AcknowledgeServiceForm> {
 
   Future<void> acknowledgeService() async {
     var api = ApiRequest();
+    print(_commentController.text + _hostNameController.text + _serviceDescriptionController.text);
     var data = await api.Request(
       'domain-types/acknowledge/collections/service',
       method: 'POST',
@@ -43,8 +44,14 @@ class _AcknowledgeServiceFormState extends State<AcknowledgeServiceForm> {
       },
     );
 
-    if (data['result_code'] == 0) {
-      print("Service acknowledged successfully");
+    if (data == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Service acknowledged successfully'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      Navigator.of(context).pop();
     } else {
       print("Failed to acknowledge service");
     }

@@ -1,4 +1,4 @@
-import '../../services/apiRequest.dart';
+import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
 import 'package:flutter/material.dart';
 
 class CommentServiceWidget extends StatefulWidget {
@@ -36,10 +36,16 @@ class _CommentServiceWidgetState extends State<CommentServiceWidget> {
       },
     );
 
-    if (data['result_code'] == 0) {
-      print("Comment added successfully");
+    if (data == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Service commented successfully'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      Navigator.of(context).pop();
     } else {
-      print("Failed to add comment");
+      print("Failed to comment service");
     }
   }
 

@@ -61,9 +61,11 @@ class ApiRequest {
     if (response.statusCode == 200) {
       // If the server returns a 200 OK response, then parse the JSON.
       return jsonDecode(response.body);
+    } else if (response.statusCode == 204) {
+      return true;
     } else {
       // If the server returns an error response, then throw an exception.
-      throw Exception('Failed to get api Request' + response.body);
+      throw Exception('Failed to get api Request' + response.body + " Error Code: " + response.statusCode.toString());
     }
   }
 }
