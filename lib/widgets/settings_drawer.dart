@@ -15,44 +15,21 @@ class SettingsDrawer extends StatelessWidget {
               color: Theme.of(context).colorScheme.onPrimary,
             ),
           ),
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                ListTile(
-                  leading: Icon(Icons.help),
-                  title: Text('Help'),
-                  onTap: () {
-                    // Navigate to the HelpPage
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => HelpPage()),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: Icon(Icons.person),
-                  title: Text('User'),
-                  onTap: () {
-                    // Navigate to the UserConfig
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => UserConfig()),
-                    );
-                  },
-                ),
-              ],
-            ),
+          ListTile(
+            title: Text('Help'),
+            onTap: () {
+              // Update the state of the app
+              // Then close the drawer
+              Navigator.pushNamed(context, 'help_screen');
+            },
           ),
-          Container(
-            color: Theme.of(context).colorScheme.secondary,
-            child: ListTile(
-              leading: Icon(Icons.logout),
-              title: Text('Logout'),
-              onTap: () {
-                // Implement logout
-              },
-            ),
+          ListTile(
+            title: Text('User'),
+            onTap: () {
+              // Update the state of the app
+              // Then close the drawer
+              Navigator.pushNamed(context, 'user_screen');
+            },
           ),
         ],
       ),

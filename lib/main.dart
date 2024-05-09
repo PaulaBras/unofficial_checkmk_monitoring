@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:ptp_4_monitoring_app/colors.dart';
+import 'package:ptp_4_monitoring_app/screens/help/help.dart';
 import 'package:ptp_4_monitoring_app/screens/my_home_page.dart';
 import 'package:ptp_4_monitoring_app/screens/user/login_screen.dart';
 import 'package:ptp_4_monitoring_app/screens/user/registration_screen.dart';
+import 'package:ptp_4_monitoring_app/screens/user/user.dart';
 import 'package:ptp_4_monitoring_app/screens/user/welcome_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -11,6 +13,8 @@ const String welcomeScreenId = 'welcome_screen';
 const String loginScreenId = 'login_screen';
 const String registrationScreenId = 'registration_screen';
 const String homeScreenId = 'home_screen';
+const String helpScreenId = 'help_screen';
+const String userScreenId = 'user_screen';
 
 void main() {
   initializeDateFormatting().then((_) {
@@ -44,6 +48,10 @@ class MyApp extends StatelessWidget {
         return MaterialPageRoute(builder: (_) => RegistrationScreen());
       case homeScreenId:
         return MaterialPageRoute(builder: (_) => MyHomePage());
+      case helpScreenId:
+        return MaterialPageRoute(builder: (_) => HelpScreen());
+      case userScreenId:
+        return MaterialPageRoute(builder: (_) => UserScreen());
       default:
         return null;
     }
