@@ -27,7 +27,7 @@ class SettingsDrawer extends StatelessWidget {
             onTap: () {
               // Update the state of the app
               // Then close the drawer
-              Navigator.pop(context);
+              Navigator.pushNamed(context, 'user_screen');
             },
           ),
         ],

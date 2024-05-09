@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:ptp_4_monitoring_app/screens/my_home_page.dart';
 import 'package:ptp_4_monitoring_app/widgets/app_bar_widget.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -31,10 +32,18 @@ class _HelpScreenState extends State<HelpScreen> {
       body: ListView(
         children: <Widget>[
           ListTile(
-              title: Text(
-            'Learning Checkmk',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          )),
+            title: Text(
+              'Learning Checkmk',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            leading: SvgPicture.asset(
+              'images/icon_learning_checkmk.svg',
+              width: 30,
+              height: 30,
+              colorFilter: ColorFilter.mode(
+                  Theme.of(context).colorScheme.onPrimary, BlendMode.srcIn),
+            ),
+          ),
           // Headline
           GestureDetector(
             onTap: () =>
@@ -55,10 +64,18 @@ class _HelpScreenState extends State<HelpScreen> {
             child: ListTile(title: Text('Community Forum')),
           ),
           ListTile(
-              title: Text(
-            'Developer resources',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          )),
+            title: Text(
+              'Developer resources',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            leading: SvgPicture.asset(
+              'images/icon_developer_resources.svg',
+              width: 30,
+              height: 30,
+              colorFilter: ColorFilter.mode(
+                  Theme.of(context).colorScheme.onPrimary, BlendMode.srcIn),
+            ),
+          ),
           // Headline
           GestureDetector(
             onTap: () => _launchURL(
@@ -71,10 +88,18 @@ class _HelpScreenState extends State<HelpScreen> {
             child: ListTile(title: Text('REST API introduction')),
           ),
           ListTile(
-              title: Text(
-            'About Checkmk',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          )),
+            title: Text(
+              'About Checkmk',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            leading: SvgPicture.asset(
+              'images/icon_about_checkmk.svg',
+              width: 30,
+              height: 30,
+              colorFilter: ColorFilter.mode(
+                  Theme.of(context).colorScheme.onPrimary, BlendMode.srcIn),
+            ),
+          ),
           // Headline
           GestureDetector(
             onTap: () => Navigator.pushNamed(context, 'infoScreenId'),
