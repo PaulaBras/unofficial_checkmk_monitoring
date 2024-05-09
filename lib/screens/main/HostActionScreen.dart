@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ptp_4_monitoring_app/actions/host/AcknowledgeHost.dart';
+import 'package:ptp_4_monitoring_app/actions/host/CommentHost.dart';
+import 'package:ptp_4_monitoring_app/actions/host/DowntimeHost.dart';
 import 'package:ptp_4_monitoring_app/screens/main/HostServicesScreen.dart';
 import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
 
@@ -25,6 +27,24 @@ class _HostActionScreenState extends State<HostActionScreen> {
 
   void recheckHost() {
     // Implement your logic to recheck the host
+  }
+
+  void downtimeHost(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (context) =>
+              DowntimeHostWidget(hostName: widget.host['extensions']['name'])),
+    );
+  }
+
+  void commentHost(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (context) =>
+              CommentHostWidget(hostName: widget.host['extensions']['name'])),
+    );
   }
 
   void acknowledgeHost(BuildContext context) {
@@ -137,12 +157,12 @@ class _HostActionScreenState extends State<HostActionScreen> {
                         ElevatedButton.icon(
                           icon: Icon(Icons.timer),
                           label: Text('Downtime'),
-                          onPressed: null,
+                          onPressed: () => downtimeHost(context),
                         ),
                         ElevatedButton.icon(
                           icon: Icon(Icons.comment),
                           label: Text('Comment'),
-                          onPressed: null,
+                          onPressed: () => commentHost(context),
                         ),
                       ],
                     ),

@@ -1,16 +1,16 @@
-import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
 import 'package:flutter/material.dart';
+import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
 
-class CommentServiceWidget extends StatefulWidget {
+class CommentHostWidget extends StatefulWidget {
   final String hostName;
 
-  CommentServiceWidget({required this.hostName});
+  CommentHostWidget({required this.hostName});
 
   @override
-  _CommentServiceWidgetState createState() => _CommentServiceWidgetState();
+  _CommentHostWidgetState createState() => _CommentHostWidgetState();
 }
 
-class _CommentServiceWidgetState extends State<CommentServiceWidget> {
+class _CommentHostWidgetState extends State<CommentHostWidget> {
   final _formKey = GlobalKey<FormState>();
   final _commentController = TextEditingController();
   final _hostNameController = TextEditingController();
@@ -83,7 +83,8 @@ class _CommentServiceWidgetState extends State<CommentServiceWidget> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          if (_formKey.currentState != null && _formKey.currentState!.validate()) {
+          if (_formKey.currentState != null &&
+              _formKey.currentState!.validate()) {
             _addComment();
           }
         },

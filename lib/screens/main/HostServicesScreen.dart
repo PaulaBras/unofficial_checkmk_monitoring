@@ -81,7 +81,7 @@ class _HostServiceScreenState extends State<HostServiceScreen> {
                   children: <Widget>[
                     ListTile(
                       leading: stateIcon,
-                      title: Text(service['extensions']['name']),
+                      title: Text(service['extensions']['host_name']),
                       subtitle: state == 0
                           ? Text('State: $stateText\nLast Check: $lastCheck')
                           : Text('State: $stateText\n'
@@ -92,16 +92,6 @@ class _HostServiceScreenState extends State<HostServiceScreen> {
                               'Attempt: ${service['extensions']['current_attempt']}/${service['extensions']['max_check_attempts']}\n'
                               'Last Time OK: ${DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_time_ok'] * 1000)}\n'
                               'Is Flapping: ${service['extensions']['is_flapping']}'),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          stateIcon,
-                          Text(
-                            stateText,
-                            style: TextStyle(color: color),
-                          ),
-                        ],
-                      ),
                     ),
                   ],
                 );

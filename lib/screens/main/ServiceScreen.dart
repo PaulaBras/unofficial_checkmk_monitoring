@@ -187,8 +187,6 @@ class _ServiceScreenState extends State<ServiceScreen> {
     sortedServices.sort(
         (a, b) => b['extensions']['state'].compareTo(a['extensions']['state']));
 
-    print(sortedServices);
-
     return Scaffold(
       appBar: AppBar(
         title: Text("Services Overview"),

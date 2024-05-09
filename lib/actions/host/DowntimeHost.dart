@@ -1,6 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
-import 'package:flutter/material.dart';
 
 class Downtime {
   String startTime;
@@ -9,7 +9,6 @@ class Downtime {
   final int duration;
   String comment;
   String downtimeType;
-  String serviceDescription;
   String hostName;
 
   Downtime({
@@ -19,14 +18,13 @@ class Downtime {
     this.duration = 0,
     required this.comment,
     required this.downtimeType,
-    required this.serviceDescription,
     required this.hostName,
   });
 
   Future<void> createDowntime() async {
     var api = ApiRequest();
     var data = await api.Request(
-      'domain-types/downtime/collections/service',
+      'domain-types/downtime/collections/host',
       method: 'POST',
       body: {
         "start_time": startTime,
@@ -35,7 +33,6 @@ class Downtime {
         "duration": duration,
         "comment": comment,
         "downtime_type": downtimeType,
-        "service_descriptions": [serviceDescription],
         "host_name": hostName,
       },
     );
@@ -48,21 +45,18 @@ class Downtime {
   }
 }
 
-class DowntimeServiceWidget extends StatefulWidget {
+class DowntimeHostWidget extends StatefulWidget {
   final String hostName;
-  final String serviceDescription;
 
-  DowntimeServiceWidget(
-      {required this.hostName, required this.serviceDescription});
+  DowntimeHostWidget({required this.hostName});
 
   @override
-  _DowntimeServiceWidgetState createState() => _DowntimeServiceWidgetState();
+  _DowntimeHostWidgetState createState() => _DowntimeHostWidgetState();
 }
 
-class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
+class _DowntimeHostWidgetState extends State<DowntimeHostWidget> {
   final _formKey = GlobalKey<FormState>();
   final _hostNameController = TextEditingController();
-  final _serviceDescriptionController = TextEditingController();
   Downtime? _downtime;
   DateTime? _startTime;
   DateTime? _endTime;
@@ -71,13 +65,11 @@ class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
   void initState() {
     super.initState();
     _hostNameController.text = widget.hostName;
-    _serviceDescriptionController.text = widget.serviceDescription;
     _downtime = Downtime(
       startTime: _startTime.toString(),
       endTime: _endTime.toString(),
       comment: '',
-      downtimeType: 'service',
-      serviceDescription: _serviceDescriptionController.text,
+      downtimeType: 'host',
       hostName: _hostNameController.text,
     );
   }
@@ -170,11 +162,6 @@ class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
               onSaved: (value) {
                 _downtime?.comment = value ?? '';
               },
-            ),
-            TextFormField(
-              controller: _serviceDescriptionController,
-              decoration: InputDecoration(labelText: 'Service Description'),
-              enabled: false,
             ),
             TextFormField(
               controller: _hostNameController,
