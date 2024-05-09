@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:ptp_4_monitoring_app/actions/Acknowledge.dart';
-import 'package:ptp_4_monitoring_app/actions/Downtime.dart';
-import 'package:ptp_4_monitoring_app/actions/Comment.dart';
+import 'package:ptp_4_monitoring_app/actions/service/AcknowledgeService.dart';
+import 'package:ptp_4_monitoring_app/actions/service/DowntimeService.dart';
+import 'package:ptp_4_monitoring_app/actions/service/CommentService.dart';
 import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
 
 class ServiceActionScreen extends StatefulWidget {
@@ -42,7 +42,7 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
       context,
       MaterialPageRoute(
           builder: (context) => DowntimeServiceWidget(
-              hostName: widget.service['extensions']['host_name'])),
+              hostName: widget.service['extensions']['host_name'], serviceDescription: widget.service['extensions']['description'],)),
     );
   }
 
@@ -58,7 +58,7 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
   Future<void> _getService() async {
     var api = ApiRequest();
     var data = await api.Request(
-        '/objects/host/${widget.service['extensions']['host_name']}/collections/services?query=%7B%22op%22%3A%20%22%3D%22%2C%20%22left%22%3A%20%22description%22%2C%20%22right%22%3A%20%22${widget.service['extensions']['description']}%22%7D&columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged&columns=state&columns=comments&columns=is_flapping');
+        '/objects/host/${widget.service['extensions']['host_name']}/collections/services?query=%7B%22op%22%3A%20%22%3D%22%2C%20%22left%22%3A%20%22description%22%2C%20%22right%22%3A%20%22${Uri.encodeComponent(widget.service['extensions']['description'])}%22%7D&columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged&columns=state&columns=comments&columns=is_flapping');
 
     setState(() {
       _service = data['value'][0];
@@ -91,15 +91,15 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
 
     switch (state) {
       case 1:
-        stateIcon = Icon(Icons.warning);
+        stateIcon = Icon(Icons.warning, color: Colors.yellow);
         color = Colors.yellow;
         break;
       case 2:
-        stateIcon = Icon(Icons.error);
+        stateIcon = Icon(Icons.error, color: Colors.red);
         color = Colors.red;
         break;
       case 3:
-        stateIcon = Icon(Icons.help_outline);
+        stateIcon = Icon(Icons.help_outline, color: Colors.orange);
         color = Colors.orange;
         break;
       default:
@@ -115,95 +115,107 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
         child: _service == null
             ? Center(child: CircularProgressIndicator())
             : Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              ListTile(
-                leading: stateIcon,
-                title: Text(service['extensions']['host_name']),
-                subtitle: Column(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Service: $description'),
-                    Text(
-                        'Current Attempt: ${service['extensions']['current_attempt']}/${service['extensions']['max_check_attempts']}'),
-                    Text(
-                        'Last Check: ${DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_check'] * 1000)}'),
-                    Text(
-                        'Last Time OK: ${DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_time_ok'] * 1000)}'),
-                    Text('Is Flapping: ${isFlapping == 1 ? 'Yes' : 'No'}'), // Display is_flapping
-                    if (isFlapping == 1) Icon(Icons.waves), // Display wave icon if is_flapping is 1
+                  children: <Widget>[
+                    ListTile(
+                      leading: stateIcon,
+                      title: Text(service['extensions']['host_name']),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Service: $description'),
+                          Text(
+                              'Current Attempt: ${service['extensions']['current_attempt']}/${service['extensions']['max_check_attempts']}'),
+                          Text(
+                              'Last Check: ${DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_check'] * 1000)}'),
+                          Text(
+                              'Last Time OK: ${DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_time_ok'] * 1000)}'),
+                          Text(
+                              'Is Flapping: ${isFlapping == 1 ? 'Yes' : 'No'}'), // Display is_flapping
+                          if (isFlapping == 1)
+                            Icon(Icons
+                                .waves), // Display wave icon if is_flapping is 1
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton.icon(
+                          icon: Icon(Icons.refresh),
+                          label: Text('Recheck'),
+                          onPressed:
+                              null, // Disable the button by setting onPressed to null
+                        ),
+                        ElevatedButton.icon(
+                          icon: Icon(Icons.check_circle),
+                          label: Text('Acknowledge'),
+                          onPressed: () => acknowledgeService(context),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton.icon(
+                          icon: Icon(Icons.timer),
+                          label: Text('Downtime'),
+                          onPressed: () => downtimeService(context),
+                        ),
+                        ElevatedButton.icon(
+                          icon: Icon(Icons.comment),
+                          label: Text('Comment'),
+                          onPressed: () => commentService(context),
+                        ),
+                      ],
+                    ),
+                    Expanded(
+                      child: FutureBuilder<List<dynamic>>(
+                        future: _getComments(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return Center(child: CircularProgressIndicator());
+                          } else if (snapshot.hasError) {
+                            return Text('Error: ${snapshot.error}');
+                          } else {
+                            return ListView.builder(
+                              itemCount: snapshot.data?.length ?? 0,
+                              itemBuilder: (context, index) {
+                                var comment = snapshot.data?[index];
+                                return ListTile(
+                                  title: Text(
+                                      'Author: ${comment['extensions']['author']}'),
+                                  subtitle: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                          'Comment: ${comment['extensions']['comment']}'),
+                                      Text(
+                                          'Persistent: ${comment['extensions']['persistent'] ? 'Yes' : 'No'}'),
+                                      Text(
+                                          'Entry Time: ${comment['extensions']['entry_time']}'),
+                                      if (comment['extensions']
+                                              ['expire_time'] !=
+                                          null)
+                                        Text(
+                                            'Expire Time: ${comment['extensions']['expire_time']}'),
+                                    ],
+                                  ),
+                                );
+                              },
+                            );
+                          }
+                        },
+                      ),
+                    ),
                   ],
                 ),
               ),
-              SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton.icon(
-                    icon: Icon(Icons.refresh),
-                    label: Text('Recheck'),
-                    onPressed:
-                    null, // Disable the button by setting onPressed to null
-                  ),
-                  ElevatedButton.icon(
-                    icon: Icon(Icons.check_circle),
-                    label: Text('Acknowledge'),
-                    onPressed: () => acknowledgeService(context),
-                  ),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton.icon(
-                    icon: Icon(Icons.timer),
-                    label: Text('Downtime'),
-                    onPressed: () => downtimeService(context),
-                  ),
-                  ElevatedButton.icon(
-                    icon: Icon(Icons.comment),
-                    label: Text('Comment'),
-                    onPressed: () => commentService(context),
-                  ),
-                ],
-              ),
-              Expanded(
-                child: FutureBuilder<List<dynamic>>(
-                  future: _getComments(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
-                    } else if (snapshot.hasError) {
-                      return Text('Error: ${snapshot.error}');
-                    } else {
-                      return ListView.builder(
-                        itemCount: snapshot.data?.length ?? 0,
-                        itemBuilder: (context, index) {
-                          var comment = snapshot.data?[index];
-                          return ListTile(
-                            title: Text('Author: ${comment['extensions']['author']}'),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Comment: ${comment['extensions']['comment']}'),
-                                Text('Persistent: ${comment['extensions']['persistent'] ? 'Yes' : 'No'}'),
-                                Text('Entry Time: ${comment['extensions']['entry_time']}'),
-                                if (comment['extensions']['expire_time'] != null)
-                                  Text('Expire Time: ${comment['extensions']['expire_time']}'),
-                              ],
-                            ),
-                          );
-                        },
-                      );
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'reloadServiceActions',

@@ -22,14 +22,17 @@ class _AcknowledgeServiceFormState extends State<AcknowledgeServiceForm> {
   @override
   void initState() {
     super.initState();
+    _commentController.text = 'ack';
     _hostNameController.text = widget.service['extensions']['host_name'];
     _serviceDescriptionController.text =
-    widget.service['extensions']['description'];
+        widget.service['extensions']['description'];
   }
 
   Future<void> acknowledgeService() async {
     var api = ApiRequest();
-    print(_commentController.text + _hostNameController.text + _serviceDescriptionController.text);
+    print(_commentController.text +
+        _hostNameController.text +
+        _serviceDescriptionController.text);
     var data = await api.Request(
       'domain-types/acknowledge/collections/service',
       method: 'POST',

@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
 import 'package:ptp_4_monitoring_app/screens/main/ServiceActionScreen.dart';
 
-class CriticalScreen extends StatefulWidget {
+class ServiceScreen extends StatefulWidget {
   @override
-  _CriticalScreenState createState() => _CriticalScreenState();
+  _ServiceScreenState createState() => _ServiceScreenState();
 }
 
-class _CriticalScreenState extends State<CriticalScreen> {
+class _ServiceScreenState extends State<ServiceScreen> {
   dynamic _service;
   List<dynamic> _services = [];
 
