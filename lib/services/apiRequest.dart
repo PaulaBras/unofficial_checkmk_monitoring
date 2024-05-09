@@ -2,7 +2,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 import 'dart:convert';
 import 'dart:io';
-import '../../models/credentials.dart';
+import 'package:ptp_4_monitoring_app/models/credentials.dart';
 
 class ApiRequest {
   bool _ignoreCertificate = false;
@@ -43,6 +43,7 @@ class ApiRequest {
         },
       );
     } else if (method == 'POST') {
+      print("POST");
       response = await ioClient.post(
         url,
         headers: headers ?? <String, String>{
@@ -50,7 +51,7 @@ class ApiRequest {
           'Accept': 'application/json',
           'Content-Type': 'application/json; charset=UTF-8'
         },
-        body: body,
+        body: jsonEncode(body),
       );
     } else {
       throw Exception('HTTP method $method not supported');
@@ -60,9 +61,11 @@ class ApiRequest {
     if (response.statusCode == 200) {
       // If the server returns a 200 OK response, then parse the JSON.
       return jsonDecode(response.body);
+    } else if (response.statusCode == 204) {
+      return true;
     } else {
       // If the server returns an error response, then throw an exception.
-      throw Exception('Failed to get api Request' + response.body);
+      throw Exception('Failed to get api Request' + response.body + " Error Code: " + response.statusCode.toString());
     }
   }
 }

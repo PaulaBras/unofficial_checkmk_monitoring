@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:ptp_4_monitoring_app/screens/setup/HelpPage.dart';
+import 'package:ptp_4_monitoring_app/screens/setup/UserPage.dart';
 
 class SettingsDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
       backgroundColor: Theme.of(context).colorScheme.background,
-      child: ListView(
-        padding: EdgeInsets.zero,
+      child: Column(
         children: [
           DrawerHeader(
-            child: Text('Settings'),
+            child: Text('Settings', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.onPrimary,
             ),

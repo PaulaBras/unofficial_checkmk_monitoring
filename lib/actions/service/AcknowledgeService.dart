@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/apiRequest.dart';
+import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
 
 class AcknowledgeServiceForm extends StatefulWidget {
   final dynamic service;
@@ -22,12 +22,17 @@ class _AcknowledgeServiceFormState extends State<AcknowledgeServiceForm> {
   @override
   void initState() {
     super.initState();
+    _commentController.text = 'ack';
     _hostNameController.text = widget.service['extensions']['host_name'];
-    _serviceDescriptionController.text = widget.service['extensions']['description'];
+    _serviceDescriptionController.text =
+        widget.service['extensions']['description'];
   }
 
   Future<void> acknowledgeService() async {
     var api = ApiRequest();
+    print(_commentController.text +
+        _hostNameController.text +
+        _serviceDescriptionController.text);
     var data = await api.Request(
       'domain-types/acknowledge/collections/service',
       method: 'POST',
@@ -40,13 +45,16 @@ class _AcknowledgeServiceFormState extends State<AcknowledgeServiceForm> {
         "host_name": _hostNameController.text,
         "service_description": _serviceDescriptionController.text
       },
-      headers: {
-        "Content-Type": "application/json",
-      },
     );
 
-    if (data['result_code'] == 0) {
-      print("Service acknowledged successfully");
+    if (data == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Service acknowledged successfully'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      Navigator.of(context).pop();
     } else {
       print("Failed to acknowledge service");
     }
@@ -67,11 +75,12 @@ class _AcknowledgeServiceFormState extends State<AcknowledgeServiceForm> {
               TextFormField(
                 controller: _commentController,
                 decoration: InputDecoration(labelText: 'Comment'),
-              ),
-              TextFormField(
-                controller: _hostNameController,
-                decoration: InputDecoration(labelText: 'Host Name'),
-                enabled: false,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a comment';
+                  }
+                  return null;
+                },
               ),
               TextFormField(
                 controller: _serviceDescriptionController,
@@ -105,17 +114,23 @@ class _AcknowledgeServiceFormState extends State<AcknowledgeServiceForm> {
                   });
                 },
               ),
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    acknowledgeService();
-                  }
-                },
-                child: Text('Submit'),
-              ),
             ],
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          if (_formKey.currentState != null &&
+              _formKey.currentState!.validate()) {
+            acknowledgeService();
+          }
+        },
+        tooltip: 'Submit',
+        child: const Icon(
+          Icons.check,
+          color: Colors.white,
+        ),
+        backgroundColor: Colors.green,
       ),
     );
   }

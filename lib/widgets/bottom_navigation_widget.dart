@@ -15,16 +15,12 @@ class BottomNavigationWidget extends StatelessWidget {
     return BottomNavigationBar(
       items: const <BottomNavigationBarItem>[
         BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Main',
-        ),
-        BottomNavigationBarItem(
           icon: Icon(Icons.business),
-          label: 'Monitor',
+          label: 'Services',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.school),
-          label: 'Customize',
+          icon: Icon(Icons.home),
+          label: 'Hosts',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.settings),

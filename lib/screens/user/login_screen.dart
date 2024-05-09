@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ptp_4_monitoring_app/widgets/custom_text_field.dart';
 
-import '../../models/credentials.dart';
+import 'package:ptp_4_monitoring_app/models/credentials.dart';
 
 class LoginScreen extends StatefulWidget {
   @override

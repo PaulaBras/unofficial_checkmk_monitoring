@@ -1,16 +1,16 @@
-import '../../services/apiRequest.dart';
 import 'package:flutter/material.dart';
+import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
 
-class CommentServiceWidget extends StatefulWidget {
+class CommentHostWidget extends StatefulWidget {
   final String hostName;
 
-  CommentServiceWidget({required this.hostName});
+  CommentHostWidget({required this.hostName});
 
   @override
-  _CommentServiceWidgetState createState() => _CommentServiceWidgetState();
+  _CommentHostWidgetState createState() => _CommentHostWidgetState();
 }
 
-class _CommentServiceWidgetState extends State<CommentServiceWidget> {
+class _CommentHostWidgetState extends State<CommentHostWidget> {
   final _formKey = GlobalKey<FormState>();
   final _commentController = TextEditingController();
   final _hostNameController = TextEditingController();
@@ -34,15 +34,18 @@ class _CommentServiceWidgetState extends State<CommentServiceWidget> {
         "comment_type": _commentType,
         "host_name": _hostNameController.text,
       },
-      headers: {
-        "Content-Type": "application/json",
-      },
     );
 
-    if (data['result_code'] == 0) {
-      print("Comment added successfully");
+    if (data == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Service commented successfully'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      Navigator.of(context).pop();
     } else {
-      print("Failed to add comment");
+      print("Failed to comment service");
     }
   }
 
@@ -80,7 +83,8 @@ class _CommentServiceWidgetState extends State<CommentServiceWidget> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          if (_formKey.currentState!.validate()) {
+          if (_formKey.currentState != null &&
+              _formKey.currentState!.validate()) {
             _addComment();
           }
         },
