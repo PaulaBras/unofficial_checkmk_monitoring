@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ptp_4_monitoring_app/screens/main/HostActionScreen.dart';
 import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
-import 'package:ptp_4_monitoring_app/screens/main/HostServicesScreen.dart';
 
 enum HostState { OK, Warning, Critical, Unknown }
 
@@ -42,10 +41,10 @@ class HostNameSearch extends SearchDelegate<String> {
     final suggestions = query.isEmpty
         ? hosts
         : hosts
-        .where((host) => host['extensions']['name']
-        .toLowerCase()
-        .contains(query.toLowerCase()))
-        .toList();
+            .where((host) => host['extensions']['name']
+                .toLowerCase()
+                .contains(query.toLowerCase()))
+            .toList();
 
     return ListView.builder(
       itemCount: suggestions.length,
@@ -53,7 +52,13 @@ class HostNameSearch extends SearchDelegate<String> {
         return ListTile(
           title: Text(suggestions[index]['extensions']['name']),
           onTap: () {
-            close(context, suggestions[index]['extensions']['name']);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    HostActionScreen(host: suggestions[index]),
+              ),
+            );
           },
         );
       },
@@ -246,7 +251,8 @@ class _HostScreenState extends State<HostScreen> {
                           context,
                           MaterialPageRoute(
                             builder: (context) => HostActionScreen(
-                                host: host['extensions']['name'],),
+                              host: host,
+                            ),
                           ),
                         );
                       },

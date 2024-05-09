@@ -80,7 +80,8 @@ class _HostServiceScreenState extends State<HostServiceScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     ListTile(
-                      title: Text(service['extensions']['description']),
+                      leading: stateIcon,
+                      title: Text(service['extensions']['name']),
                       subtitle: state == 0
                           ? Text('State: $stateText\nLast Check: $lastCheck')
                           : Text('State: $stateText\n'
