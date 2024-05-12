@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:ptp_4_monitoring_app/screens/main/ServiceActionScreen.dart';
 import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
+
+import '../../models/credentials.dart';
 
 enum SerivceState { Warning, Critical, Unknown }
 
@@ -34,12 +39,7 @@ class ServiceSearch extends SearchDelegate {
   @override
   Widget buildResults(BuildContext context) {
     final results = services.where((service) {
-      return service['extensions']['host_name']
-              .toLowerCase()
-              .contains(query.toLowerCase()) ||
-          service['extensions']['description']
-              .toLowerCase()
-              .contains(query.toLowerCase());
+      return service['extensions']['host_name'].toLowerCase().contains(query.toLowerCase()) || service['extensions']['description'].toLowerCase().contains(query.toLowerCase());
     });
 
     return ListView(
@@ -63,12 +63,7 @@ class ServiceSearch extends SearchDelegate {
   @override
   Widget buildSuggestions(BuildContext context) {
     final suggestions = services.where((service) {
-      return service['extensions']['host_name']
-              .toLowerCase()
-              .contains(query.toLowerCase()) ||
-          service['extensions']['description']
-              .toLowerCase()
-              .contains(query.toLowerCase());
+      return service['extensions']['host_name'].toLowerCase().contains(query.toLowerCase()) || service['extensions']['description'].toLowerCase().contains(query.toLowerCase());
     });
 
     return ListView(
@@ -156,12 +151,28 @@ class _ServiceScreenState extends State<ServiceScreen> {
   dynamic _service;
   List<dynamic> _services = [];
   Set<SerivceState> _filterStates = {...SerivceState.values};
+  Timer? _timer;
+  String _dateFormat = 'dd.MM.yyyy, HH:mm';
+  String _locale = 'de_DE';
+  var secureStorage = SecureStorage();
 
   @override
   void initState() {
     super.initState();
-
+    _loadDateFormatAndLocale();
     _getService();
+    _timer = Timer.periodic(Duration(minutes: 1), (Timer t) => _getService());
+  }
+
+  void _loadDateFormatAndLocale() async {
+    _dateFormat = await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
+    _locale = await secureStorage.readSecureData('locale') ?? 'de_DE';
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   Future<void> _getService() async {
@@ -182,11 +193,13 @@ class _ServiceScreenState extends State<ServiceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Sort the services based on their state
-    List<dynamic> sortedServices = _service;
-    sortedServices.sort(
-        (a, b) => b['extensions']['state'].compareTo(a['extensions']['state']));
-
+    List<dynamic> sortedServices;
+    if (_service == null) {
+      return Center(child: CircularProgressIndicator());
+    } else {
+      sortedServices = _service;
+      sortedServices.sort((a, b) => b['extensions']['state'].compareTo(a['extensions']['state']));
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text("Services Overview"),
@@ -270,8 +283,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                ServiceActionScreen(service: service),
+                            builder: (context) => ServiceActionScreen(service: service),
                           ),
                         );
                       },
@@ -280,12 +292,9 @@ class _ServiceScreenState extends State<ServiceScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Service: $description'),
-                          Text(
-                              'Current Attempt: ${service['extensions']['current_attempt']}/${service['extensions']['max_check_attempts']}'),
-                          Text(
-                              'Last Check: ${DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_check'] * 1000)}'),
-                          Text(
-                              'Last Time OK: ${DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_time_ok'] * 1000)}'),
+                          Text('Current Attempt: ${service['extensions']['current_attempt']}/${service['extensions']['max_check_attempts']}'),
+                          Text('Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_check'] * 1000))}'),
+                          Text('Last Time OK: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_time_ok'] * 1000))}'),
                         ],
                       ),
                       trailing: Column(
@@ -294,10 +303,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              service['extensions']['acknowledged'] == 1
-                                  ? Icon(Icons.check_circle,
-                                      color: Colors.green)
-                                  : Container(),
+                              service['extensions']['acknowledged'] == 1 ? Icon(Icons.check_circle, color: Colors.green) : Container(),
                             ],
                           ),
                           Row(

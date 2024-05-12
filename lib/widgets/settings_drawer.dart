@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:ptp_4_monitoring_app/screens/setup/HelpPage.dart';
-import 'package:ptp_4_monitoring_app/screens/setup/UserPage.dart';
 
 class SettingsDrawer extends StatelessWidget {
   @override
