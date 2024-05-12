@@ -22,12 +22,13 @@ class _HostServiceScreenState extends State<HostServiceScreen> {
 
   Future<void> _getService() async {
     var api = ApiRequest();
-    var data = await api.Request(
-        'objects/host/${widget.hostName}/collections/services?columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged&columns=state&columns=comments&columns=is_flapping');
+    var data = await api.Request('objects/host/${widget.hostName}/collections/services?columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged&columns=state&columns=comments&columns=is_flapping');
 
-    setState(() {
-      _service = data;
-    });
+    if (_service == null) {
+      Navigator.pop(context);
+    } else {
+      setState(() {});
+    }
   }
 
   @override
@@ -43,8 +44,7 @@ class _HostServiceScreenState extends State<HostServiceScreen> {
               itemBuilder: (context, index) {
                 var service = _service['value'][index];
                 var state = service['extensions']['state'];
-                var lastCheck = DateTime.fromMillisecondsSinceEpoch(
-                    service['extensions']['last_check'] * 1000);
+                var lastCheck = DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_check'] * 1000);
                 String stateText;
                 Icon stateIcon;
                 Color color;

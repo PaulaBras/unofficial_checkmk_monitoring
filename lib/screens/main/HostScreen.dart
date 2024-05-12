@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:ptp_4_monitoring_app/screens/main/HostActionScreen.dart';
 import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
@@ -38,13 +40,7 @@ class HostNameSearch extends SearchDelegate<String> {
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    final suggestions = query.isEmpty
-        ? hosts
-        : hosts
-            .where((host) => host['extensions']['name']
-                .toLowerCase()
-                .contains(query.toLowerCase()))
-            .toList();
+    final suggestions = query.isEmpty ? hosts : hosts.where((host) => host['extensions']['name'].toLowerCase().contains(query.toLowerCase())).toList();
 
     return ListView.builder(
       itemCount: suggestions.length,
@@ -55,8 +51,7 @@ class HostNameSearch extends SearchDelegate<String> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) =>
-                    HostActionScreen(host: suggestions[index]),
+                builder: (context) => HostActionScreen(host: suggestions[index]),
               ),
             );
           },
@@ -131,17 +126,24 @@ class HostScreen extends StatefulWidget {
 class _HostScreenState extends State<HostScreen> {
   List<dynamic> _hosts = [];
   Set<HostState> _filterStates = {};
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _getHosts();
+    _timer = Timer.periodic(Duration(minutes: 1), (Timer t) => _getHosts());
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   Future<void> _getHosts() async {
     var api = ApiRequest();
-    var data = await api.Request(
-        'domain-types/host/collections/all?query=%7B%22op%22%3A%20%22%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=name&columns=address&columns=last_check&columns=last_time_up&columns=state&columns=total_services&columns=acknowledged');
+    var data = await api.Request('domain-types/host/collections/all?query=%7B%22op%22%3A%20%22%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=name&columns=address&columns=last_check&columns=last_time_up&columns=state&columns=total_services&columns=acknowledged');
 
     setState(() {
       _hosts = data['value'];
@@ -222,8 +224,7 @@ class _HostScreenState extends State<HostScreen> {
                       break;
                     case 3:
                       stateText = 'UNKNOWN';
-                      stateIcon =
-                          Icon(Icons.help_outline, color: Colors.orange);
+                      stateIcon = Icon(Icons.help_outline, color: Colors.orange);
                       color = Colors.orange;
                       break;
                     default:
@@ -261,14 +262,10 @@ class _HostScreenState extends State<HostScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Address: ${host['extensions']['address']}'),
-                          Text(
-                              'Last Check: ${DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_check'] * 1000)}'),
-                          Text(
-                              'Last Time Up: ${DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_time_up'] * 1000)}'),
-                          Text(
-                              'Total Services: ${host['extensions']['total_services']}'),
-                          Text(
-                              'Acknowledged: ${host['extensions']['acknowledged'] == 1 ? 'Yes' : 'No'}'),
+                          Text('Last Check: ${DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_check'] * 1000)}'),
+                          Text('Last Time Up: ${DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_time_up'] * 1000)}'),
+                          Text('Total Services: ${host['extensions']['total_services']}'),
+                          Text('Acknowledged: ${host['extensions']['acknowledged'] == 1 ? 'Yes' : 'No'}'),
                         ],
                       ),
                       trailing: Row(
