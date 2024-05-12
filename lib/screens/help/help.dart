@@ -41,7 +41,7 @@ class _HelpScreenState extends State<HelpScreen> {
               width: 30,
               height: 30,
               colorFilter: ColorFilter.mode(
-                  Theme.of(context).colorScheme.onPrimary, BlendMode.srcIn),
+                  Theme.of(context).colorScheme.surface, BlendMode.srcIn),
             ),
           ),
           // Headline
@@ -73,7 +73,7 @@ class _HelpScreenState extends State<HelpScreen> {
               width: 30,
               height: 30,
               colorFilter: ColorFilter.mode(
-                  Theme.of(context).colorScheme.onPrimary, BlendMode.srcIn),
+                  Theme.of(context).colorScheme.surface, BlendMode.srcIn),
             ),
           ),
           // Headline
@@ -97,7 +97,7 @@ class _HelpScreenState extends State<HelpScreen> {
               width: 30,
               height: 30,
               colorFilter: ColorFilter.mode(
-                  Theme.of(context).colorScheme.onPrimary, BlendMode.srcIn),
+                  Theme.of(context).colorScheme.surface, BlendMode.srcIn),
             ),
           ),
           // Headline
