@@ -27,7 +27,7 @@ class WelcomeScreen extends StatelessWidget {
             ElevatedButton(
               onPressed: () => Navigator.pushNamed(context, 'login_screen'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+                backgroundColor: Theme.of(context).colorScheme.surface,
                 elevation: 0,
               ),
               child: const Text('Log In'),

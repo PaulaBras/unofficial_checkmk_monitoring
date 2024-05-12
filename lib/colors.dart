@@ -12,7 +12,7 @@ const lightColorScheme = ColorScheme(
   onError: Colors.white,
   background: Colors.white,
   onBackground: Color(0xFF2C3843), // Dark Grey
-  surface: Colors.white,
+  surface: Color(0xFF15D1A0),
   onSurface: Color(0xFF2C3843), // Dark Grey
 );
 const darkColorScheme = ColorScheme(

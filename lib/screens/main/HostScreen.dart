@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:ptp_4_monitoring_app/screens/main/HostActionScreen.dart';
 import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
 
@@ -231,16 +232,11 @@ class _HostScreenState extends State<HostScreen> {
               margin: const EdgeInsets.all(8.0),
               padding: const EdgeInsets.all(8.0),
               decoration: BoxDecoration(
-                color: Colors.indigo,
                 borderRadius: BorderRadius.circular(10.0),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.5),
-                    spreadRadius: 5,
-                    blurRadius: 7,
-                    offset: Offset(0, 3),
-                  ),
-                ],
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.surface,
+                  width: 2.0,
+                ),
               ),
               child: ListTile(
                 onTap: () {
@@ -259,9 +255,11 @@ class _HostScreenState extends State<HostScreen> {
                   children: [
                     Text('Address: ${host['extensions']['address']}'),
                     Text(
-                        'Last Check: ${DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_check'] * 1000)}'),
+                      'Last Check: ${DateFormat('dd.MM.yyyy HH:mm', 'de').format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_check'] * 1000))}',
+                    ),
                     Text(
-                        'Last Time Up: ${DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_time_up'] * 1000)}'),
+                      'Last Time Up: ${DateFormat('dd.MM.yyyy HH:mm', 'de').format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_time_up'] * 1000))}',
+                    ),
                     Text(
                         'Total Services: ${host['extensions']['total_services']}'),
                     Text(
