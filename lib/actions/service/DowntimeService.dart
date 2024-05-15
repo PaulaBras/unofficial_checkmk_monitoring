@@ -1,6 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
-import 'package:flutter/material.dart';
+
+import '../../models/credentials.dart';
 
 class Downtime {
   String startTime;
@@ -52,8 +54,7 @@ class DowntimeServiceWidget extends StatefulWidget {
   final String hostName;
   final String serviceDescription;
 
-  DowntimeServiceWidget(
-      {required this.hostName, required this.serviceDescription});
+  DowntimeServiceWidget({required this.hostName, required this.serviceDescription});
 
   @override
   _DowntimeServiceWidgetState createState() => _DowntimeServiceWidgetState();
@@ -66,6 +67,9 @@ class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
   Downtime? _downtime;
   DateTime? _startTime;
   DateTime? _endTime;
+  String _dateFormat = 'dd.MM.yyyy, HH:mm';
+  String _locale = 'de_DE';
+  var secureStorage = SecureStorage();
 
   @override
   void initState() {
@@ -82,6 +86,11 @@ class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
     );
   }
 
+  void _loadDateFormatAndLocale() async {
+    _dateFormat = await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
+    _locale = await secureStorage.readSecureData('locale') ?? 'de_DE';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -96,9 +105,7 @@ class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(_startTime == null
-                    ? 'Select Start Time'
-                    : 'Start Time: ${DateFormat('H:m d.M.y').format(_startTime!)}'),
+                Text(_startTime == null ? 'Select Start Time' : 'Start Time: ${DateFormat(_dateFormat, _locale).format(_startTime!)}'),
                 ElevatedButton(
                   onPressed: () async {
                     final date = await showDatePicker(
@@ -132,9 +139,7 @@ class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(_endTime == null
-                    ? 'Select End Time'
-                    : 'End Time: ${DateFormat('H:m d.M.y').format(_endTime!)}'),
+                Text(_endTime == null ? 'Select End Time' : 'End Time: ${DateFormat(_dateFormat, _locale).format(_endTime!)}'),
                 ElevatedButton(
                   onPressed: () async {
                     final date = await showDatePicker(

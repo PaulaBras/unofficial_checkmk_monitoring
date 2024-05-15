@@ -7,7 +7,6 @@ import 'package:ptp_4_monitoring_app/screens/help/help.dart';
 import 'package:ptp_4_monitoring_app/screens/my_home_page.dart';
 import 'package:ptp_4_monitoring_app/screens/notify/notify.dart';
 import 'package:ptp_4_monitoring_app/screens/user/login_screen.dart';
-import 'package:ptp_4_monitoring_app/screens/user/registration_screen.dart';
 import 'package:ptp_4_monitoring_app/screens/user/user.dart';
 import 'package:ptp_4_monitoring_app/screens/user/welcome_screen.dart';
 
@@ -65,8 +64,6 @@ class MyApp extends StatelessWidget {
         return MaterialPageRoute(builder: (_) => WelcomeScreen());
       case loginScreenId:
         return MaterialPageRoute(builder: (_) => LoginScreen());
-      case registrationScreenId:
-        return MaterialPageRoute(builder: (_) => RegistrationScreen());
       case homeScreenId:
         return MaterialPageRoute(builder: (_) => MyHomePage());
       case helpScreenId:

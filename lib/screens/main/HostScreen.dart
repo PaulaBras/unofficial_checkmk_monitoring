@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:ptp_4_monitoring_app/screens/main/HostActionScreen.dart';
 import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
+
+import '../../models/credentials.dart';
 
 enum HostState { OK, Warning, Critical, Unknown }
 
@@ -38,13 +43,7 @@ class HostNameSearch extends SearchDelegate<String> {
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    final suggestions = query.isEmpty
-        ? hosts
-        : hosts
-            .where((host) => host['extensions']['name']
-                .toLowerCase()
-                .contains(query.toLowerCase()))
-            .toList();
+    final suggestions = query.isEmpty ? hosts : hosts.where((host) => host['extensions']['name'].toLowerCase().contains(query.toLowerCase())).toList();
 
     return ListView.builder(
       itemCount: suggestions.length,
@@ -55,8 +54,7 @@ class HostNameSearch extends SearchDelegate<String> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) =>
-                    HostActionScreen(host: suggestions[index]),
+                builder: (context) => HostActionScreen(host: suggestions[index]),
               ),
             );
           },
@@ -85,6 +83,7 @@ class _StateFilterDialogState extends State<StateFilterDialog> {
   @override
   void initState() {
     super.initState();
+
     _selectedStates = widget.selectedStates;
   }
 
@@ -131,17 +130,33 @@ class HostScreen extends StatefulWidget {
 class _HostScreenState extends State<HostScreen> {
   List<dynamic> _hosts = [];
   Set<HostState> _filterStates = {};
+  Timer? _timer;
+  String _dateFormat = 'dd.MM.yyyy, HH:mm';
+  String _locale = 'de_DE';
+  var secureStorage = SecureStorage();
 
   @override
   void initState() {
     super.initState();
+    _loadDateFormatAndLocale();
     _getHosts();
+    _timer = Timer.periodic(Duration(minutes: 1), (Timer t) => _getHosts());
+  }
+
+  void _loadDateFormatAndLocale() async {
+    _dateFormat = await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
+    _locale = await secureStorage.readSecureData('locale') ?? 'de_DE';
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   Future<void> _getHosts() async {
     var api = ApiRequest();
-    var data = await api.Request(
-        'domain-types/host/collections/all?query=%7B%22op%22%3A%20%22%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=name&columns=address&columns=last_check&columns=last_time_up&columns=state&columns=total_services&columns=acknowledged');
+    var data = await api.Request('domain-types/host/collections/all?query=%7B%22op%22%3A%20%22%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=name&columns=address&columns=last_check&columns=last_time_up&columns=state&columns=total_services&columns=acknowledged');
 
     setState(() {
       _hosts = data['value'];
@@ -192,108 +207,101 @@ class _HostScreenState extends State<HostScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: _getHosts,
-        child: _hosts == null
-            ? Center(child: CircularProgressIndicator())
-            : ListView.builder(
-                itemCount: _hosts.length,
-                itemBuilder: (context, index) {
-                  var host = _hosts[index];
-                  var state = host['extensions']['state'];
-                  String stateText;
-                  Icon stateIcon;
-                  Color color;
+        child: ListView.builder(
+          itemCount: _hosts.length,
+          itemBuilder: (context, index) {
+            var host = _hosts[index];
+            var state = host['extensions']['state'];
+            String stateText;
+            Icon stateIcon;
+            Color color;
+            switch (state) {
+              case 0:
+                stateText = 'OK';
+                color = Colors.green;
+                stateIcon = Icon(Icons.check_circle, color: Colors.green);
+                break;
+              // For testing only
+              case 1:
+                stateText = 'Warning';
+                stateIcon = Icon(Icons.warning, color: Colors.yellow);
+                color = Colors.yellow;
+                break;
+              case 2:
+                stateText = 'Critical';
+                stateIcon = Icon(Icons.error, color: Colors.red);
+                color = Colors.red;
+                break;
+              case 3:
+                stateText = 'UNKNOWN';
+                stateIcon = Icon(Icons.help_outline, color: Colors.orange);
+                color = Colors.orange;
+                break;
+              default:
+                return Container(); // Return an empty container if the state is not 1, 2, or 3
+            }
 
-                  switch (state) {
-                    case 0:
-                      stateText = 'OK';
-                      color = Colors.green;
-                      stateIcon = Icon(Icons.check_circle, color: Colors.green);
-                      break;
-                    // For testing only
-                    case 1:
-                      stateText = 'Warning';
-                      stateIcon = Icon(Icons.warning, color: Colors.yellow);
-                      color = Colors.yellow;
-                      break;
-                    case 2:
-                      stateText = 'Critical';
-                      stateIcon = Icon(Icons.error, color: Colors.red);
-                      color = Colors.red;
-                      break;
-                    case 3:
-                      stateText = 'UNKNOWN';
-                      stateIcon =
-                          Icon(Icons.help_outline, color: Colors.orange);
-                      color = Colors.orange;
-                      break;
-                    default:
-                      return Container(); // Return an empty container if the state is not 1, 2, or 3
-                  }
-
-                  return Container(
-                    margin: const EdgeInsets.all(8.0),
-                    padding: const EdgeInsets.all(8.0),
-                    decoration: BoxDecoration(
-                      color: Colors.indigo,
-                      borderRadius: BorderRadius.circular(10.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 5,
-                          blurRadius: 7,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: ListTile(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => HostActionScreen(
-                              host: host,
-                            ),
-                          ),
-                        );
-                      },
-                      title: Text(host['extensions']['name']),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Address: ${host['extensions']['address']}'),
-                          Text(
-                              'Last Check: ${DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_check'] * 1000)}'),
-                          Text(
-                              'Last Time Up: ${DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_time_up'] * 1000)}'),
-                          Text(
-                              'Total Services: ${host['extensions']['total_services']}'),
-                          Text(
-                              'Acknowledged: ${host['extensions']['acknowledged'] == 1 ? 'Yes' : 'No'}'),
-                        ],
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          stateIcon,
-                          Text(
-                            stateText,
-                            style: TextStyle(color: color),
-                          ),
-                        ],
+            return Container(
+              margin: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10.0),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.surface,
+                  width: 2.0,
+                ),
+              ),
+              child: ListTile(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => HostActionScreen(
+                        host: host,
                       ),
                     ),
                   );
                 },
+                title: Text(host['extensions']['name']),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Address: ${host['extensions']['address']}'),
+                    Text(
+                      'Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_check'] * 1000))}',
+                    ),
+                    Text(
+                      'Last Time Up: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_time_up'] * 1000))}',
+                    ),
+                    Text(
+                        'Total Services: ${host['extensions']['total_services']}'),
+                    Text(
+                        'Acknowledged: ${host['extensions']['acknowledged'] == 1 ? 'Yes' : 'No'}'),
+                  ],
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    stateIcon,
+                    Text(
+                      stateText,
+                      style: TextStyle(color: color),
+                    ),
+                  ],
+                ),
               ),
+            );
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _getHosts,
         tooltip: 'Refresh',
         child: const Icon(
           Icons.refresh,
-          color: Colors.black, // Make the icon black
+          color: Colors.black,
         ),
-        backgroundColor: Colors.yellow, // Keep the button yellow
+        backgroundColor: Theme.of(context).colorScheme.surface,
       ),
     );
   }

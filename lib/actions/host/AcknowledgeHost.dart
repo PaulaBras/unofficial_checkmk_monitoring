@@ -23,7 +23,7 @@ class _AcknowledgeHostFormState extends State<AcknowledgeHostForm> {
     super.initState();
     print(widget.service);
     _commentController.text = 'ack';
-    _hostNameController.text = widget.service;
+    _hostNameController.text = widget.service['extensions']['name'];
   }
 
   Future<void> acknowledgeHost() async {
@@ -31,14 +31,7 @@ class _AcknowledgeHostFormState extends State<AcknowledgeHostForm> {
     var data = await api.Request(
       'domain-types/acknowledge/collections/host',
       method: 'POST',
-      body: {
-        "acknowledge_type": "host",
-        "sticky": _sticky,
-        "persistent": _persistent,
-        "notify": _notify,
-        "comment": _commentController.text,
-        "host_name": _hostNameController.text
-      },
+      body: {"acknowledge_type": "host", "sticky": _sticky, "persistent": _persistent, "notify": _notify, "comment": _commentController.text, "host_name": _hostNameController.text},
     );
 
     if (data == true) {
@@ -109,8 +102,7 @@ class _AcknowledgeHostFormState extends State<AcknowledgeHostForm> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          if (_formKey.currentState != null &&
-              _formKey.currentState!.validate()) {
+          if (_formKey.currentState != null && _formKey.currentState!.validate()) {
             acknowledgeHost();
           }
         },

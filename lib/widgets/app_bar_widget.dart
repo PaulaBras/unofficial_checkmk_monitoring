@@ -24,7 +24,7 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
         child: Container(
           margin: const EdgeInsets.all(10.0),
           child: Image.asset(
-            'images/checkmk-icon-white.png',
+            'images/checkmk-icon-green.png',
             fit: BoxFit.fill,
           ),
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../models/credentials.dart';
 
 class SetupScreen extends StatefulWidget {
@@ -15,6 +16,9 @@ class _SetupScreenState extends State<SetupScreen> {
   final _passwordController = TextEditingController();
   final _siteController = TextEditingController();
   bool _ignoreCertificate = false;
+  bool _notification = false;
+  String _dateFormat = 'dd.MM.yyyy, HH:mm';
+  String _locale = 'de_DE';
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -25,10 +29,15 @@ class _SetupScreenState extends State<SetupScreen> {
 
   void _loadCredentials() async {
     _serverController.text = await secureStorage.readSecureData('server') ?? '';
-    _usernameController.text = await secureStorage.readSecureData('username') ?? '';
-    _passwordController.text = await secureStorage.readSecureData('password') ?? '';
+    _usernameController.text =
+        await secureStorage.readSecureData('username') ?? '';
+    _passwordController.text =
+        await secureStorage.readSecureData('password') ?? '';
     _siteController.text = await secureStorage.readSecureData('site') ?? '';
     _ignoreCertificate = (await secureStorage.readSecureData('ignoreCertificate'))?.toLowerCase() == 'true' ?? false;
+    _notification = (await secureStorage.readSecureData('notification'))?.toLowerCase() == 'true' ?? false;
+    _dateFormat = await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
+    _locale = await secureStorage.readSecureData('locale') ?? 'de_DE';
     setState(() {});
   }
 
@@ -40,6 +49,9 @@ class _SetupScreenState extends State<SetupScreen> {
       await secureStorage.writeSecureData('password', _passwordController.text);
       await secureStorage.writeSecureData('site', _siteController.text);
       await secureStorage.writeSecureData('ignoreCertificate', _ignoreCertificate.toString());
+      await secureStorage.writeSecureData('notification', _notification.toString());
+      await secureStorage.writeSecureData('dateFormat', _dateFormat);
+      await secureStorage.writeSecureData('locale', _locale);
       Navigator.pop(context);
     }
   }
@@ -65,6 +77,13 @@ class _SetupScreenState extends State<SetupScreen> {
                 onSaved: (value) => _serverController.text = value!,
               ),
               TextFormField(
+                controller: _siteController,
+                decoration: InputDecoration(
+                  labelText: 'Site',
+                ),
+                onSaved: (value) => _siteController.text = value!,
+              ),
+              TextFormField(
                 controller: _usernameController,
                 decoration: InputDecoration(
                   labelText: 'Username',
@@ -79,13 +98,6 @@ class _SetupScreenState extends State<SetupScreen> {
                 obscureText: true,
                 onSaved: (value) => _passwordController.text = value!,
               ),
-              TextFormField(
-                controller: _siteController,
-                decoration: InputDecoration(
-                  labelText: 'Site',
-                ),
-                onSaved: (value) => _siteController.text = value!,
-              ),
               SwitchListTile(
                 title: Text('Ignore Certificate Warnings'),
                 value: _ignoreCertificate,
@@ -94,6 +106,32 @@ class _SetupScreenState extends State<SetupScreen> {
                     _ignoreCertificate = value;
                   });
                 },
+              ),
+              SwitchListTile(
+                title: Text('Enable Notification'),
+                value: _notification,
+                onChanged: (bool value) {
+                  setState(() {
+                    _notification = value;
+                  });
+                },
+              ),
+              DropdownButton<String>(
+                value: _locale,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    if (newValue != null) {
+                      _dateFormat = newValue == 'de_DE' ? 'dd.MM.yyyy, HH:mm' : 'MM/dd/yyyy, hh:mm a';
+                      _locale = newValue;
+                    }
+                  });
+                },
+                items: <String>['de_DE', 'en_US'].map<DropdownMenuItem<String>>((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
               ),
               ElevatedButton(
                 onPressed: _saveCredentials,
