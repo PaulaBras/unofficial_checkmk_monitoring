@@ -5,10 +5,12 @@ class SettingsDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Drawer(
       backgroundColor: Theme.of(context).colorScheme.background,
-      child: Column(
+      child: ListView(
+        padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            child: Text('Settings', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            child: Text('Settings',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.onPrimary,
             ),

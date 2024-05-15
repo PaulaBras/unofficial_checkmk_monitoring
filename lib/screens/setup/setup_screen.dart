@@ -38,8 +38,10 @@ class _SetupScreenState extends State<SetupScreen> {
 
   void _loadSettings() async {
     _serverController.text = await secureStorage.readSecureData('server') ?? '';
-    _usernameController.text = await secureStorage.readSecureData('username') ?? '';
-    _passwordController.text = await secureStorage.readSecureData('password') ?? '';
+    _usernameController.text =
+        await secureStorage.readSecureData('username') ?? '';
+    _passwordController.text =
+        await secureStorage.readSecureData('password') ?? '';
     _siteController.text = await secureStorage.readSecureData('site') ?? '';
     _ignoreCertificate = (await secureStorage.readSecureData('ignoreCertificate'))?.toLowerCase() == 'true' ?? false;
     _notification = (await secureStorage.readSecureData('notification'))?.toLowerCase() == 'true' ?? false;

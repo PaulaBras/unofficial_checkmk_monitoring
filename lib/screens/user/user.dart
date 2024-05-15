@@ -31,7 +31,7 @@ class _UserScreenState extends State<UserScreen> {
               width: 30,
               height: 30,
               colorFilter: ColorFilter.mode(
-                  Theme.of(context).colorScheme.onPrimary, BlendMode.srcIn),
+                  Theme.of(context).colorScheme.surface, BlendMode.srcIn),
             ),
           ),
           // Headline

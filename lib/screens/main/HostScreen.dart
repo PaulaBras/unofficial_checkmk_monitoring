@@ -207,103 +207,101 @@ class _HostScreenState extends State<HostScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: _getHosts,
-        child: _hosts == null
-            ? Center(child: CircularProgressIndicator())
-            : ListView.builder(
-                itemCount: _hosts.length,
-                itemBuilder: (context, index) {
-                  var host = _hosts[index];
-                  var state = host['extensions']['state'];
-                  String stateText;
-                  Icon stateIcon;
-                  Color color;
+        child: ListView.builder(
+          itemCount: _hosts.length,
+          itemBuilder: (context, index) {
+            var host = _hosts[index];
+            var state = host['extensions']['state'];
+            String stateText;
+            Icon stateIcon;
+            Color color;
+            switch (state) {
+              case 0:
+                stateText = 'OK';
+                color = Colors.green;
+                stateIcon = Icon(Icons.check_circle, color: Colors.green);
+                break;
+              // For testing only
+              case 1:
+                stateText = 'Warning';
+                stateIcon = Icon(Icons.warning, color: Colors.yellow);
+                color = Colors.yellow;
+                break;
+              case 2:
+                stateText = 'Critical';
+                stateIcon = Icon(Icons.error, color: Colors.red);
+                color = Colors.red;
+                break;
+              case 3:
+                stateText = 'UNKNOWN';
+                stateIcon = Icon(Icons.help_outline, color: Colors.orange);
+                color = Colors.orange;
+                break;
+              default:
+                return Container(); // Return an empty container if the state is not 1, 2, or 3
+            }
 
-                  switch (state) {
-                    case 0:
-                      stateText = 'OK';
-                      color = Colors.green;
-                      stateIcon = Icon(Icons.check_circle, color: Colors.green);
-                      break;
-                    // For testing only
-                    case 1:
-                      stateText = 'Warning';
-                      stateIcon = Icon(Icons.warning, color: Colors.yellow);
-                      color = Colors.yellow;
-                      break;
-                    case 2:
-                      stateText = 'Critical';
-                      stateIcon = Icon(Icons.error, color: Colors.red);
-                      color = Colors.red;
-                      break;
-                    case 3:
-                      stateText = 'UNKNOWN';
-                      stateIcon = Icon(Icons.help_outline, color: Colors.orange);
-                      color = Colors.orange;
-                      break;
-                    default:
-                      return Container(); // Return an empty container if the state is not 1, 2, or 3
-                  }
-
-                  return Container(
-                    margin: const EdgeInsets.all(8.0),
-                    padding: const EdgeInsets.all(8.0),
-                    decoration: BoxDecoration(
-                      color: Colors.indigo,
-                      borderRadius: BorderRadius.circular(10.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 5,
-                          blurRadius: 7,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: ListTile(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => HostActionScreen(
-                              host: host,
-                            ),
-                          ),
-                        );
-                      },
-                      title: Text(host['extensions']['name']),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Address: ${host['extensions']['address']}'),
-                          Text('Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_check'] * 1000))}'),
-                          Text('Last Time Up: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_time_up'] * 1000))}'),
-                          Text('Total Services: ${host['extensions']['total_services']}'),
-                          Text('Acknowledged: ${host['extensions']['acknowledged'] == 1 ? 'Yes' : 'No'}'),
-                        ],
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          stateIcon,
-                          Text(
-                            stateText,
-                            style: TextStyle(color: color),
-                          ),
-                        ],
+            return Container(
+              margin: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10.0),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.surface,
+                  width: 2.0,
+                ),
+              ),
+              child: ListTile(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => HostActionScreen(
+                        host: host,
                       ),
                     ),
                   );
                 },
+                title: Text(host['extensions']['name']),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Address: ${host['extensions']['address']}'),
+                    Text(
+                      'Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_check'] * 1000))}',
+                    ),
+                    Text(
+                      'Last Time Up: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_time_up'] * 1000))}',
+                    ),
+                    Text(
+                        'Total Services: ${host['extensions']['total_services']}'),
+                    Text(
+                        'Acknowledged: ${host['extensions']['acknowledged'] == 1 ? 'Yes' : 'No'}'),
+                  ],
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    stateIcon,
+                    Text(
+                      stateText,
+                      style: TextStyle(color: color),
+                    ),
+                  ],
+                ),
               ),
+            );
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _getHosts,
         tooltip: 'Refresh',
         child: const Icon(
           Icons.refresh,
-          color: Colors.black, // Make the icon black
+          color: Colors.black,
         ),
-        backgroundColor: Colors.yellow, // Keep the button yellow
+        backgroundColor: Theme.of(context).colorScheme.surface,
       ),
     );
   }
