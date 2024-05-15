@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ptp_4_monitoring_app/screens/main/HostActionScreen.dart';
 import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
+
+import '../../models/credentials.dart';
 
 enum HostState { OK, Warning, Critical, Unknown }
 
@@ -39,13 +43,7 @@ class HostNameSearch extends SearchDelegate<String> {
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    final suggestions = query.isEmpty
-        ? hosts
-        : hosts
-            .where((host) => host['extensions']['name']
-                .toLowerCase()
-                .contains(query.toLowerCase()))
-            .toList();
+    final suggestions = query.isEmpty ? hosts : hosts.where((host) => host['extensions']['name'].toLowerCase().contains(query.toLowerCase())).toList();
 
     return ListView.builder(
       itemCount: suggestions.length,
@@ -56,8 +54,7 @@ class HostNameSearch extends SearchDelegate<String> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) =>
-                    HostActionScreen(host: suggestions[index]),
+                builder: (context) => HostActionScreen(host: suggestions[index]),
               ),
             );
           },
@@ -86,6 +83,7 @@ class _StateFilterDialogState extends State<StateFilterDialog> {
   @override
   void initState() {
     super.initState();
+
     _selectedStates = widget.selectedStates;
   }
 
@@ -132,17 +130,33 @@ class HostScreen extends StatefulWidget {
 class _HostScreenState extends State<HostScreen> {
   List<dynamic> _hosts = [];
   Set<HostState> _filterStates = {};
+  Timer? _timer;
+  String _dateFormat = 'dd.MM.yyyy, HH:mm';
+  String _locale = 'de_DE';
+  var secureStorage = SecureStorage();
 
   @override
   void initState() {
     super.initState();
+    _loadDateFormatAndLocale();
     _getHosts();
+    _timer = Timer.periodic(Duration(minutes: 1), (Timer t) => _getHosts());
+  }
+
+  void _loadDateFormatAndLocale() async {
+    _dateFormat = await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
+    _locale = await secureStorage.readSecureData('locale') ?? 'de_DE';
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   Future<void> _getHosts() async {
     var api = ApiRequest();
-    var data = await api.Request(
-        'domain-types/host/collections/all?query=%7B%22op%22%3A%20%22%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=name&columns=address&columns=last_check&columns=last_time_up&columns=state&columns=total_services&columns=acknowledged');
+    var data = await api.Request('domain-types/host/collections/all?query=%7B%22op%22%3A%20%22%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=name&columns=address&columns=last_check&columns=last_time_up&columns=state&columns=total_services&columns=acknowledged');
 
     setState(() {
       _hosts = data['value'];
@@ -201,7 +215,6 @@ class _HostScreenState extends State<HostScreen> {
             String stateText;
             Icon stateIcon;
             Color color;
-
             switch (state) {
               case 0:
                 stateText = 'OK';
@@ -255,10 +268,10 @@ class _HostScreenState extends State<HostScreen> {
                   children: [
                     Text('Address: ${host['extensions']['address']}'),
                     Text(
-                      'Last Check: ${DateFormat('dd.MM.yyyy HH:mm', 'de').format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_check'] * 1000))}',
+                      'Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_check'] * 1000))}',
                     ),
                     Text(
-                      'Last Time Up: ${DateFormat('dd.MM.yyyy HH:mm', 'de').format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_time_up'] * 1000))}',
+                      'Last Time Up: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_time_up'] * 1000))}',
                     ),
                     Text(
                         'Total Services: ${host['extensions']['total_services']}'),
