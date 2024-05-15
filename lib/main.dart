@@ -9,6 +9,7 @@ import 'package:ptp_4_monitoring_app/screens/notify/notify.dart';
 import 'package:ptp_4_monitoring_app/screens/user/login_screen.dart';
 import 'package:ptp_4_monitoring_app/screens/user/user.dart';
 import 'package:ptp_4_monitoring_app/screens/user/welcome_screen.dart';
+import 'package:timezone/data/latest.dart' as tz;
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
@@ -36,6 +37,8 @@ void main() async {
 
   notificationService!.test();
   notificationService!.start();
+
+  tz.initializeTimeZones();
 
   initializeDateFormatting().then((_) {
     Intl.defaultLocale = 'de_DE';
