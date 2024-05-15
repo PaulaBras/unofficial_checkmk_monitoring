@@ -15,10 +15,17 @@ class NotificationService {
   }
 
   void start() {
-    _timer = Timer.periodic(Duration(minutes: 1), (timer) => _checkServices());
+    _timer = Timer.periodic(Duration(seconds: 5), (timer) => test());
+    //_timer = Timer.periodic(Duration(seconds: 5), (timer) => _checkServices());
+  }
+
+  void test() {
+    print('Testing notification service');
+    notificationServiceCheck.testNotification();
   }
 
   Future<void> _checkServices() async {
+    notificationServiceCheck.testNotification();
     await notificationServiceCheck.checkServices();
   }
 

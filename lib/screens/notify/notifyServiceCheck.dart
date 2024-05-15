@@ -8,6 +8,15 @@ class NotificationServiceCheck {
 
   NotificationServiceCheck(this._cache);
 
+  void testNotification() {
+    var mockService = {
+      'extensions': {'state': 2, 'host_name': 'Test Host', 'description': 'Test Description', 'plugin_output': 'Test Output'}
+    };
+
+    _scheduleNotification(mockService);
+    print('Test notification scheduled');
+  }
+
   Future<void> checkServices() async {
     print('Checking services');
     var api = ApiRequest();
@@ -18,9 +27,12 @@ class NotificationServiceCheck {
       var state = service['extensions']['state'];
       var isFlapping = service['extensions']['is_flapping'];
 
+      // Add the service to the cache regardless of its state
+      _cache[id] = state;
+
+      // Only schedule a notification if the state has changed and the service is not flapping
       if (_cache[id] != state && isFlapping == 0) {
         _scheduleNotification(service);
-        _cache[id] = state;
       }
     }
   }
@@ -49,6 +61,6 @@ class NotificationServiceCheck {
 
     var androidPlatformChannelSpecifics = AndroidNotificationDetails('service_state_change', 'Service State Change', importance: Importance.max, priority: Priority.high, showWhen: false);
     var platformChannelSpecifics = NotificationDetails(android: androidPlatformChannelSpecifics);
-    await flutterLocalNotificationsPlugin.show(0, 'Service State Change', 'Host: $host, Service: $description, State: $stateText, Output: $pluginOutput', platformChannelSpecifics);
+    await flutterLocalNotificationsPlugin.show(0, '$stateText Service State Change', 'Host: $host, Service: $description, Output: $pluginOutput', platformChannelSpecifics);
   }
 }

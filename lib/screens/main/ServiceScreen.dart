@@ -34,12 +34,7 @@ class ServiceSearch extends SearchDelegate {
   @override
   Widget buildResults(BuildContext context) {
     final results = services.where((service) {
-      return service['extensions']['host_name']
-              .toLowerCase()
-              .contains(query.toLowerCase()) ||
-          service['extensions']['description']
-              .toLowerCase()
-              .contains(query.toLowerCase());
+      return service['extensions']['host_name'].toLowerCase().contains(query.toLowerCase()) || service['extensions']['description'].toLowerCase().contains(query.toLowerCase());
     });
 
     return ListView(
@@ -63,12 +58,7 @@ class ServiceSearch extends SearchDelegate {
   @override
   Widget buildSuggestions(BuildContext context) {
     final suggestions = services.where((service) {
-      return service['extensions']['host_name']
-              .toLowerCase()
-              .contains(query.toLowerCase()) ||
-          service['extensions']['description']
-              .toLowerCase()
-              .contains(query.toLowerCase());
+      return service['extensions']['host_name'].toLowerCase().contains(query.toLowerCase()) || service['extensions']['description'].toLowerCase().contains(query.toLowerCase());
     });
 
     return ListView(
@@ -182,10 +172,13 @@ class _ServiceScreenState extends State<ServiceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Sort the services based on their state
-    List<dynamic> sortedServices = _service;
-    sortedServices.sort(
-        (a, b) => b['extensions']['state'].compareTo(a['extensions']['state']));
+    List<dynamic> sortedServices;
+    if (_service == null) {
+      return Center(child: CircularProgressIndicator());
+    } else {
+      sortedServices = _service;
+      sortedServices.sort((a, b) => b['extensions']['state'].compareTo(a['extensions']['state']));
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -270,8 +263,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                ServiceActionScreen(service: service),
+                            builder: (context) => ServiceActionScreen(service: service),
                           ),
                         );
                       },
@@ -280,12 +272,9 @@ class _ServiceScreenState extends State<ServiceScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Service: $description'),
-                          Text(
-                              'Current Attempt: ${service['extensions']['current_attempt']}/${service['extensions']['max_check_attempts']}'),
-                          Text(
-                              'Last Check: ${DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_check'] * 1000)}'),
-                          Text(
-                              'Last Time OK: ${DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_time_ok'] * 1000)}'),
+                          Text('Current Attempt: ${service['extensions']['current_attempt']}/${service['extensions']['max_check_attempts']}'),
+                          Text('Last Check: ${DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_check'] * 1000)}'),
+                          Text('Last Time OK: ${DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_time_ok'] * 1000)}'),
                         ],
                       ),
                       trailing: Column(
@@ -294,10 +283,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              service['extensions']['acknowledged'] == 1
-                                  ? Icon(Icons.check_circle,
-                                      color: Colors.green)
-                                  : Container(),
+                              service['extensions']['acknowledged'] == 1 ? Icon(Icons.check_circle, color: Colors.green) : Container(),
                             ],
                           ),
                           Row(
