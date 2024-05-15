@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 import 'package:ptp_4_monitoring_app/colors.dart';
 import 'package:ptp_4_monitoring_app/screens/help/help.dart';
 import 'package:ptp_4_monitoring_app/screens/my_home_page.dart';
@@ -6,8 +8,7 @@ import 'package:ptp_4_monitoring_app/screens/user/login_screen.dart';
 import 'package:ptp_4_monitoring_app/screens/user/registration_screen.dart';
 import 'package:ptp_4_monitoring_app/screens/user/user.dart';
 import 'package:ptp_4_monitoring_app/screens/user/welcome_screen.dart';
-import 'package:intl/intl.dart';
-import 'package:intl/date_symbol_data_local.dart';
+import 'package:timezone/data/latest.dart' as tz;
 
 const String welcomeScreenId = 'welcome_screen';
 const String loginScreenId = 'login_screen';
@@ -17,6 +18,7 @@ const String helpScreenId = 'help_screen';
 const String userScreenId = 'user_screen';
 
 void main() {
+  tz.initializeTimeZones();
   initializeDateFormatting().then((_) {
     Intl.defaultLocale = 'de_DE';
     runApp(const MyApp());

@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../models/credentials.dart';
+import 'AreNotificationsActive.dart';
+import 'SetupNotificationSchedule.dart';
 
 class SetupScreen extends StatefulWidget {
   const SetupScreen({Key? key}) : super(key: key);
@@ -17,29 +21,57 @@ class _SetupScreenState extends State<SetupScreen> {
   final _siteController = TextEditingController();
   bool _ignoreCertificate = false;
   bool _notification = false;
+  bool _notificationSchedule = false;
   String _dateFormat = 'dd.MM.yyyy, HH:mm';
   String _locale = 'de_DE';
   final _formKey = GlobalKey<FormState>();
+  bool _isNotificationActive = false;
+  bool _isNotificationScheduleActive = false;
+  Timer? _notificationCheckTask;
 
   @override
   void initState() {
     super.initState();
-    _loadCredentials();
+    _loadSettings();
+    _startNotificationCheckTask();
   }
 
-  void _loadCredentials() async {
+  void _loadSettings() async {
     _serverController.text = await secureStorage.readSecureData('server') ?? '';
     _usernameController.text = await secureStorage.readSecureData('username') ?? '';
     _passwordController.text = await secureStorage.readSecureData('password') ?? '';
     _siteController.text = await secureStorage.readSecureData('site') ?? '';
     _ignoreCertificate = (await secureStorage.readSecureData('ignoreCertificate'))?.toLowerCase() == 'true' ?? false;
     _notification = (await secureStorage.readSecureData('notification'))?.toLowerCase() == 'true' ?? false;
+    _notification = (await secureStorage.readSecureData('notificationSchedule'))?.toLowerCase() == 'true' ?? false;
     _dateFormat = await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
     _locale = await secureStorage.readSecureData('locale') ?? 'de_DE';
+    _isNotificationActive = (await secureStorage.readSecureData('notification'))?.toLowerCase() == 'true' ?? false;
+    _isNotificationScheduleActive = (await secureStorage.readSecureData('notificationSchedule'))?.toLowerCase() == 'true' ?? false;
+    if (_notificationSchedule) {
+      var notifier = AreNotificationsActive();
+      _notification = await notifier.areNotificationsActive();
+    }
     setState(() {});
   }
 
-  void _saveCredentials() async {
+  void _startNotificationCheckTask() {
+    _notificationCheckTask = Timer.periodic(Duration(minutes: 5), (timer) async {
+      if (_isNotificationActive || _isNotificationScheduleActive) {
+        var notifier = AreNotificationsActive();
+        _notification = await notifier.areNotificationsActive();
+        _saveSettings();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _notificationCheckTask?.cancel();
+    super.dispose();
+  }
+
+  void _saveSettings() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       await secureStorage.writeSecureData('server', _serverController.text);
@@ -48,9 +80,10 @@ class _SetupScreenState extends State<SetupScreen> {
       await secureStorage.writeSecureData('site', _siteController.text);
       await secureStorage.writeSecureData('ignoreCertificate', _ignoreCertificate.toString());
       await secureStorage.writeSecureData('notification', _notification.toString());
+      await secureStorage.writeSecureData('notificationSchedule', _notificationSchedule.toString());
       await secureStorage.writeSecureData('dateFormat', _dateFormat);
       await secureStorage.writeSecureData('locale', _locale);
-      Navigator.pop(context);
+      //Navigator.pop(context);
     }
   }
 
@@ -103,16 +136,41 @@ class _SetupScreenState extends State<SetupScreen> {
                   setState(() {
                     _ignoreCertificate = value;
                   });
+                  _saveSettings();
                 },
               ),
               SwitchListTile(
                 title: Text('Enable Notification'),
                 value: _notification,
-                onChanged: (bool value) {
+                onChanged: _notificationSchedule
+                    ? null
+                    : (bool value) async {
+                        setState(() {
+                          _notification = value;
+                        });
+                        _saveSettings();
+                      },
+              ),
+              SwitchListTile(
+                title: Text('Enable Schedule Notification'),
+                value: _notificationSchedule,
+                onChanged: (bool value) async {
                   setState(() {
-                    _notification = value;
+                    _notificationSchedule = value;
                   });
+                  var notifier = AreNotificationsActive();
+                  _notification = await notifier.areNotificationsActive();
+                  _saveSettings();
                 },
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => NotificationSchedulePage()),
+                  );
+                },
+                child: Text('Setup Notification Schedule'),
               ),
               DropdownButton<String>(
                 value: _locale,
@@ -132,7 +190,7 @@ class _SetupScreenState extends State<SetupScreen> {
                 }).toList(),
               ),
               ElevatedButton(
-                onPressed: _saveCredentials,
+                onPressed: _saveSettings,
                 child: Text('Save'),
               ),
             ],
