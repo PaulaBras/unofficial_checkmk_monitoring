@@ -149,7 +149,6 @@ class ServiceScreen extends StatefulWidget {
 
 class _ServiceScreenState extends State<ServiceScreen> {
   dynamic _service;
-  List<dynamic> _services = [];
   Set<SerivceState> _filterStates = {...SerivceState.values};
   Timer? _timer;
   String _dateFormat = 'dd.MM.yyyy, HH:mm';
@@ -180,26 +179,30 @@ class _ServiceScreenState extends State<ServiceScreen> {
     var data = await api.Request(
         'domain-types/service/collections/all?query=%7B%22op%22%3A%20%22!%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=state&columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged');
 
-    setState(() {
-      _service = data['value'];
-      if (_filterStates.isNotEmpty) {
-        _service = _service.where((service) {
-          var state = int.parse(service['extensions']['state'].toString());
-          return _filterStates.contains(SerivceState.values[state - 1]);
-        }).toList();
-      }
-    });
+    if (data != null && data['value'] != null) {
+      setState(() {
+        _service = data['value'];
+        if (_filterStates.isNotEmpty) {
+          _service = _service.where((service) {
+            var state = int.parse(service['extensions']['state'].toString());
+            return _filterStates.contains(SerivceState.values[state - 1]);
+          }).toList();
+        }
+      });
+    } else {
+      // Handle the case when data or data['value'] is null
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    List<dynamic> sortedServices;
-    if (_service == null) {
-      return Center(child: CircularProgressIndicator());
-    } else {
-      sortedServices = _service;
-      sortedServices.sort((a, b) => b['extensions']['state'].compareTo(a['extensions']['state']));
+    // Sort the services based on their state
+    List<dynamic> sortedServices = _service ?? [];
+    if (sortedServices.isNotEmpty) {
+      sortedServices.sort((a, b) =>
+          b['extensions']['state'].compareTo(a['extensions']['state']));
     }
+
     return Scaffold(
       appBar: AppBar(
         title: Text("Services Overview"),
@@ -267,7 +270,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
                     margin: const EdgeInsets.all(8.0),
                     padding: const EdgeInsets.all(8.0),
                     decoration: BoxDecoration(
-                      color: Colors.indigo,
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(10.0),
                       boxShadow: [
                         BoxShadow(
@@ -328,6 +331,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
         onPressed: _getService,
         tooltip: 'Refresh',
         child: Icon(Icons.refresh),
+        backgroundColor: Theme.of(context).colorScheme.surface,
       ),
     );
   }
