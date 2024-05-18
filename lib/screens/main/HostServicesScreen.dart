@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:ptp_4_monitoring_app/models/credentials.dart';
 import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
+
+import '../../services/secureStorage.dart';
 
 class HostServiceScreen extends StatefulWidget {
   final String hostName;
@@ -14,7 +15,6 @@ class HostServiceScreen extends StatefulWidget {
 
 class _HostServiceScreenState extends State<HostServiceScreen> {
   dynamic _service;
-  List<dynamic> _services = [];
   String _dateFormat = 'dd.MM.yyyy, HH:mm';
   String _locale = 'de_DE';
   var secureStorage = SecureStorage();
@@ -27,13 +27,15 @@ class _HostServiceScreenState extends State<HostServiceScreen> {
   }
 
   void _loadDateFormatAndLocale() async {
-    _dateFormat = await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
+    _dateFormat =
+        await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
     _locale = await secureStorage.readSecureData('locale') ?? 'de_DE';
   }
 
   Future<void> _getService() async {
     var api = ApiRequest();
-    var data = await api.Request('objects/host/${widget.hostName}/collections/services?columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged&columns=state&columns=comments&columns=is_flapping');
+    var data = await api.Request(
+        'objects/host/${widget.hostName}/collections/services?columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged&columns=state&columns=comments&columns=is_flapping');
 
     if (data == null) {
       Navigator.pop(context);
@@ -57,7 +59,9 @@ class _HostServiceScreenState extends State<HostServiceScreen> {
               itemBuilder: (context, index) {
                 var service = _service['value'][index];
                 var state = service['extensions']['state'];
-                var lastCheck = DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_check'] * 1000));
+                var lastCheck = DateFormat(_dateFormat, _locale).format(
+                    DateTime.fromMillisecondsSinceEpoch(
+                        service['extensions']['last_check'] * 1000));
                 String stateText;
                 Icon stateIcon;
                 Color color;
@@ -117,7 +121,8 @@ class _HostServiceScreenState extends State<HostServiceScreen> {
           Icons.refresh,
           color: Colors.black, // Make the icon black
         ),
-        backgroundColor: Colors.yellow, // Keep the button yellow
+        backgroundColor:
+            Theme.of(context).canvasColor, // Keep the button yellow
       ),
     );
   }

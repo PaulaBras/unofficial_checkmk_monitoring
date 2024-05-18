@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:ptp_4_monitoring_app/screens/main/HostActionScreen.dart';
 import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
 
-import '../../models/credentials.dart';
+import '../../services/secureStorage.dart';
 
 enum HostState { OK, Warning, Critical, Unknown }
 
@@ -43,7 +43,13 @@ class HostNameSearch extends SearchDelegate<String> {
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    final suggestions = query.isEmpty ? hosts : hosts.where((host) => host['extensions']['name'].toLowerCase().contains(query.toLowerCase())).toList();
+    final suggestions = query.isEmpty
+        ? hosts
+        : hosts
+            .where((host) => host['extensions']['name']
+                .toLowerCase()
+                .contains(query.toLowerCase()))
+            .toList();
 
     return ListView.builder(
       itemCount: suggestions.length,
@@ -54,7 +60,8 @@ class HostNameSearch extends SearchDelegate<String> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => HostActionScreen(host: suggestions[index]),
+                builder: (context) =>
+                    HostActionScreen(host: suggestions[index]),
               ),
             );
           },
@@ -144,7 +151,8 @@ class _HostScreenState extends State<HostScreen> {
   }
 
   void _loadDateFormatAndLocale() async {
-    _dateFormat = await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
+    _dateFormat =
+        await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
     _locale = await secureStorage.readSecureData('locale') ?? 'de_DE';
   }
 
@@ -156,7 +164,8 @@ class _HostScreenState extends State<HostScreen> {
 
   Future<void> _getHosts() async {
     var api = ApiRequest();
-    var data = await api.Request('domain-types/host/collections/all?query=%7B%22op%22%3A%20%22%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=name&columns=address&columns=last_check&columns=last_time_up&columns=state&columns=total_services&columns=acknowledged');
+    var data = await api.Request(
+        'domain-types/host/collections/all?query=%7B%22op%22%3A%20%22%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=name&columns=address&columns=last_check&columns=last_time_up&columns=state&columns=total_services&columns=acknowledged');
 
     setState(() {
       _hosts = data['value'];

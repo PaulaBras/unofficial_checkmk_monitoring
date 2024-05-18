@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:ptp_4_monitoring_app/screens/main/ServiceActionScreen.dart';
 import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
 
-import '../../models/credentials.dart';
+import '../../services/secureStorage.dart';
 
 enum SerivceState { Warning, Critical, Unknown }
 

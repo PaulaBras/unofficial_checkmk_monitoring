@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:ptp_4_monitoring_app/models/credentials.dart';
-
 import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
 
-class UserConfig extends StatefulWidget{
+import '../../services/secureStorage.dart';
+
+class UserConfig extends StatefulWidget {
   @override
   _UserConfigState createState() => _UserConfigState();
 }
@@ -57,11 +57,15 @@ class UserConfigWidget extends StatelessWidget {
         Text('Title: ${userConfig['title']}'),
         Text('Full Name: ${userConfig['extensions']['fullname']}'),
         Text('Email: ${userConfig['extensions']['contact_options']['email']}'),
-        Text('Fallback Contact: ${userConfig['extensions']['contact_options']['fallback_contact']}'),
-        Text('Idle Timeout: ${userConfig['extensions']['idle_timeout']['option']}'),
+        Text(
+            'Fallback Contact: ${userConfig['extensions']['contact_options']['fallback_contact']}'),
+        Text(
+            'Idle Timeout: ${userConfig['extensions']['idle_timeout']['option']}'),
         Text('Roles: ${userConfig['extensions']['roles'].join(', ')}'),
-        Text('Contact Groups: ${userConfig['extensions']['contactgroups'].join(', ')}'),
-        Text('Auth Option: ${userConfig['extensions']['auth_option']['auth_type']}'),
+        Text(
+            'Contact Groups: ${userConfig['extensions']['contactgroups'].join(', ')}'),
+        Text(
+            'Auth Option: ${userConfig['extensions']['auth_option']['auth_type']}'),
         // Add more fields as needed
       ],
     );

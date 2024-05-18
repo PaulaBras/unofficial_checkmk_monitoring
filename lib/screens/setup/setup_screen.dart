@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../models/credentials.dart';
+import '../../services/secureStorage.dart';
 import 'AreNotificationsActive.dart';
 import 'SetupNotificationSchedule.dart';
 
@@ -43,13 +43,31 @@ class _SetupScreenState extends State<SetupScreen> {
     _passwordController.text =
         await secureStorage.readSecureData('password') ?? '';
     _siteController.text = await secureStorage.readSecureData('site') ?? '';
-    _ignoreCertificate = (await secureStorage.readSecureData('ignoreCertificate'))?.toLowerCase() == 'true' ?? false;
-    _notification = (await secureStorage.readSecureData('notification'))?.toLowerCase() == 'true' ?? false;
-    _notification = (await secureStorage.readSecureData('notificationSchedule'))?.toLowerCase() == 'true' ?? false;
-    _dateFormat = await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
+    _ignoreCertificate =
+        (await secureStorage.readSecureData('ignoreCertificate'))
+                    ?.toLowerCase() ==
+                'true' ??
+            false;
+    _notification =
+        (await secureStorage.readSecureData('notification'))?.toLowerCase() ==
+                'true' ??
+            false;
+    _notification = (await secureStorage.readSecureData('notificationSchedule'))
+                ?.toLowerCase() ==
+            'true' ??
+        false;
+    _dateFormat =
+        await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
     _locale = await secureStorage.readSecureData('locale') ?? 'de_DE';
-    _isNotificationActive = (await secureStorage.readSecureData('notification'))?.toLowerCase() == 'true' ?? false;
-    _isNotificationScheduleActive = (await secureStorage.readSecureData('notificationSchedule'))?.toLowerCase() == 'true' ?? false;
+    _isNotificationActive =
+        (await secureStorage.readSecureData('notification'))?.toLowerCase() ==
+                'true' ??
+            false;
+    _isNotificationScheduleActive =
+        (await secureStorage.readSecureData('notificationSchedule'))
+                    ?.toLowerCase() ==
+                'true' ??
+            false;
     if (_notificationSchedule) {
       var notifier = AreNotificationsActive();
       _notification = await notifier.areNotificationsActive();
@@ -58,7 +76,8 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   void _startNotificationCheckTask() {
-    _notificationCheckTask = Timer.periodic(Duration(minutes: 5), (timer) async {
+    _notificationCheckTask =
+        Timer.periodic(Duration(minutes: 5), (timer) async {
       if (_isNotificationActive || _isNotificationScheduleActive) {
         var notifier = AreNotificationsActive();
         _notification = await notifier.areNotificationsActive();
@@ -80,9 +99,12 @@ class _SetupScreenState extends State<SetupScreen> {
       await secureStorage.writeSecureData('username', _usernameController.text);
       await secureStorage.writeSecureData('password', _passwordController.text);
       await secureStorage.writeSecureData('site', _siteController.text);
-      await secureStorage.writeSecureData('ignoreCertificate', _ignoreCertificate.toString());
-      await secureStorage.writeSecureData('notification', _notification.toString());
-      await secureStorage.writeSecureData('notificationSchedule', _notificationSchedule.toString());
+      await secureStorage.writeSecureData(
+          'ignoreCertificate', _ignoreCertificate.toString());
+      await secureStorage.writeSecureData(
+          'notification', _notification.toString());
+      await secureStorage.writeSecureData(
+          'notificationSchedule', _notificationSchedule.toString());
       await secureStorage.writeSecureData('dateFormat', _dateFormat);
       await secureStorage.writeSecureData('locale', _locale);
       //Navigator.pop(context);
@@ -169,7 +191,8 @@ class _SetupScreenState extends State<SetupScreen> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => NotificationSchedulePage()),
+                    MaterialPageRoute(
+                        builder: (context) => NotificationSchedulePage()),
                   );
                 },
                 child: Text('Setup Notification Schedule'),
@@ -179,12 +202,15 @@ class _SetupScreenState extends State<SetupScreen> {
                 onChanged: (String? newValue) {
                   setState(() {
                     if (newValue != null) {
-                      _dateFormat = newValue == 'de_DE' ? 'dd.MM.yyyy, HH:mm' : 'MM/dd/yyyy, hh:mm a';
+                      _dateFormat = newValue == 'de_DE'
+                          ? 'dd.MM.yyyy, HH:mm'
+                          : 'MM/dd/yyyy, hh:mm a';
                       _locale = newValue;
                     }
                   });
                 },
-                items: <String>['de_DE', 'en_US'].map<DropdownMenuItem<String>>((String value) {
+                items: <String>['de_DE', 'en_US']
+                    .map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(value),

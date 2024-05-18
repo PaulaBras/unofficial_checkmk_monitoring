@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:timezone/timezone.dart' as timezone;
 
-import '../../models/credentials.dart';
+import '../../services/secureStorage.dart';
 import 'AreNotificationsActive.dart';
 
 class NotificationSchedulePage extends StatefulWidget {
   @override
-  _NotificationSchedulePageState createState() => _NotificationSchedulePageState();
+  _NotificationSchedulePageState createState() =>
+      _NotificationSchedulePageState();
 }
 
 class _NotificationSchedulePageState extends State<NotificationSchedulePage> {
@@ -35,22 +36,38 @@ class _NotificationSchedulePageState extends State<NotificationSchedulePage> {
 
   Future<void> _loadSettings() async {
     _selectedTimeZone = await secureStorage.readSecureData('timeZone') ?? 'UTC';
-    _dateFormat = await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
+    _dateFormat =
+        await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
     _locale = await secureStorage.readSecureData('locale') ?? 'de_DE';
 
-    final startHour = int.parse(await secureStorage.readSecureData('workingHoursStartHour') ?? '8');
-    final startMinute = int.parse(await secureStorage.readSecureData('workingHoursStartMinute') ?? '0');
+    final startHour = int.parse(
+        await secureStorage.readSecureData('workingHoursStartHour') ?? '8');
+    final startMinute = int.parse(
+        await secureStorage.readSecureData('workingHoursStartMinute') ?? '0');
     _workingHoursStart = TimeOfDay(hour: startHour, minute: startMinute);
 
-    final endHour = int.parse(await secureStorage.readSecureData('workingHoursEndHour') ?? '18');
-    final endMinute = int.parse(await secureStorage.readSecureData('workingHoursEndMinute') ?? '0');
+    final endHour = int.parse(
+        await secureStorage.readSecureData('workingHoursEndHour') ?? '18');
+    final endMinute = int.parse(
+        await secureStorage.readSecureData('workingHoursEndMinute') ?? '0');
     _workingHoursEnd = TimeOfDay(hour: endHour, minute: endMinute);
 
-    _notifyDuringWorkingHours = (await secureStorage.readSecureData('notifyDuringWorkingHours'))?.toLowerCase() == 'true' ?? true;
-    _notifyDuringOffHours = (await secureStorage.readSecureData('notifyDuringOffHours'))?.toLowerCase() == 'true' ?? false;
+    _notifyDuringWorkingHours =
+        (await secureStorage.readSecureData('notifyDuringWorkingHours'))
+                    ?.toLowerCase() ==
+                'true' ??
+            true;
+    _notifyDuringOffHours =
+        (await secureStorage.readSecureData('notifyDuringOffHours'))
+                    ?.toLowerCase() ==
+                'true' ??
+            false;
 
     for (int i = 0; i < 7; i++) {
-      _selectedDays[i] = (await secureStorage.readSecureData('selectedDay$i'))?.toLowerCase() == 'true' ?? (i < 5);
+      _selectedDays[i] = (await secureStorage.readSecureData('selectedDay$i'))
+                  ?.toLowerCase() ==
+              'true' ??
+          (i < 5);
     }
 
     setState(() {});
@@ -59,15 +76,22 @@ class _NotificationSchedulePageState extends State<NotificationSchedulePage> {
   Future<void> _saveSettings() async {
     await secureStorage.writeSecureData('timeZone', _selectedTimeZone);
 
-    await secureStorage.writeSecureData('workingHoursStartHour', _workingHoursStart.hour.toString());
-    await secureStorage.writeSecureData('workingHoursStartMinute', _workingHoursStart.minute.toString());
-    await secureStorage.writeSecureData('workingHoursEndHour', _workingHoursEnd.hour.toString());
-    await secureStorage.writeSecureData('workingHoursEndMinute', _workingHoursEnd.minute.toString());
-    await secureStorage.writeSecureData('notifyDuringWorkingHours', _notifyDuringWorkingHours.toString());
-    await secureStorage.writeSecureData('notifyDuringOffHours', _notifyDuringOffHours.toString());
+    await secureStorage.writeSecureData(
+        'workingHoursStartHour', _workingHoursStart.hour.toString());
+    await secureStorage.writeSecureData(
+        'workingHoursStartMinute', _workingHoursStart.minute.toString());
+    await secureStorage.writeSecureData(
+        'workingHoursEndHour', _workingHoursEnd.hour.toString());
+    await secureStorage.writeSecureData(
+        'workingHoursEndMinute', _workingHoursEnd.minute.toString());
+    await secureStorage.writeSecureData(
+        'notifyDuringWorkingHours', _notifyDuringWorkingHours.toString());
+    await secureStorage.writeSecureData(
+        'notifyDuringOffHours', _notifyDuringOffHours.toString());
 
     for (int i = 0; i < 7; i++) {
-      await secureStorage.writeSecureData('selectedDay$i', _selectedDays[i].toString());
+      await secureStorage.writeSecureData(
+          'selectedDay$i', _selectedDays[i].toString());
     }
 
     // Show a SnackBar to indicate that the settings have been saved
@@ -188,12 +212,19 @@ class _NotificationSchedulePageState extends State<NotificationSchedulePage> {
                 return Row(
                   children: [
                     Icon(
-                      (snapshot.data ?? false) ? Icons.notifications_active : Icons.notifications_off,
-                      color: (snapshot.data ?? false) ? Colors.green : Colors.red,
+                      (snapshot.data ?? false)
+                          ? Icons.notifications_active
+                          : Icons.notifications_off,
+                      color:
+                          (snapshot.data ?? false) ? Colors.green : Colors.red,
                     ),
-                    SizedBox(width: 8.0), // Add some spacing between the icon and the text
+                    SizedBox(
+                        width:
+                            8.0), // Add some spacing between the icon and the text
                     Text(
-                      (snapshot.data ?? false) ? 'Notifications are currently running' : 'Notifications are currently off',
+                      (snapshot.data ?? false)
+                          ? 'Notifications are currently running'
+                          : 'Notifications are currently off',
                     ),
                   ],
                 );
@@ -213,7 +244,8 @@ class _NotificationSchedulePageState extends State<NotificationSchedulePage> {
   }
 
   Future<List<DropdownMenuItem<String>>> _getTimeZones() async {
-    return timezone.timeZoneDatabase.locations.keys.map<DropdownMenuItem<String>>((String value) {
+    return timezone.timeZoneDatabase.locations.keys
+        .map<DropdownMenuItem<String>>((String value) {
       return DropdownMenuItem<String>(
         value: value,
         child: Text(value),
