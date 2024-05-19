@@ -10,7 +10,6 @@ class ApiRequest {
   bool _ignoreCertificate = false;
   var secureStorage = SecureStorage();
   String? _errorMessage;
-  Timer? _timer;
 
   Future<dynamic> Request(String apiRequestUri,
       {String method = 'GET',
@@ -87,20 +86,15 @@ class ApiRequest {
       }
     } catch (e) {
       if (e is SocketException) {
-        print('Failed to make network request due to a network error: $e');
+        _errorMessage = 'Failed to make network request due to a network error';
       } else {
-        print('Failed to make network request. Error: $e');
+        _errorMessage = 'Failed to make network request';
       }
-      throw e;
+      //throw e;
     }
   }
 
   String? getErrorMessage() {
     return _errorMessage;
-  }
-
-  void cancelTimer() {
-    _timer?.cancel();
-    _timer = null;
   }
 }

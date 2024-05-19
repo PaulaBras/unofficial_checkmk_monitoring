@@ -29,8 +29,17 @@ class NotificationService {
     try {
       print('Check notification service');
       await notificationServiceCheck.checkServices();
+      var errorMessage = notificationServiceCheck.getErrorMessage();
+      if (errorMessage != null) {
+      } else {
+        // Restart the timer if it was stopped
+        if (_timer == null || !_timer!.isActive) {
+          _timer = Timer.periodic(
+              Duration(seconds: 5), (Timer t) => _checkServices());
+        }
+      }
     } catch (e) {
-      _timer?.cancel();
+      stop();
       await sendNotification(
         'Error',
         'An error occurred while checking services: ${e.toString()}',
@@ -40,6 +49,7 @@ class NotificationService {
 
   void stop() {
     _timer?.cancel();
+    _timer = null;
   }
 
   Future<void> requestNotificationsPermission() async {

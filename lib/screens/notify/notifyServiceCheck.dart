@@ -3,6 +3,7 @@ import '../../services/apiRequest.dart';
 
 class NotificationServiceCheck {
   Map<String, dynamic> _cache;
+  String? _errorMessage;
 
   NotificationServiceCheck(this._cache);
 
@@ -25,12 +26,11 @@ class NotificationServiceCheck {
     var data = await api.Request(
         'domain-types/service/collections/all?columns=host_name&columns=description&columns=state&columns=last_check&columns=is_flapping&columns=plugin_output');
 
-    var error = api.getErrorMessage();
-    if (error != null) {
+    _errorMessage = api.getErrorMessage();
+    if (_errorMessage != null) {
       // Handle the error, for example, print the error message
       // Stop the timer
-      api.cancelTimer();
-      print('Failed to make notify network request: $error');
+      throw Exception('Failed to make notify network request: $_errorMessage');
     } else {
       if (data != null && data['value'] != null) {
         for (var service in data['value']) {
@@ -48,6 +48,10 @@ class NotificationServiceCheck {
         }
       }
     }
+  }
+
+  String? getErrorMessage() {
+    return _errorMessage;
   }
 
   void _scheduleNotification(dynamic service) async {

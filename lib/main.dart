@@ -114,7 +114,6 @@ void main() async {
   await notificationService!.requestNotificationsPermission();
 
   // Start the notification service
-  notificationService!.test();
   notificationService!.start();
 
   // theme mode

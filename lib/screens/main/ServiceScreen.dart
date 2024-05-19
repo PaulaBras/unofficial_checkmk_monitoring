@@ -196,15 +196,21 @@ class _ServiceScreenState extends State<ServiceScreen> {
     if (error != null) {
       // Handle the error, for example, show a dialog or a snackbar
       // Stop the timer
-      api.cancelTimer();
       setState(() {
         _error = error;
+        _allServices = [];
       });
+      _timer?.cancel();
     } else {
       setState(() {
         _allServices = data['value']; // Store all services
         _filterServices(); // Filter the services
         _error = null;
+        // Restart the timer if it was stopped
+        if (_timer == null || !_timer!.isActive) {
+          _timer =
+              Timer.periodic(Duration(minutes: 1), (Timer t) => _getService());
+        }
       });
     }
   }
@@ -270,7 +276,11 @@ class _ServiceScreenState extends State<ServiceScreen> {
         child: _error != null
             ? Center(child: Text(_error!))
             : _filteredServices.isEmpty
-                ? Center(child: CircularProgressIndicator())
+                ? Center(
+                    child: _allServices.isEmpty
+                        ? CircularProgressIndicator()
+                        : Text('No services with selected status'),
+                  )
                 : ListView.builder(
                     itemCount: sortedServices.length,
                     itemBuilder: (context, index) {

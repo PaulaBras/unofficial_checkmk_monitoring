@@ -172,15 +172,21 @@ class _HostScreenState extends State<HostScreen> {
     var error = api.getErrorMessage();
     if (error != null) {
       // Stop the timer
-      api.cancelTimer();
       setState(() {
         _error = error;
+        _allHosts = [];
       });
+      _timer?.cancel();
     } else {
       setState(() {
         _allHosts = data['value'];
         _filterHosts();
         _error = null;
+        // Restart the timer if it was stopped
+        if (_timer == null || !_timer!.isActive) {
+          _timer =
+              Timer.periodic(Duration(minutes: 1), (Timer t) => _getHosts());
+        }
       });
     }
   }
@@ -246,7 +252,11 @@ class _HostScreenState extends State<HostScreen> {
         child: _error != null
             ? Center(child: Text(_error!))
             : _filteredHosts.isEmpty
-                ? Center(child: CircularProgressIndicator())
+                ? Center(
+                    child: _allHosts.isEmpty
+                        ? CircularProgressIndicator()
+                        : Text('No services with selected status'),
+                  )
                 : ListView.builder(
                     itemCount: sortedHosts.length,
                     itemBuilder: (context, index) {
