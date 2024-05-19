@@ -120,108 +120,110 @@ class _SetupScreenState extends State<SetupScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: <Widget>[
-              TextFormField(
-                controller: _serverController,
-                decoration: InputDecoration(
-                  labelText: 'Server',
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: <Widget>[
+                TextFormField(
+                  controller: _serverController,
+                  decoration: InputDecoration(
+                    labelText: 'Server',
+                  ),
+                  onSaved: (value) => _serverController.text = value!,
                 ),
-                onSaved: (value) => _serverController.text = value!,
-              ),
-              TextFormField(
-                controller: _siteController,
-                decoration: InputDecoration(
-                  labelText: 'Site',
+                TextFormField(
+                  controller: _siteController,
+                  decoration: InputDecoration(
+                    labelText: 'Site',
+                  ),
+                  onSaved: (value) => _siteController.text = value!,
                 ),
-                onSaved: (value) => _siteController.text = value!,
-              ),
-              TextFormField(
-                controller: _usernameController,
-                decoration: InputDecoration(
-                  labelText: 'Username',
+                TextFormField(
+                  controller: _usernameController,
+                  decoration: InputDecoration(
+                    labelText: 'Username',
+                  ),
+                  onSaved: (value) => _usernameController.text = value!,
                 ),
-                onSaved: (value) => _usernameController.text = value!,
-              ),
-              TextFormField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Password',
+                TextFormField(
+                  controller: _passwordController,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                  ),
+                  obscureText: true,
+                  onSaved: (value) => _passwordController.text = value!,
                 ),
-                obscureText: true,
-                onSaved: (value) => _passwordController.text = value!,
-              ),
-              SwitchListTile(
-                title: Text('Ignore Certificate Warnings'),
-                value: _ignoreCertificate,
-                onChanged: (bool value) {
-                  setState(() {
-                    _ignoreCertificate = value;
-                  });
-                  _saveSettings();
-                },
-              ),
-              SwitchListTile(
-                title: Text('Enable Notification'),
-                value: _notification,
-                onChanged: _notificationSchedule
-                    ? null
-                    : (bool value) async {
-                        setState(() {
-                          _notification = value;
-                        });
-                        _saveSettings();
-                      },
-              ),
-              SwitchListTile(
-                title: Text('Enable Schedule Notification'),
-                value: _notificationSchedule,
-                onChanged: (bool value) async {
-                  setState(() {
-                    _notificationSchedule = value;
-                  });
-                  var notifier = AreNotificationsActive();
-                  _notification = await notifier.areNotificationsActive();
-                  _saveSettings();
-                },
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => NotificationSchedulePage()),
-                  );
-                },
-                child: Text('Setup Notification Schedule'),
-              ),
-              DropdownButton<String>(
-                value: _locale,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    if (newValue != null) {
-                      _dateFormat = newValue == 'de_DE'
-                          ? 'dd.MM.yyyy, HH:mm'
-                          : 'MM/dd/yyyy, hh:mm a';
-                      _locale = newValue;
-                    }
-                  });
-                },
-                items: <String>['de_DE', 'en_US']
-                    .map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-              ElevatedButton(
-                onPressed: _saveSettings,
-                child: Text('Save'),
-              ),
-            ],
+                SwitchListTile(
+                  title: Text('Ignore Certificate Warnings'),
+                  value: _ignoreCertificate,
+                  onChanged: (bool value) {
+                    setState(() {
+                      _ignoreCertificate = value;
+                    });
+                    _saveSettings();
+                  },
+                ),
+                SwitchListTile(
+                  title: Text('Enable Notification'),
+                  value: _notification,
+                  onChanged: _notificationSchedule
+                      ? null
+                      : (bool value) async {
+                          setState(() {
+                            _notification = value;
+                          });
+                          _saveSettings();
+                        },
+                ),
+                SwitchListTile(
+                  title: Text('Enable Schedule Notification'),
+                  value: _notificationSchedule,
+                  onChanged: (bool value) async {
+                    setState(() {
+                      _notificationSchedule = value;
+                    });
+                    var notifier = AreNotificationsActive();
+                    _notification = await notifier.areNotificationsActive();
+                    _saveSettings();
+                  },
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => NotificationSchedulePage()),
+                    );
+                  },
+                  child: Text('Setup Notification Schedule'),
+                ),
+                DropdownButton<String>(
+                  value: _locale,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      if (newValue != null) {
+                        _dateFormat = newValue == 'de_DE'
+                            ? 'dd.MM.yyyy, HH:mm'
+                            : 'MM/dd/yyyy, hh:mm a';
+                        _locale = newValue;
+                      }
+                    });
+                  },
+                  items: <String>['de_DE', 'en_US']
+                      .map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                ),
+                ElevatedButton(
+                  onPressed: _saveSettings,
+                  child: Text('Save'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
