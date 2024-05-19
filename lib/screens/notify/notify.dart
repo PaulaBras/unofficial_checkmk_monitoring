@@ -26,8 +26,16 @@ class NotificationService {
   }
 
   Future<void> _checkServices() async {
-    //notificationServiceCheck.testNotification();
-    await notificationServiceCheck.checkServices();
+    try {
+      print('Check notification service');
+      await notificationServiceCheck.checkServices();
+    } catch (e) {
+      _timer?.cancel();
+      await sendNotification(
+        'Error',
+        'An error occurred while checking services: ${e.toString()}',
+      );
+    }
   }
 
   void stop() {
@@ -84,5 +92,22 @@ class NotificationService {
     }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('notificationsEnabled', _notificationsEnabled);
+  }
+
+  Future<void> sendNotification(String title, String body,
+      {String? payload}) async {
+    // android notification settings
+    const AndroidNotificationDetails androidNotificationDetails =
+        AndroidNotificationDetails(
+            'service_state_change', 'Service State Change',
+            importance: Importance.max,
+            priority: Priority.high,
+            showWhen: false);
+
+    const NotificationDetails notificationDetails = NotificationDetails(
+      android: androidNotificationDetails,
+    );
+    await flutterLocalNotificationsPlugin
+        .show(0, title, body, notificationDetails, payload: payload);
   }
 }

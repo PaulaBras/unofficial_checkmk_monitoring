@@ -13,6 +13,7 @@ import 'package:ptp_4_monitoring_app/screens/notify/notify.dart';
 import 'package:ptp_4_monitoring_app/screens/user/login_screen.dart';
 import 'package:ptp_4_monitoring_app/screens/user/user.dart';
 import 'package:ptp_4_monitoring_app/screens/user/welcome_screen.dart';
+import 'package:ptp_4_monitoring_app/services/notificationHandler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -26,6 +27,11 @@ const String registrationScreenId = 'registration_screen';
 const String homeScreenId = 'home_screen';
 const String helpScreenId = 'help_screen';
 const String userScreenId = 'user_screen';
+
+/// Defines a iOS/MacOS notification category for plain actions.
+const String darwinNotificationCategoryPlain = 'plainCategory';
+
+String? selectedNotificationPayload;
 
 NotificationService? notificationService;
 
@@ -43,13 +49,63 @@ void main() async {
 
   await _configureLocalTimeZone();
 
+  // Define the Darwin notification categories
+  final List<DarwinNotificationCategory> darwinNotificationCategories =
+      <DarwinNotificationCategory>[
+    DarwinNotificationCategory(
+      darwinNotificationCategoryPlain,
+      actions: <DarwinNotificationAction>[
+        DarwinNotificationAction.plain('id_1', 'Action 1'),
+      ],
+    ),
+  ];
+
+  // android notification settings
   final AndroidInitializationSettings androidInitializationSettings =
       AndroidInitializationSettings('@mipmap/launcher_icon');
+  // ios notification settings
+  final DarwinInitializationSettings initializationSettingsDarwin =
+      DarwinInitializationSettings(
+    requestAlertPermission: false,
+    requestBadgePermission: false,
+    requestSoundPermission: false,
+    onDidReceiveLocalNotification:
+        (int id, String? title, String? body, String? payload) async {
+      didReceiveLocalNotificationStream.add(
+        ReceivedNotification(
+          id: id,
+          title: title,
+          body: body,
+          payload: payload,
+        ),
+      );
+    },
+    notificationCategories: darwinNotificationCategories,
+  );
+  // linux notification settings
+  final LinuxInitializationSettings initializationSettingsLinux =
+      LinuxInitializationSettings(
+    defaultActionName: 'Open notification',
+    defaultIcon: AssetsLinuxIcon('images/checkmk-icon-green.png'),
+  );
+  // initialize the settings
   final InitializationSettings initializationSettings = InitializationSettings(
     android: androidInitializationSettings,
+    iOS: initializationSettingsDarwin,
+    macOS: initializationSettingsDarwin,
+    linux: initializationSettingsLinux,
   );
 
-  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  await flutterLocalNotificationsPlugin.initialize(
+    initializationSettings,
+    onDidReceiveNotificationResponse:
+        (NotificationResponse notificationResponse) {
+      if (notificationResponse.notificationResponseType ==
+          NotificationResponseType.selectedNotification) {
+        selectNotificationStream.add(notificationResponse.payload);
+      }
+    },
+  );
 
   // Initialize the global notificationService variable
   notificationService = NotificationService(flutterLocalNotificationsPlugin);
@@ -57,6 +113,7 @@ void main() async {
   // Request notification permissions
   await notificationService!.requestNotificationsPermission();
 
+  // Start the notification service
   notificationService!.test();
   notificationService!.start();
 
@@ -67,6 +124,12 @@ void main() async {
 
   ThemeMode themeMode =
       themeModeString == 'dark' ? ThemeMode.dark : ThemeMode.light;
+
+  // handle notification selection
+  selectNotificationStream.stream.listen((String? payload) async {
+    // Handle the user's response to the notification here
+    print('Notification selected with payload: $payload');
+  });
 
   initializeDateFormatting().then((_) {
     Intl.defaultLocale = 'de_DE';

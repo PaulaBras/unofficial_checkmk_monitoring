@@ -204,6 +204,7 @@ class _HostActionScreenState extends State<HostActionScreen> {
         onPressed: _getHost,
         tooltip: 'Refresh',
         child: Icon(Icons.refresh),
+        backgroundColor: Theme.of(context).colorScheme.surface,
       ),
     );
   }

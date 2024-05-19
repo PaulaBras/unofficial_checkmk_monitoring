@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -8,6 +9,8 @@ import 'package:ptp_4_monitoring_app/services/secureStorage.dart';
 class ApiRequest {
   bool _ignoreCertificate = false;
   var secureStorage = SecureStorage();
+  String? _errorMessage;
+  Timer? _timer;
 
   Future<dynamic> Request(String apiRequestUri,
       {String method = 'GET',
@@ -90,5 +93,14 @@ class ApiRequest {
       }
       throw e;
     }
+  }
+
+  String? getErrorMessage() {
+    return _errorMessage;
+  }
+
+  void cancelTimer() {
+    _timer?.cancel();
+    _timer = null;
   }
 }

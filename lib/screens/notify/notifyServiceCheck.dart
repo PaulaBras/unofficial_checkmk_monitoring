@@ -1,7 +1,3 @@
-import 'dart:io';
-
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-
 import '../../main.dart';
 import '../../services/apiRequest.dart';
 
@@ -25,32 +21,31 @@ class NotificationServiceCheck {
   }
 
   Future<void> checkServices() async {
-    try {
-      var api = ApiRequest();
-      var data = await api.Request(
-          'domain-types/service/collections/all?columns=host_name&columns=description&columns=state&columns=last_check&columns=is_flapping&columns=plugin_output');
+    var api = ApiRequest();
+    var data = await api.Request(
+        'domain-types/service/collections/all?columns=host_name&columns=description&columns=state&columns=last_check&columns=is_flapping&columns=plugin_output');
 
-      for (var service in data['value']) {
-        var id = service['id'];
-        var state = service['extensions']['state'];
-        var isFlapping = service['extensions']['is_flapping'];
+    var error = api.getErrorMessage();
+    if (error != null) {
+      // Handle the error, for example, print the error message
+      // Stop the timer
+      api.cancelTimer();
+      print('Failed to make notify network request: $error');
+    } else {
+      if (data != null && data['value'] != null) {
+        for (var service in data['value']) {
+          var id = service['id'];
+          var state = service['extensions']['state'];
+          var isFlapping = service['extensions']['is_flapping'];
 
-        // Add the service to the cache regardless of its state
-        _cache[id] = state;
+          // Add the service to the cache regardless of its state
+          _cache[id] = state;
 
-        // Only schedule a notification if the state has changed and the service is not flapping
-        if (_cache[id] != state && isFlapping == 0) {
-          _scheduleNotification(service);
+          // Only schedule a notification if the state has changed and the service is not flapping
+          if (_cache[id] != state && isFlapping == 0) {
+            _scheduleNotification(service);
+          }
         }
-      }
-    } catch (e) {
-      if (e is SocketException) {
-        // Handle the SocketException
-        print(
-            'Failed to make network request. Please check your internet connection and try again.');
-      } else {
-        // Rethrow any other exception
-        rethrow;
       }
     }
   }
@@ -77,15 +72,9 @@ class NotificationServiceCheck {
         break;
     }
 
-    var androidPlatformChannelSpecifics = AndroidNotificationDetails(
-        'service_state_change', 'Service State Change',
-        importance: Importance.max, priority: Priority.high, showWhen: false);
-    var platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
-    await flutterLocalNotificationsPlugin.show(
-        0,
-        '$stateText Service State Change',
-        'Host: $host, Service: $description, Output: $pluginOutput',
-        platformChannelSpecifics);
+    await notificationService?.sendNotification(
+      '$stateText Service State Change',
+      'Host: $host, Service: $description, Output: $pluginOutput',
+    );
   }
 }

@@ -135,12 +135,14 @@ class HostScreen extends StatefulWidget {
 }
 
 class _HostScreenState extends State<HostScreen> {
-  List<dynamic> _hosts = [];
-  Set<HostState> _filterStates = {};
+  List<dynamic> _allHosts = []; // Add this line to store all hosts
+  List<dynamic> _filteredHosts = [];
+  Set<HostState> _filterStates = {...HostState.values};
   Timer? _timer;
   String _dateFormat = 'dd.MM.yyyy, HH:mm';
   String _locale = 'de_DE';
   var secureStorage = SecureStorage();
+  String? _error;
 
   @override
   void initState() {
@@ -167,19 +169,44 @@ class _HostScreenState extends State<HostScreen> {
     var data = await api.Request(
         'domain-types/host/collections/all?query=%7B%22op%22%3A%20%22%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=name&columns=address&columns=last_check&columns=last_time_up&columns=state&columns=total_services&columns=acknowledged');
 
-    setState(() {
-      _hosts = data['value'];
+    var error = api.getErrorMessage();
+    if (error != null) {
+      // Stop the timer
+      api.cancelTimer();
+      setState(() {
+        _error = error;
+      });
+    } else {
+      setState(() {
+        _allHosts = data['value'];
+        _filterHosts();
+        _error = null;
+      });
+    }
+  }
+
+  void _filterHosts() {
+    if (_allHosts.isNotEmpty) {
       if (_filterStates.isNotEmpty) {
-        _hosts = _hosts.where((host) {
+        _filteredHosts = _allHosts.where((host) {
           var state = host['extensions']['state'];
           return _filterStates.contains(HostState.values[state]);
         }).toList();
+      } else {
+        _filteredHosts = _allHosts;
       }
-    });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Sort the services based on their state
+    List<dynamic> sortedHosts = _filteredHosts;
+    if (sortedHosts.isNotEmpty) {
+      sortedHosts.sort((a, b) =>
+          b['extensions']['state'].compareTo(a['extensions']['state']));
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Host Overview'),
@@ -196,7 +223,7 @@ class _HostScreenState extends State<HostScreen> {
                       setState(() {
                         _filterStates = selectedStates;
                       });
-                      _getHosts();
+                      _filterHosts();
                     },
                   );
                 },
@@ -208,7 +235,7 @@ class _HostScreenState extends State<HostScreen> {
             onPressed: () {
               showSearch(
                 context: context,
-                delegate: HostNameSearch(_hosts),
+                delegate: HostNameSearch(_filteredHosts),
               );
             },
           ),
@@ -216,92 +243,98 @@ class _HostScreenState extends State<HostScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: _getHosts,
-        child: ListView.builder(
-          itemCount: _hosts.length,
-          itemBuilder: (context, index) {
-            var host = _hosts[index];
-            var state = host['extensions']['state'];
-            String stateText;
-            Icon stateIcon;
-            Color color;
-            switch (state) {
-              case 0:
-                stateText = 'OK';
-                color = Colors.green;
-                stateIcon = Icon(Icons.check_circle, color: Colors.green);
-                break;
-              // For testing only
-              case 1:
-                stateText = 'Warning';
-                stateIcon = Icon(Icons.warning, color: Colors.yellow);
-                color = Colors.yellow;
-                break;
-              case 2:
-                stateText = 'Critical';
-                stateIcon = Icon(Icons.error, color: Colors.red);
-                color = Colors.red;
-                break;
-              case 3:
-                stateText = 'UNKNOWN';
-                stateIcon = Icon(Icons.help_outline, color: Colors.orange);
-                color = Colors.orange;
-                break;
-              default:
-                return Container(); // Return an empty container if the state is not 1, 2, or 3
-            }
+        child: _error != null
+            ? Center(child: Text(_error!))
+            : _filteredHosts.isEmpty
+                ? Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    itemCount: sortedHosts.length,
+                    itemBuilder: (context, index) {
+                      var host = sortedHosts[index];
+                      var state = host['extensions']['state'];
+                      String stateText;
+                      Icon stateIcon;
+                      Color color;
+                      switch (state) {
+                        case 0:
+                          stateText = 'OK';
+                          color = Colors.green;
+                          stateIcon =
+                              Icon(Icons.check_circle, color: Colors.green);
+                          break;
+                        // For testing only
+                        case 1:
+                          stateText = 'Warning';
+                          stateIcon = Icon(Icons.warning, color: Colors.yellow);
+                          color = Colors.yellow;
+                          break;
+                        case 2:
+                          stateText = 'Critical';
+                          stateIcon = Icon(Icons.error, color: Colors.red);
+                          color = Colors.red;
+                          break;
+                        case 3:
+                          stateText = 'UNKNOWN';
+                          stateIcon =
+                              Icon(Icons.help_outline, color: Colors.orange);
+                          color = Colors.orange;
+                          break;
+                        default:
+                          return Container(); // Return an empty container if the state is not 1, 2, or 3
+                      }
 
-            return Container(
-              margin: const EdgeInsets.all(8.0),
-              padding: const EdgeInsets.all(8.0),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10.0),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.surface,
-                  width: 2.0,
-                ),
-              ),
-              child: ListTile(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => HostActionScreen(
-                        host: host,
-                      ),
-                    ),
-                  );
-                },
-                title: Text(host['extensions']['name']),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Address: ${host['extensions']['address']}'),
-                    Text(
-                      'Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_check'] * 1000))}',
-                    ),
-                    Text(
-                      'Last Time Up: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_time_up'] * 1000))}',
-                    ),
-                    Text(
-                        'Total Services: ${host['extensions']['total_services']}'),
-                    Text(
-                        'Acknowledged: ${host['extensions']['acknowledged'] == 1 ? 'Yes' : 'No'}'),
-                  ],
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    stateIcon,
-                    Text(
-                      stateText,
-                      style: TextStyle(color: color),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
+                      return Container(
+                        margin: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.all(8.0),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10.0),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.surface,
+                            width: 2.0,
+                          ),
+                        ),
+                        child: ListTile(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => HostActionScreen(
+                                  host: host,
+                                ),
+                              ),
+                            );
+                          },
+                          title: Text(host['extensions']['name']),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Address: ${host['extensions']['address']}'),
+                              Text(
+                                'Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_check'] * 1000))}',
+                              ),
+                              Text(
+                                'Last Time Up: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_time_up'] * 1000))}',
+                              ),
+                              Text(
+                                  'Total Services: ${host['extensions']['total_services']}'),
+                              Text(
+                                  'Acknowledged: ${host['extensions']['acknowledged'] == 1 ? 'Yes' : 'No'}'),
+                            ],
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              stateIcon,
+                              Text(
+                                stateText,
+                                style: TextStyle(color: color),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _getHosts,
