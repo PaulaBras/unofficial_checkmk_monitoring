@@ -1,5 +1,9 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:ptp_4_monitoring_app/colors.dart';
@@ -9,9 +13,13 @@ import 'package:ptp_4_monitoring_app/screens/notify/notify.dart';
 import 'package:ptp_4_monitoring_app/screens/user/login_screen.dart';
 import 'package:ptp_4_monitoring_app/screens/user/user.dart';
 import 'package:ptp_4_monitoring_app/screens/user/welcome_screen.dart';
-import 'package:timezone/data/latest.dart' as tz;
+import 'package:ptp_4_monitoring_app/services/notificationHandler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
 
 const String welcomeScreenId = 'welcome_screen';
 const String loginScreenId = 'login_screen';
@@ -20,34 +28,118 @@ const String homeScreenId = 'home_screen';
 const String helpScreenId = 'help_screen';
 const String userScreenId = 'user_screen';
 
+/// Defines a iOS/MacOS notification category for plain actions.
+const String darwinNotificationCategoryPlain = 'plainCategory';
+
+String? selectedNotificationPayload;
+
 NotificationService? notificationService;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final AndroidInitializationSettings androidInitializationSettings = AndroidInitializationSettings('@mipmap/launcher_icon');
+  Future<void> _configureLocalTimeZone() async {
+    if (kIsWeb || Platform.isLinux) {
+      return;
+    }
+    tz.initializeTimeZones();
+    final String? timeZoneName = await FlutterTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(timeZoneName!));
+  }
+
+  await _configureLocalTimeZone();
+
+  // Define the Darwin notification categories
+  final List<DarwinNotificationCategory> darwinNotificationCategories =
+      <DarwinNotificationCategory>[
+    DarwinNotificationCategory(
+      darwinNotificationCategoryPlain,
+      actions: <DarwinNotificationAction>[
+        DarwinNotificationAction.plain('id_1', 'Action 1'),
+      ],
+    ),
+  ];
+
+  // android notification settings
+  final AndroidInitializationSettings androidInitializationSettings =
+      AndroidInitializationSettings('@mipmap/launcher_icon');
+  // ios notification settings
+  final DarwinInitializationSettings initializationSettingsDarwin =
+      DarwinInitializationSettings(
+    requestAlertPermission: false,
+    requestBadgePermission: false,
+    requestSoundPermission: false,
+    onDidReceiveLocalNotification:
+        (int id, String? title, String? body, String? payload) async {
+      didReceiveLocalNotificationStream.add(
+        ReceivedNotification(
+          id: id,
+          title: title,
+          body: body,
+          payload: payload,
+        ),
+      );
+    },
+    notificationCategories: darwinNotificationCategories,
+  );
+  // linux notification settings
+  final LinuxInitializationSettings initializationSettingsLinux =
+      LinuxInitializationSettings(
+    defaultActionName: 'Open notification',
+    defaultIcon: AssetsLinuxIcon('images/checkmk-icon-green.png'),
+  );
+  // initialize the settings
   final InitializationSettings initializationSettings = InitializationSettings(
     android: androidInitializationSettings,
+    iOS: initializationSettingsDarwin,
+    macOS: initializationSettingsDarwin,
+    linux: initializationSettingsLinux,
   );
 
-  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  await flutterLocalNotificationsPlugin.initialize(
+    initializationSettings,
+    onDidReceiveNotificationResponse:
+        (NotificationResponse notificationResponse) {
+      if (notificationResponse.notificationResponseType ==
+          NotificationResponseType.selectedNotification) {
+        selectNotificationStream.add(notificationResponse.payload);
+      }
+    },
+  );
 
   // Initialize the global notificationService variable
   notificationService = NotificationService(flutterLocalNotificationsPlugin);
 
-  notificationService!.test();
+  // Request notification permissions
+  await notificationService!.requestNotificationsPermission();
+
+  // Start the notification service
   notificationService!.start();
 
-  tz.initializeTimeZones();
+  // theme mode
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String themeModeKey = 'themeMode';
+  String themeModeString = prefs.getString(themeModeKey) ?? 'dark';
+
+  ThemeMode themeMode =
+      themeModeString == 'dark' ? ThemeMode.dark : ThemeMode.light;
+
+  // handle notification selection
+  selectNotificationStream.stream.listen((String? payload) async {
+    // Handle the user's response to the notification here
+    print('Notification selected with payload: $payload');
+  });
 
   initializeDateFormatting().then((_) {
     Intl.defaultLocale = 'de_DE';
-    runApp(const MyApp());
+    runApp(MyApp(themeMode: themeMode));
   });
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final ThemeMode themeMode;
+
+  const MyApp({Key? key, required this.themeMode}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +147,7 @@ class MyApp extends StatelessWidget {
       title: "CheckMK Monitoring",
       theme: ThemeData(useMaterial3: true, colorScheme: lightColorScheme),
       darkTheme: ThemeData(useMaterial3: true, colorScheme: darkColorScheme),
-      themeMode: ThemeMode.dark,
+      themeMode: themeMode,
       initialRoute: welcomeScreenId,
       onGenerateRoute: getRoute,
     );

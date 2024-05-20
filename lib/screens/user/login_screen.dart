@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:ptp_4_monitoring_app/models/credentials.dart';
 import 'package:ptp_4_monitoring_app/widgets/custom_text_field.dart';
+
+import '../../services/authService.dart';
+import '../../services/secureStorage.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -9,6 +11,9 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   var secureStorage = SecureStorage();
+  late AuthenticationService authService;
+
+  // Define the instance variables
   String _server = '';
   String _username = '';
   String _password = '';
@@ -19,42 +24,42 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
+    authService = AuthenticationService(secureStorage);
     _loadCredentials();
   }
 
-  void _loadCredentials() async {
-    _server = await secureStorage.readSecureData('server') ?? '';
-    _username = await secureStorage.readSecureData('username') ?? '';
-    _password = await secureStorage.readSecureData('password') ?? '';
-    _site = await secureStorage.readSecureData('site') ?? '';
-    _ignoreCertificate =
-        (await secureStorage.readSecureData('ignoreCertificate'))
-                ?.toLowerCase() ==
-            'true';
-    if (_server.isNotEmpty &&
-        _username.isNotEmpty &&
-        _password.isNotEmpty &&
-        _site.isNotEmpty) {
-      _login();
-    } else {
-      setState(() {});
-    }
+  void _loadCredentials() {
+    authService.loadCredentials().then((credentials) {
+      if (credentials != null) {
+        setState(() {
+          _server = credentials.server;
+          _username = credentials.username;
+          _password = credentials.password;
+          _site = credentials.site;
+          _ignoreCertificate = credentials.ignoreCertificate;
+        });
+        _login();
+      } else {
+        setState(() {});
+      }
+    });
   }
 
   void _login() async {
-    // Implement your login logic here
-    Navigator.pushNamed(context, 'home_screen');
+    bool loginSuccessful = await authService.login(
+        _server, _username, _password, _site, _ignoreCertificate);
+    if (loginSuccessful) {
+      Navigator.pushNamed(context, 'home_screen');
+    } else {
+      // Show an error message
+    }
   }
 
   void _saveCredentials() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      await secureStorage.writeSecureData('server', _server);
-      await secureStorage.writeSecureData('username', _username);
-      await secureStorage.writeSecureData('password', _password);
-      await secureStorage.writeSecureData('site', _site);
-      await secureStorage.writeSecureData(
-          'ignoreCertificate', _ignoreCertificate.toString());
+      await authService.saveCredentials(
+          _server, _username, _password, _site, _ignoreCertificate);
       _login();
     }
   }

@@ -17,7 +17,7 @@ class WelcomeScreen extends StatelessWidget {
                 const Hero(
                   tag: 'logo',
                   child: Image(
-                    image: AssetImage('images/checkmk-logo-white.png'),
+                    image: AssetImage('images/checkmk-logo-green.png'),
                     height: 60.0,
                   ),
                 ),

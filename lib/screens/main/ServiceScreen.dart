@@ -5,9 +5,9 @@ import 'package:intl/intl.dart';
 import 'package:ptp_4_monitoring_app/screens/main/ServiceActionScreen.dart';
 import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
 
-import '../../models/credentials.dart';
+import '../../services/secureStorage.dart';
 
-enum SerivceState { Warning, Critical, Unknown }
+enum ServiceState { Warning, Critical, Unknown }
 
 class ServiceSearch extends SearchDelegate {
   final List<dynamic> services;
@@ -39,7 +39,12 @@ class ServiceSearch extends SearchDelegate {
   @override
   Widget buildResults(BuildContext context) {
     final results = services.where((service) {
-      return service['extensions']['host_name'].toLowerCase().contains(query.toLowerCase()) || service['extensions']['description'].toLowerCase().contains(query.toLowerCase());
+      return service['extensions']['host_name']
+              .toLowerCase()
+              .contains(query.toLowerCase()) ||
+          service['extensions']['description']
+              .toLowerCase()
+              .contains(query.toLowerCase());
     });
 
     return ListView(
@@ -63,7 +68,12 @@ class ServiceSearch extends SearchDelegate {
   @override
   Widget buildSuggestions(BuildContext context) {
     final suggestions = services.where((service) {
-      return service['extensions']['host_name'].toLowerCase().contains(query.toLowerCase()) || service['extensions']['description'].toLowerCase().contains(query.toLowerCase());
+      return service['extensions']['host_name']
+              .toLowerCase()
+              .contains(query.toLowerCase()) ||
+          service['extensions']['description']
+              .toLowerCase()
+              .contains(query.toLowerCase());
     });
 
     return ListView(
@@ -86,8 +96,8 @@ class ServiceSearch extends SearchDelegate {
 }
 
 class StateFilterDialog extends StatefulWidget {
-  final Set<SerivceState> selectedStates;
-  final ValueChanged<Set<SerivceState>> onSelectedStatesChanged;
+  final Set<ServiceState> selectedStates;
+  final ValueChanged<Set<ServiceState>> onSelectedStatesChanged;
 
   StateFilterDialog({
     required this.selectedStates,
@@ -99,7 +109,7 @@ class StateFilterDialog extends StatefulWidget {
 }
 
 class _StateFilterDialogState extends State<StateFilterDialog> {
-  late Set<SerivceState> _selectedStates;
+  late Set<ServiceState> _selectedStates;
 
   @override
   void initState() {
@@ -113,7 +123,7 @@ class _StateFilterDialogState extends State<StateFilterDialog> {
       title: Text('Filter by state'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
-        children: SerivceState.values.map((state) {
+        children: ServiceState.values.map((state) {
           return CheckboxListTile(
             title: Text(state.toString().split('.').last),
             value: _selectedStates.contains(state),
@@ -148,12 +158,14 @@ class ServiceScreen extends StatefulWidget {
 }
 
 class _ServiceScreenState extends State<ServiceScreen> {
-  dynamic _service;
-  Set<SerivceState> _filterStates = {...SerivceState.values};
+  dynamic _allServices = []; // Add this line to store all services
+  dynamic _filteredServices = [];
+  Set<ServiceState> _filterStates = {...ServiceState.values};
   Timer? _timer;
   String _dateFormat = 'dd.MM.yyyy, HH:mm';
   String _locale = 'de_DE';
   var secureStorage = SecureStorage();
+  String? _error;
 
   @override
   void initState() {
@@ -164,7 +176,8 @@ class _ServiceScreenState extends State<ServiceScreen> {
   }
 
   void _loadDateFormatAndLocale() async {
-    _dateFormat = await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
+    _dateFormat =
+        await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
     _locale = await secureStorage.readSecureData('locale') ?? 'de_DE';
   }
 
@@ -179,25 +192,46 @@ class _ServiceScreenState extends State<ServiceScreen> {
     var data = await api.Request(
         'domain-types/service/collections/all?query=%7B%22op%22%3A%20%22!%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=state&columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged');
 
-    if (data != null && data['value'] != null) {
+    var error = api.getErrorMessage();
+    if (error != null) {
+      // Handle the error, for example, show a dialog or a snackbar
+      // Stop the timer
       setState(() {
-        _service = data['value'];
-        if (_filterStates.isNotEmpty) {
-          _service = _service.where((service) {
-            var state = int.parse(service['extensions']['state'].toString());
-            return _filterStates.contains(SerivceState.values[state - 1]);
-          }).toList();
+        _error = error;
+        _allServices = [];
+      });
+      _timer?.cancel();
+    } else {
+      setState(() {
+        _allServices = data['value']; // Store all services
+        _filterServices(); // Filter the services
+        _error = null;
+        // Restart the timer if it was stopped
+        if (_timer == null || !_timer!.isActive) {
+          _timer =
+              Timer.periodic(Duration(minutes: 1), (Timer t) => _getService());
         }
       });
-    } else {
-      // Handle the case when data or data['value'] is null
+    }
+  }
+
+  void _filterServices() {
+    if (_allServices.isNotEmpty) {
+      if (_filterStates.isNotEmpty) {
+        _filteredServices = _allServices.where((service) {
+          var state = int.parse(service['extensions']['state'].toString());
+          return _filterStates.contains(ServiceState.values[state - 1]);
+        }).toList();
+      } else {
+        _filteredServices = _allServices;
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     // Sort the services based on their state
-    List<dynamic> sortedServices = _service ?? [];
+    List<dynamic> sortedServices = _filteredServices ?? [];
     if (sortedServices.isNotEmpty) {
       sortedServices.sort((a, b) =>
           b['extensions']['state'].compareTo(a['extensions']['state']));
@@ -219,7 +253,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
                       setState(() {
                         _filterStates = selectedStates;
                       });
-                      _getService();
+                      _filterServices(); // Filter the services
                     },
                   );
                 },
@@ -231,7 +265,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
             onPressed: () {
               showSearch(
                 context: context,
-                delegate: ServiceSearch(_service),
+                delegate: ServiceSearch(_filteredServices),
               );
             },
           ),
@@ -239,92 +273,100 @@ class _ServiceScreenState extends State<ServiceScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: _getService,
-        child: _service == null
-            ? Center(child: CircularProgressIndicator())
-            : ListView.builder(
-                itemCount: sortedServices.length,
-                itemBuilder: (context, index) {
-                  var service = sortedServices[index];
-                  var state = service['extensions']['state'];
-                  var description = service['extensions']['description'];
-                  String stateText;
-                  Color color;
+        child: _error != null
+            ? Center(child: Text(_error!))
+            : _filteredServices.isEmpty
+                ? Center(
+                    child: _allServices.isEmpty
+                        ? CircularProgressIndicator()
+                        : Text('No services with selected status'),
+                  )
+                : ListView.builder(
+                    itemCount: sortedServices.length,
+                    itemBuilder: (context, index) {
+                      var service = sortedServices[index];
+                      var state = service['extensions']['state'];
+                      var description = service['extensions']['description'];
+                      String stateText;
+                      Color color;
 
-                  switch (state) {
-                    case 1:
-                      stateText = 'Warning';
-                      color = Colors.yellow;
-                      break;
-                    case 2:
-                      stateText = 'Critical';
-                      color = Colors.red;
-                      break;
-                    case 3:
-                      stateText = 'UNKNOWN';
-                      color = Colors.orange;
-                      break;
-                    default:
-                      return Container(); // Return an empty container if the state is not 1, 2, or 3
-                  }
-                  return Container(
-                    margin: const EdgeInsets.all(8.0),
-                    padding: const EdgeInsets.all(8.0),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(10.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 5,
-                          blurRadius: 7,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: ListTile(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ServiceActionScreen(service: service),
+                      switch (state) {
+                        case 1:
+                          stateText = 'Warning';
+                          color = Colors.yellow;
+                          break;
+                        case 2:
+                          stateText = 'Critical';
+                          color = Colors.red;
+                          break;
+                        case 3:
+                          stateText = 'UNKNOWN';
+                          color = Colors.orange;
+                          break;
+                        default:
+                          return Container(); // Return an empty container if the state is not 1, 2, or 3
+                      }
+                      return Container(
+                        margin: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.all(8.0),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10.0),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.surface,
+                            width: 2.0,
                           ),
-                        );
-                      },
-                      title: Text(service['extensions']['host_name']),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Service: $description'),
-                          Text('Current Attempt: ${service['extensions']['current_attempt']}/${service['extensions']['max_check_attempts']}'),
-                          Text('Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_check'] * 1000))}'),
-                          Text('Last Time OK: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_time_ok'] * 1000))}'),
-                        ],
-                      ),
-                      trailing: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
+                        ),
+                        child: ListTile(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    ServiceActionScreen(service: service),
+                              ),
+                            );
+                          },
+                          title: Text(service['extensions']['host_name']),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              service['extensions']['acknowledged'] == 1 ? Icon(Icons.check_circle, color: Colors.green) : Container(),
+                              Text('Service: $description'),
+                              Text(
+                                  'Current Attempt: ${service['extensions']['current_attempt']}/${service['extensions']['max_check_attempts']}'),
+                              Text(
+                                  'Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_check'] * 1000))}'),
+                              Text(
+                                  'Last Time OK: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_time_ok'] * 1000))}'),
                             ],
                           ),
-                          Row(
+                          trailing: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.warning, color: color),
-                              Text(
-                                stateText,
-                                style: TextStyle(color: color),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  service['extensions']['acknowledged'] == 1
+                                      ? Icon(Icons.check_circle,
+                                          color: Colors.green)
+                                      : Container(),
+                                ],
+                              ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.warning, color: color),
+                                  Text(
+                                    stateText,
+                                    style: TextStyle(color: color),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+                        ),
+                      );
+                    },
+                  ),
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'reloadCriticalServices',

@@ -6,7 +6,7 @@ import 'package:ptp_4_monitoring_app/actions/host/DowntimeHost.dart';
 import 'package:ptp_4_monitoring_app/screens/main/HostServicesScreen.dart';
 import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
 
-import '../../models/credentials.dart';
+import '../../services/secureStorage.dart';
 
 class HostActionScreen extends StatefulWidget {
   final dynamic host;
@@ -19,7 +19,6 @@ class HostActionScreen extends StatefulWidget {
 
 class _HostActionScreenState extends State<HostActionScreen> {
   dynamic _host;
-  List<dynamic> _services = [];
   String _dateFormat = 'dd.MM.yyyy, HH:mm';
   String _locale = 'de_DE';
   var secureStorage = SecureStorage();
@@ -33,7 +32,8 @@ class _HostActionScreenState extends State<HostActionScreen> {
   }
 
   void _loadDateFormatAndLocale() async {
-    _dateFormat = await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
+    _dateFormat =
+        await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
     _locale = await secureStorage.readSecureData('locale') ?? 'de_DE';
   }
 
@@ -44,21 +44,26 @@ class _HostActionScreenState extends State<HostActionScreen> {
   void downtimeHost(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => DowntimeHostWidget(hostName: widget.host['extensions']['name'])),
+      MaterialPageRoute(
+          builder: (context) =>
+              DowntimeHostWidget(hostName: widget.host['extensions']['name'])),
     );
   }
 
   void commentHost(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => CommentHostWidget(hostName: widget.host['extensions']['name'])),
+      MaterialPageRoute(
+          builder: (context) =>
+              CommentHostWidget(hostName: widget.host['extensions']['name'])),
     );
   }
 
   void acknowledgeHost(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => AcknowledgeHostForm(service: widget.host)),
+      MaterialPageRoute(
+          builder: (context) => AcknowledgeHostForm(service: widget.host)),
     );
   }
 
@@ -74,7 +79,8 @@ class _HostActionScreenState extends State<HostActionScreen> {
 
   Future<List<dynamic>> _getComments() async {
     var api = ApiRequest();
-    var data = await api.Request('domain-types/comment/collections/all?host_name=${widget.host['extensions']['name']}');
+    var data = await api.Request(
+        'domain-types/comment/collections/all?host_name=${widget.host['extensions']['name']}');
     return data['value'];
   }
 
@@ -110,7 +116,8 @@ class _HostActionScreenState extends State<HostActionScreen> {
         color = Colors.orange;
         break;
       default:
-        stateIcon = Icon(Icons.help_outline, color: Colors.grey); // Default icon
+        stateIcon =
+            Icon(Icons.help_outline, color: Colors.grey); // Default icon
         color = Colors.grey;
         break;
     }
@@ -131,7 +138,8 @@ class _HostActionScreenState extends State<HostActionScreen> {
                     ListTile(
                       leading: stateIcon,
                       title: Text(host['extensions']['name']),
-                      subtitle: Text('Address: ${host['extensions']['address']}\n'
+                      subtitle: Text(
+                          'Address: ${host['extensions']['address']}\n'
                           'Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_check'] * 1000))}\n'
                           'Last Time Up: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_time_up'] * 1000))}\n'
                           'State: ${host['extensions']['state']}\n'
@@ -145,7 +153,8 @@ class _HostActionScreenState extends State<HostActionScreen> {
                         ElevatedButton.icon(
                           icon: Icon(Icons.refresh),
                           label: Text('Recheck'),
-                          onPressed: null, // Disable the button by setting onPressed to null
+                          onPressed:
+                              null, // Disable the button by setting onPressed to null
                         ),
                         ElevatedButton.icon(
                           icon: Icon(Icons.check_circle),
@@ -176,7 +185,9 @@ class _HostActionScreenState extends State<HostActionScreen> {
                             onPressed: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (context) => HostServiceScreen(hostName: host['extensions']['name'])),
+                                MaterialPageRoute(
+                                    builder: (context) => HostServiceScreen(
+                                        hostName: host['extensions']['name'])),
                               );
                             },
                             icon: Icon(Icons.electrical_services),
@@ -193,6 +204,7 @@ class _HostActionScreenState extends State<HostActionScreen> {
         onPressed: _getHost,
         tooltip: 'Refresh',
         child: Icon(Icons.refresh),
+        backgroundColor: Theme.of(context).colorScheme.surface,
       ),
     );
   }
