@@ -46,4 +46,8 @@ class AuthenticationService {
       return null;
     }
   }
+
+  Future<void> logout() async {
+    await secureStorage.clearAll(); // Clear all data from secure storage
+  }
 }

@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ptp_4_monitoring_app/screens/main/HostActionScreen.dart';
 import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../services/secureStorage.dart';
+import '../notify/notify.dart';
 
 enum HostState { OK, Warning, Critical, Unknown }
 
@@ -141,8 +142,10 @@ class _HostScreenState extends State<HostScreen> {
   Timer? _timer;
   String _dateFormat = 'dd.MM.yyyy, HH:mm';
   String _locale = 'de_DE';
-  var secureStorage = SecureStorage();
   String? _error;
+
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
+      GlobalKey<RefreshIndicatorState>();
 
   @override
   void initState() {
@@ -153,9 +156,9 @@ class _HostScreenState extends State<HostScreen> {
   }
 
   void _loadDateFormatAndLocale() async {
-    _dateFormat =
-        await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
-    _locale = await secureStorage.readSecureData('locale') ?? 'de_DE';
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _dateFormat = prefs.getString('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
+    _locale = prefs.getString('locale') ?? 'de_DE';
   }
 
   @override
@@ -189,6 +192,7 @@ class _HostScreenState extends State<HostScreen> {
         }
       });
     }
+    NotificationService().checkTimer();
   }
 
   void _filterHosts() {
@@ -248,6 +252,7 @@ class _HostScreenState extends State<HostScreen> {
         ],
       ),
       body: RefreshIndicator(
+        key: _refreshIndicatorKey,
         onRefresh: _getHosts,
         child: _error != null
             ? Center(child: Text(_error!))
@@ -314,21 +319,92 @@ class _HostScreenState extends State<HostScreen> {
                               ),
                             );
                           },
-                          title: Text(host['extensions']['name']),
+                          title: Text(
+                            host['extensions']['name'],
+                            style: TextStyle(
+                              fontSize: 20.0, // adjust the size as needed
+                              fontWeight:
+                                  FontWeight.bold, // makes the text thicker
+                            ),
+                          ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Address: ${host['extensions']['address']}'),
-                              Text(
-                                'Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_check'] * 1000))}',
+                              RichText(
+                                text: TextSpan(
+                                  text: 'Address: ',
+                                  style: DefaultTextStyle.of(context)
+                                      .style
+                                      .copyWith(fontWeight: FontWeight.bold),
+                                  children: <TextSpan>[
+                                    TextSpan(
+                                        text:
+                                            '${host['extensions']['address']}',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.normal)),
+                                  ],
+                                ),
                               ),
-                              Text(
-                                'Last Time Up: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_time_up'] * 1000))}',
+                              RichText(
+                                text: TextSpan(
+                                  text: 'Last Check: ',
+                                  style: DefaultTextStyle.of(context)
+                                      .style
+                                      .copyWith(fontWeight: FontWeight.bold),
+                                  children: <TextSpan>[
+                                    TextSpan(
+                                        text:
+                                            '${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_check'] * 1000))}',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.normal)),
+                                  ],
+                                ),
                               ),
-                              Text(
-                                  'Total Services: ${host['extensions']['total_services']}'),
-                              Text(
-                                  'Acknowledged: ${host['extensions']['acknowledged'] == 1 ? 'Yes' : 'No'}'),
+                              RichText(
+                                text: TextSpan(
+                                  text: 'Last Time Up: ',
+                                  style: DefaultTextStyle.of(context)
+                                      .style
+                                      .copyWith(fontWeight: FontWeight.bold),
+                                  children: <TextSpan>[
+                                    TextSpan(
+                                        text:
+                                            '${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_time_up'] * 1000))}',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.normal)),
+                                  ],
+                                ),
+                              ),
+                              RichText(
+                                text: TextSpan(
+                                  text: 'Total Services: ',
+                                  style: DefaultTextStyle.of(context)
+                                      .style
+                                      .copyWith(fontWeight: FontWeight.bold),
+                                  children: <TextSpan>[
+                                    TextSpan(
+                                        text:
+                                            '${host['extensions']['total_services']}',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.normal)),
+                                  ],
+                                ),
+                              ),
+                              RichText(
+                                text: TextSpan(
+                                  text: 'Acknowledged: ',
+                                  style: DefaultTextStyle.of(context)
+                                      .style
+                                      .copyWith(fontWeight: FontWeight.bold),
+                                  children: <TextSpan>[
+                                    TextSpan(
+                                        text:
+                                            '${host['extensions']['acknowledged'] == 1 ? 'Yes' : 'No'}',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.normal)),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
                           trailing: Row(
@@ -347,12 +423,12 @@ class _HostScreenState extends State<HostScreen> {
                   ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _getHosts,
+        onPressed: () {
+          _getHosts;
+          _refreshIndicatorKey.currentState?.show();
+        },
         tooltip: 'Refresh',
-        child: const Icon(
-          Icons.refresh,
-          color: Colors.black,
-        ),
+        child: Icon(Icons.refresh),
         backgroundColor: Theme.of(context).colorScheme.surface,
       ),
     );

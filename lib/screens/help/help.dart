@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:ptp_4_monitoring_app/screens/my_home_page.dart';
-import 'package:ptp_4_monitoring_app/widgets/app_bar_widget.dart';
+import 'package:ptp_4_monitoring_app/screens/myHomePage.dart';
+import 'package:ptp_4_monitoring_app/widgets/appBarWidget.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class HelpScreen extends StatefulWidget {

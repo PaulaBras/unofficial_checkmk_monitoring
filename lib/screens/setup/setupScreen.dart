@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../services/secureStorage.dart';
 import 'AreNotificationsActive.dart';
@@ -37,6 +38,7 @@ class _SetupScreenState extends State<SetupScreen> {
   }
 
   void _loadSettings() async {
+    // Load settings from secure storage
     _serverController.text = await secureStorage.readSecureData('server') ?? '';
     _usernameController.text =
         await secureStorage.readSecureData('username') ?? '';
@@ -48,6 +50,8 @@ class _SetupScreenState extends State<SetupScreen> {
                     ?.toLowerCase() ==
                 'true' ??
             false;
+    // Load settings from shared preferences
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     _notification =
         (await secureStorage.readSecureData('notification'))?.toLowerCase() ==
                 'true' ??
@@ -56,9 +60,8 @@ class _SetupScreenState extends State<SetupScreen> {
                 ?.toLowerCase() ==
             'true' ??
         false;
-    _dateFormat =
-        await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
-    _locale = await secureStorage.readSecureData('locale') ?? 'de_DE';
+    _dateFormat = prefs.getString('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
+    _locale = prefs.getString('locale') ?? 'de_DE';
     _isNotificationActive =
         (await secureStorage.readSecureData('notification'))?.toLowerCase() ==
                 'true' ??

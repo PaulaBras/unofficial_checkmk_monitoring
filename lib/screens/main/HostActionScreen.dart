@@ -5,8 +5,7 @@ import 'package:ptp_4_monitoring_app/actions/host/CommentHost.dart';
 import 'package:ptp_4_monitoring_app/actions/host/DowntimeHost.dart';
 import 'package:ptp_4_monitoring_app/screens/main/HostServicesScreen.dart';
 import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
-
-import '../../services/secureStorage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HostActionScreen extends StatefulWidget {
   final dynamic host;
@@ -21,7 +20,6 @@ class _HostActionScreenState extends State<HostActionScreen> {
   dynamic _host;
   String _dateFormat = 'dd.MM.yyyy, HH:mm';
   String _locale = 'de_DE';
-  var secureStorage = SecureStorage();
 
   @override
   void initState() {
@@ -32,9 +30,9 @@ class _HostActionScreenState extends State<HostActionScreen> {
   }
 
   void _loadDateFormatAndLocale() async {
-    _dateFormat =
-        await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
-    _locale = await secureStorage.readSecureData('locale') ?? 'de_DE';
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _dateFormat = prefs.getString('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
+    _locale = prefs.getString('locale') ?? 'de_DE';
   }
 
   void recheckHost() {

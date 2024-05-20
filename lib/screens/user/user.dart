@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:ptp_4_monitoring_app/screens/my_home_page.dart';
-import 'package:ptp_4_monitoring_app/widgets/app_bar_widget.dart';
+import 'package:provider/provider.dart';
+import 'package:ptp_4_monitoring_app/screens/myHomePage.dart';
+import 'package:ptp_4_monitoring_app/screens/user/loginScreen.dart'; // Import the login screen
+import 'package:ptp_4_monitoring_app/services/themeNotifier.dart';
+import 'package:ptp_4_monitoring_app/widgets/appBarWidget.dart';
 
 class UserScreen extends StatefulWidget {
   const UserScreen({super.key});
@@ -13,6 +16,7 @@ class UserScreen extends StatefulWidget {
 class _UserScreenState extends State<UserScreen> {
   @override
   Widget build(BuildContext context) {
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
     final myHomePageLogic = MyHomePageLogic();
 
     return Scaffold(
@@ -35,13 +39,14 @@ class _UserScreenState extends State<UserScreen> {
             ),
           ),
           // Headline
-          GestureDetector(
-            onTap: () => RouteInformation(),
-            child: ListTile(title: Text('Color theme')),
-          ),
-          GestureDetector(
-            onTap: () => RouteInformation(),
-            child: ListTile(title: Text('Sidebar position')),
+          SwitchListTile(
+            title: Text('Dark Theme'),
+            value: themeNotifier.darkTheme,
+            onChanged: (value) {
+              setState(() {
+                themeNotifier.toggleTheme();
+              });
+            },
           ),
           ListTile(
             title: Text(
@@ -57,22 +62,17 @@ class _UserScreenState extends State<UserScreen> {
           // Headline
           GestureDetector(
             onTap: () => RouteInformation(),
-            child: ListTile(title: Text('Edit profile')),
-          ),
-          GestureDetector(
-            onTap: () => RouteInformation(),
             child: ListTile(title: Text('Notification rules')),
           ),
           GestureDetector(
-            onTap: () => RouteInformation(),
-            child: ListTile(title: Text('Change password')),
-          ),
-          GestureDetector(
-            onTap: () => RouteInformation(),
-            child: ListTile(title: Text('Two-factor authentication')),
-          ),
-          GestureDetector(
-            onTap: () => RouteInformation(),
+            onTap: () async {
+              //await authService.logout(); // Call the logout function
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                    builder: (context) =>
+                        LoginScreen()), // Navigate to the login screen
+              );
+            },
             child: ListTile(title: Text('Logout')),
           ),
         ],

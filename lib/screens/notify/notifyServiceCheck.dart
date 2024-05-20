@@ -7,20 +7,6 @@ class NotificationServiceCheck {
 
   NotificationServiceCheck(this._cache);
 
-  void testNotification() {
-    var mockService = {
-      'extensions': {
-        'state': 2,
-        'host_name': 'Test Host',
-        'description': 'Test Description',
-        'plugin_output': 'Test Output'
-      }
-    };
-
-    _scheduleNotification(mockService);
-    print('Test notification scheduled');
-  }
-
   Future<void> checkServices() async {
     var api = ApiRequest();
     var data = await api.Request(
