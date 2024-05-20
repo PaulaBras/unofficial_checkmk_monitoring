@@ -31,8 +31,7 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
   }
 
   void _loadDateFormatAndLocale() async {
-    _dateFormat =
-        await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
+    _dateFormat = await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
     _locale = await secureStorage.readSecureData('locale') ?? 'de_DE';
   }
 
@@ -43,9 +42,7 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
   void acknowledgeService(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-          builder: (context) =>
-              AcknowledgeServiceForm(service: widget.service)),
+      MaterialPageRoute(builder: (context) => AcknowledgeServiceForm(service: widget.service)),
     );
   }
 
@@ -63,21 +60,17 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
   void commentService(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-          builder: (context) => CommentServiceWidget(
-              hostName: widget.service['extensions']['host_name'])),
+      MaterialPageRoute(builder: (context) => CommentServiceWidget(hostName: widget.service['extensions']['host_name'])),
     );
   }
 
   Future<void> _getService() async {
     var api = ApiRequest();
     var data = await api.Request(
-        'domain-types/service/collections/all?query=%7B%22op%22%3A%20%22!%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=state&columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged');
+        'domain-types/service/collections/all?query=%7B%22op%22%3A%20%22!%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=state&columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged&columns=plugin_output');
 
     var services = data['value'];
-    _service = services.firstWhere(
-        (service) => service['id'] == widget.service['id'],
-        orElse: () => null);
+    _service = services.firstWhere((service) => service['id'] == widget.service['id'], orElse: () => null);
 
     if (_service == null) {
       Navigator.pop(context);
@@ -88,8 +81,7 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
 
   Future<List<dynamic>> _getComments() async {
     var api = ApiRequest();
-    var data = await api.Request(
-        '/domain-types/comment/collections/all?host_name=${widget.service['extensions']['host_name']}&service_description=${widget.service['extensions']['description']}');
+    var data = await api.Request('/domain-types/comment/collections/all?host_name=${widget.service['extensions']['host_name']}&service_description=${widget.service['extensions']['description']}');
     return data['value'];
   }
 
@@ -146,17 +138,12 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Service: $description'),
-                          Text(
-                              'Current Attempt: ${service['extensions']['current_attempt']}/${service['extensions']['max_check_attempts']}'),
-                          Text(
-                              'Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_check'] * 1000))}'),
-                          Text(
-                              'Last Time OK: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_time_ok'] * 1000))}'),
-                          Text(
-                              'Is Flapping: ${isFlapping == 1 ? 'Yes' : 'No'}'), // Display is_flapping
-                          if (isFlapping == 1)
-                            Icon(Icons
-                                .waves), // Display wave icon if is_flapping is 1
+                          Text('Output: ${service['extensions']['plugin_output']}'),
+                          Text('Current Attempt: ${service['extensions']['current_attempt']}/${service['extensions']['max_check_attempts']}'),
+                          Text('Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_check'] * 1000))}'),
+                          Text('Last Time OK: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_time_ok'] * 1000))}'),
+                          Text('Is Flapping: ${isFlapping == 1 ? 'Yes' : 'No'}'), // Display is_flapping
+                          if (isFlapping == 1) Icon(Icons.waves), // Display wave icon if is_flapping is 1
                         ],
                       ),
                     ),
@@ -167,8 +154,7 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
                         ElevatedButton.icon(
                           icon: Icon(Icons.refresh),
                           label: Text('Recheck'),
-                          onPressed:
-                              null, // Disable the button by setting onPressed to null
+                          onPressed: null, // Disable the button by setting onPressed to null
                         ),
                         ElevatedButton.icon(
                           icon: Icon(Icons.check_circle),
@@ -196,8 +182,7 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
                       child: FutureBuilder<List<dynamic>>(
                         future: _getComments(),
                         builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
                             return Center(child: CircularProgressIndicator());
                           } else if (snapshot.hasError) {
                             return Text('Error: ${snapshot.error}');
@@ -207,23 +192,14 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
                               itemBuilder: (context, index) {
                                 var comment = snapshot.data?[index];
                                 return ListTile(
-                                  title: Text(
-                                      'Author: ${comment['extensions']['author']}'),
+                                  title: Text('Author: ${comment['extensions']['author']}'),
                                   subtitle: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                          'Comment: ${comment['extensions']['comment']}'),
-                                      Text(
-                                          'Persistent: ${comment['extensions']['persistent'] ? 'Yes' : 'No'}'),
-                                      Text(
-                                          'Entry Time: ${comment['extensions']['entry_time']}'),
-                                      if (comment['extensions']
-                                              ['expire_time'] !=
-                                          null)
-                                        Text(
-                                            'Expire Time: ${comment['extensions']['expire_time']}'),
+                                      Text('Comment: ${comment['extensions']['comment']}'),
+                                      Text('Persistent: ${comment['extensions']['persistent'] ? 'Yes' : 'No'}'),
+                                      Text('Entry Time: ${comment['extensions']['entry_time']}'),
+                                      if (comment['extensions']['expire_time'] != null) Text('Expire Time: ${comment['extensions']['expire_time']}'),
                                     ],
                                   ),
                                 );

@@ -39,12 +39,7 @@ class ServiceSearch extends SearchDelegate {
   @override
   Widget buildResults(BuildContext context) {
     final results = services.where((service) {
-      return service['extensions']['host_name']
-              .toLowerCase()
-              .contains(query.toLowerCase()) ||
-          service['extensions']['description']
-              .toLowerCase()
-              .contains(query.toLowerCase());
+      return service['extensions']['host_name'].toLowerCase().contains(query.toLowerCase()) || service['extensions']['description'].toLowerCase().contains(query.toLowerCase());
     });
 
     return ListView(
@@ -68,12 +63,7 @@ class ServiceSearch extends SearchDelegate {
   @override
   Widget buildSuggestions(BuildContext context) {
     final suggestions = services.where((service) {
-      return service['extensions']['host_name']
-              .toLowerCase()
-              .contains(query.toLowerCase()) ||
-          service['extensions']['description']
-              .toLowerCase()
-              .contains(query.toLowerCase());
+      return service['extensions']['host_name'].toLowerCase().contains(query.toLowerCase()) || service['extensions']['description'].toLowerCase().contains(query.toLowerCase());
     });
 
     return ListView(
@@ -176,8 +166,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
   }
 
   void _loadDateFormatAndLocale() async {
-    _dateFormat =
-        await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
+    _dateFormat = await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
     _locale = await secureStorage.readSecureData('locale') ?? 'de_DE';
   }
 
@@ -190,7 +179,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
   Future<void> _getService() async {
     var api = ApiRequest();
     var data = await api.Request(
-        'domain-types/service/collections/all?query=%7B%22op%22%3A%20%22!%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=state&columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged');
+        'domain-types/service/collections/all?query=%7B%22op%22%3A%20%22!%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=state&columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged&columns=plugin_output');
 
     var error = api.getErrorMessage();
     if (error != null) {
@@ -208,8 +197,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
         _error = null;
         // Restart the timer if it was stopped
         if (_timer == null || !_timer!.isActive) {
-          _timer =
-              Timer.periodic(Duration(minutes: 1), (Timer t) => _getService());
+          _timer = Timer.periodic(Duration(minutes: 1), (Timer t) => _getService());
         }
       });
     }
@@ -233,8 +221,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
     // Sort the services based on their state
     List<dynamic> sortedServices = _filteredServices ?? [];
     if (sortedServices.isNotEmpty) {
-      sortedServices.sort((a, b) =>
-          b['extensions']['state'].compareTo(a['extensions']['state']));
+      sortedServices.sort((a, b) => b['extensions']['state'].compareTo(a['extensions']['state']));
     }
 
     return Scaffold(
@@ -277,9 +264,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
             ? Center(child: Text(_error!))
             : _filteredServices.isEmpty
                 ? Center(
-                    child: _allServices.isEmpty
-                        ? CircularProgressIndicator()
-                        : Text('No services with selected status'),
+                    child: _allServices.isEmpty ? CircularProgressIndicator() : Text('No services with selected status'),
                   )
                 : ListView.builder(
                     itemCount: sortedServices.length,
@@ -321,8 +306,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) =>
-                                    ServiceActionScreen(service: service),
+                                builder: (context) => ServiceActionScreen(service: service),
                               ),
                             );
                           },
@@ -331,12 +315,10 @@ class _ServiceScreenState extends State<ServiceScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('Service: $description'),
-                              Text(
-                                  'Current Attempt: ${service['extensions']['current_attempt']}/${service['extensions']['max_check_attempts']}'),
-                              Text(
-                                  'Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_check'] * 1000))}'),
-                              Text(
-                                  'Last Time OK: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_time_ok'] * 1000))}'),
+                              Text('Output: ${service['extensions']['plugin_output']}'),
+                              Text('Current Attempt: ${service['extensions']['current_attempt']}/${service['extensions']['max_check_attempts']}'),
+                              Text('Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_check'] * 1000))}'),
+                              Text('Last Time OK: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_time_ok'] * 1000))}'),
                             ],
                           ),
                           trailing: Column(
@@ -345,10 +327,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  service['extensions']['acknowledged'] == 1
-                                      ? Icon(Icons.check_circle,
-                                          color: Colors.green)
-                                      : Container(),
+                                  service['extensions']['acknowledged'] == 1 ? Icon(Icons.check_circle, color: Colors.green) : Container(),
                                 ],
                               ),
                               Row(
