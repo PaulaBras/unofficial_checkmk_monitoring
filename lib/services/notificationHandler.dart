@@ -2,14 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
-final StreamController<ReceivedNotification> didReceiveLocalNotificationStream =
-    StreamController<ReceivedNotification>.broadcast();
+final StreamController<ReceivedNotification> didReceiveLocalNotificationStream = StreamController<ReceivedNotification>.broadcast();
 
-final StreamController<String?> selectNotificationStream =
-    StreamController<String?>.broadcast();
+final StreamController<String?> selectNotificationStream = StreamController<String?>.broadcast();
 
-const MethodChannel platform =
-    MethodChannel('cmk.pabr.zz/ptp_4_monitoring_app');
+const MethodChannel platform = MethodChannel('checkmk/ptp_4_monitoring_app');
 
 const String portName = 'notification_send_port';
 
