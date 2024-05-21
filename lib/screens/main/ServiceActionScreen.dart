@@ -20,6 +20,9 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
   String _dateFormat = 'dd.MM.yyyy, HH:mm';
   String _locale = 'de_DE';
 
+  // Add a ScrollController
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -139,7 +142,13 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
                   children: <Widget>[
                     ListTile(
                       leading: stateIcon,
-                      title: Text(service['extensions']['host_name']),
+                      title: Text(
+                        service['extensions']['host_name'],
+                        style: TextStyle(
+                          fontSize: 20.0, // adjust the size as needed
+                          fontWeight: FontWeight.bold, // makes the text thicker
+                        ),
+                      ),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -192,6 +201,11 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
                         ),
                       ],
                     ),
+                    SizedBox(height: 20),
+                    Divider(
+                      color: Colors.grey,
+                      height: 2.0,
+                    ),
                     Expanded(
                       child: FutureBuilder<List<dynamic>>(
                         future: _getComments(),
@@ -202,32 +216,36 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
                           } else if (snapshot.hasError) {
                             return Text('Error: ${snapshot.error}');
                           } else {
-                            return ListView.builder(
-                              itemCount: snapshot.data?.length ?? 0,
-                              itemBuilder: (context, index) {
-                                var comment = snapshot.data?[index];
-                                return ListTile(
-                                  title: Text(
-                                      'Author: ${comment['extensions']['author']}'),
-                                  subtitle: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                          'Comment: ${comment['extensions']['comment']}'),
-                                      Text(
-                                          'Persistent: ${comment['extensions']['persistent'] ? 'Yes' : 'No'}'),
-                                      Text(
-                                          'Entry Time: ${comment['extensions']['entry_time']}'),
-                                      if (comment['extensions']
-                                              ['expire_time'] !=
-                                          null)
+                            return Scrollbar(
+                              controller: _scrollController,
+                              child: ListView.builder(
+                                controller: _scrollController,
+                                itemCount: snapshot.data?.length ?? 0,
+                                itemBuilder: (context, index) {
+                                  var comment = snapshot.data?[index];
+                                  return ListTile(
+                                    title: Text(
+                                        'Author: ${comment['extensions']['author']}'),
+                                    subtitle: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
                                         Text(
-                                            'Expire Time: ${comment['extensions']['expire_time']}'),
-                                    ],
-                                  ),
-                                );
-                              },
+                                            'Comment: ${comment['extensions']['comment']}'),
+                                        Text(
+                                            'Persistent: ${comment['extensions']['persistent'] ? 'Yes' : 'No'}'),
+                                        Text(
+                                            'Entry Time: ${comment['extensions']['entry_time']}'),
+                                        if (comment['extensions']
+                                                ['expire_time'] !=
+                                            null)
+                                          Text(
+                                              'Expire Time: ${comment['extensions']['expire_time']}'),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
                             );
                           }
                         },

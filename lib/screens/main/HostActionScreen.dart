@@ -135,7 +135,13 @@ class _HostActionScreenState extends State<HostActionScreen> {
                   children: <Widget>[
                     ListTile(
                       leading: stateIcon,
-                      title: Text(host['extensions']['name']),
+                      title: Text(
+                        host['extensions']['name'],
+                        style: TextStyle(
+                          fontSize: 20.0, // adjust the size as needed
+                          fontWeight: FontWeight.bold, // makes the text thicker
+                        ),
+                      ),
                       subtitle: Text(
                           'Address: ${host['extensions']['address']}\n'
                           'Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_check'] * 1000))}\n'

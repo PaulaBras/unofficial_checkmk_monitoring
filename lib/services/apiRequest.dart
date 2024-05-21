@@ -56,7 +56,6 @@ class ApiRequest {
               },
         );
       } else if (method == 'POST') {
-        print("POST");
         response = await ioClient.post(
           url,
           headers: headers ??

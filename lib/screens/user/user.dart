@@ -6,6 +6,10 @@ import 'package:ptp_4_monitoring_app/screens/user/loginScreen.dart'; // Import t
 import 'package:ptp_4_monitoring_app/services/themeNotifier.dart';
 import 'package:ptp_4_monitoring_app/widgets/appBarWidget.dart';
 
+import '../../services/apiRequest.dart';
+import '../../services/authService.dart';
+import '../../services/secureStorage.dart';
+
 class UserScreen extends StatefulWidget {
   const UserScreen({super.key});
 
@@ -14,6 +18,22 @@ class UserScreen extends StatefulWidget {
 }
 
 class _UserScreenState extends State<UserScreen> {
+  var secureStorage = SecureStorage();
+  var apiRequest = ApiRequest(); // Create an ApiRequest instance
+  late AuthenticationService authService; // Define authService
+
+  void navigateToHomeScreen() {
+    Navigator.pushNamed(context, 'home_screen');
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    authService = AuthenticationService(
+        secureStorage, apiRequest); // Initialize authService
+    // ... rest of your code
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeNotifier = Provider.of<ThemeNotifier>(context);
@@ -59,14 +79,10 @@ class _UserScreenState extends State<UserScreen> {
               height: 30,
             ),
           ),
-          // Headline
-          GestureDetector(
-            onTap: () => RouteInformation(),
-            child: ListTile(title: Text('Notification rules')),
-          ),
           GestureDetector(
             onTap: () async {
-              //await authService.logout(); // Call the logout function
+              await authService
+                  .logout(navigateToHomeScreen); // Call the logout function
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
                     builder: (context) =>

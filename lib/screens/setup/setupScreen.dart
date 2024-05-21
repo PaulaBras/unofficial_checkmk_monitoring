@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../services/apiRequest.dart';
+import '../../services/authService.dart';
 import '../../services/secureStorage.dart';
 import 'AreNotificationsActive.dart';
 import 'SetupNotificationSchedule.dart';
@@ -16,6 +18,8 @@ class SetupScreen extends StatefulWidget {
 
 class _SetupScreenState extends State<SetupScreen> {
   var secureStorage = SecureStorage();
+  var apiRequest = ApiRequest(); // Create an ApiRequest instance
+  late AuthenticationService authService;
   final _serverController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -33,6 +37,7 @@ class _SetupScreenState extends State<SetupScreen> {
   @override
   void initState() {
     super.initState();
+    authService = AuthenticationService(secureStorage, apiRequest);
     _loadSettings();
     _startNotificationCheckTask();
   }
@@ -110,7 +115,23 @@ class _SetupScreenState extends State<SetupScreen> {
           'notificationSchedule', _notificationSchedule.toString());
       await secureStorage.writeSecureData('dateFormat', _dateFormat);
       await secureStorage.writeSecureData('locale', _locale);
-      //Navigator.pop(context);
+
+      // Login again
+      bool loginSuccessful = await authService.login(
+          _serverController.text,
+          _usernameController.text,
+          _passwordController.text,
+          _siteController.text,
+          _ignoreCertificate);
+      if (loginSuccessful) {
+        Navigator.pushNamed(context, 'home_screen');
+      } else {
+        // Show an error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Login failed. Please check your credentials.')),
+        );
+      }
     }
   }
 
