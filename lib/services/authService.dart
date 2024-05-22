@@ -1,20 +1,32 @@
 import 'package:ptp_4_monitoring_app/services/secureStorage.dart';
 
 import '../models/credentials.dart';
+import 'apiRequest.dart';
 
 class AuthenticationService {
   final SecureStorage secureStorage;
+  final ApiRequest apiRequest;
 
-  AuthenticationService(this.secureStorage);
+  AuthenticationService(this.secureStorage, this.apiRequest);
 
   Future<bool> login(String server, String username, String password,
       String site, bool ignoreCertificate) async {
-    // Implement your login logic here
-    // If login is successful, return true
-    // If login fails, return false
+    try {
+      await apiRequest.Request(
+        '/objects/site_connection/prod/actions/login/invoke',
+        method: 'POST',
+        body: {
+          'username': username,
+          'password': password,
+        },
+      );
 
-    // For now, let's assume the login is always successful
-    return true;
+      // You can add additional checks here based on the response
+      return true;
+    } catch (e) {
+      print('Login failed: $e');
+      return false;
+    }
   }
 
   Future<void> saveCredentials(String server, String username, String password,
@@ -45,5 +57,10 @@ class AuthenticationService {
     } else {
       return null;
     }
+  }
+
+  Future<void> logout(Function navigateToHomeScreen) async {
+    await secureStorage.clearAll(); // Clear all data from secure storage
+    navigateToHomeScreen();
   }
 }

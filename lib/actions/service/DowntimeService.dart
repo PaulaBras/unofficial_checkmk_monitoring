@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
-
-import '../../services/secureStorage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Downtime {
   String startTime;
@@ -70,7 +69,6 @@ class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
   DateTime? _endTime;
   String _dateFormat = 'dd.MM.yyyy, HH:mm';
   String _locale = 'de_DE';
-  var secureStorage = SecureStorage();
 
   @override
   void initState() {
@@ -89,9 +87,9 @@ class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
   }
 
   void _loadDateFormatAndLocale() async {
-    _dateFormat =
-        await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
-    _locale = await secureStorage.readSecureData('locale') ?? 'de_DE';
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _dateFormat = prefs.getString('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
+    _locale = prefs.getString('locale') ?? 'de_DE';
   }
 
   @override

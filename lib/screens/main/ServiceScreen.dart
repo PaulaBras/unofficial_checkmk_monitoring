@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ptp_4_monitoring_app/screens/main/ServiceActionScreen.dart';
 import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../services/secureStorage.dart';
+import '../notify/notify.dart';
 
 enum ServiceState { Warning, Critical, Unknown }
 
@@ -164,8 +165,13 @@ class _ServiceScreenState extends State<ServiceScreen> {
   Timer? _timer;
   String _dateFormat = 'dd.MM.yyyy, HH:mm';
   String _locale = 'de_DE';
-  var secureStorage = SecureStorage();
   String? _error;
+
+  // Add a ScrollController
+  final ScrollController _scrollController = ScrollController();
+
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
+      GlobalKey<RefreshIndicatorState>();
 
   @override
   void initState() {
@@ -176,9 +182,9 @@ class _ServiceScreenState extends State<ServiceScreen> {
   }
 
   void _loadDateFormatAndLocale() async {
-    _dateFormat =
-        await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
-    _locale = await secureStorage.readSecureData('locale') ?? 'de_DE';
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _dateFormat = prefs.getString('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
+    _locale = prefs.getString('locale') ?? 'de_DE';
   }
 
   @override
@@ -190,7 +196,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
   Future<void> _getService() async {
     var api = ApiRequest();
     var data = await api.Request(
-        'domain-types/service/collections/all?query=%7B%22op%22%3A%20%22!%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=state&columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged');
+        'domain-types/service/collections/all?query=%7B%22op%22%3A%20%22!%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=state&columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged&columns=plugin_output');
 
     var error = api.getErrorMessage();
     if (error != null) {
@@ -213,6 +219,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
         }
       });
     }
+    NotificationService().checkTimer();
   }
 
   void _filterServices() {
@@ -272,6 +279,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
         ],
       ),
       body: RefreshIndicator(
+        key: _refreshIndicatorKey,
         onRefresh: _getService,
         child: _error != null
             ? Center(child: Text(_error!))
@@ -281,77 +289,176 @@ class _ServiceScreenState extends State<ServiceScreen> {
                         ? CircularProgressIndicator()
                         : Text('No services with selected status'),
                   )
-                : ListView.builder(
-                    itemCount: sortedServices.length,
-                    itemBuilder: (context, index) {
-                      var service = sortedServices[index];
-                      var state = service['extensions']['state'];
-                      var description = service['extensions']['description'];
-                      String stateText;
-                      Color color;
+                : Scrollbar(
+                    controller: _scrollController,
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      itemCount: sortedServices.length,
+                      itemBuilder: (context, index) {
+                        var service = sortedServices[index];
+                        var state = service['extensions']['state'];
+                        var description = service['extensions']['description'];
+                        String stateText;
+                        Color color;
 
-                      switch (state) {
-                        case 1:
-                          stateText = 'Warning';
-                          color = Colors.yellow;
-                          break;
-                        case 2:
-                          stateText = 'Critical';
-                          color = Colors.red;
-                          break;
-                        case 3:
-                          stateText = 'UNKNOWN';
-                          color = Colors.orange;
-                          break;
-                        default:
-                          return Container(); // Return an empty container if the state is not 1, 2, or 3
-                      }
-                      return Container(
-                        margin: const EdgeInsets.all(8.0),
-                        padding: const EdgeInsets.all(8.0),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10.0),
-                          border: Border.all(
-                            color: Theme.of(context).colorScheme.surface,
-                            width: 2.0,
+                        switch (state) {
+                          case 1:
+                            stateText = 'Warning';
+                            color = Colors.yellow[600]!;
+                            break;
+                          case 2:
+                            stateText = 'Critical';
+                            color = Colors.red;
+                            break;
+                          case 3:
+                            stateText = 'UNKNOWN';
+                            color = Colors.orange;
+                            break;
+                          default:
+                            return Container(); // Return an empty container if the state is not 1, 2, or 3
+                        }
+                        return Container(
+                          margin: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(8.0),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10.0),
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.surface,
+                              width: 2.0,
+                            ),
                           ),
-                        ),
-                        child: ListTile(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    ServiceActionScreen(service: service),
+                          child: Stack(children: [
+                            ListTile(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        ServiceActionScreen(service: service),
+                                  ),
+                                );
+                              },
+                              title: Text(
+                                service['extensions']['host_name'],
+                                style: TextStyle(
+                                  fontSize: 20.0, // adjust the size as needed
+                                  fontWeight:
+                                      FontWeight.bold, // makes the text thicker
+                                ),
                               ),
-                            );
-                          },
-                          title: Text(service['extensions']['host_name']),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Service: $description'),
-                              Text(
-                                  'Current Attempt: ${service['extensions']['current_attempt']}/${service['extensions']['max_check_attempts']}'),
-                              Text(
-                                  'Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_check'] * 1000))}'),
-                              Text(
-                                  'Last Time OK: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_time_ok'] * 1000))}'),
-                            ],
-                          ),
-                          trailing: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  service['extensions']['acknowledged'] == 1
-                                      ? Icon(Icons.check_circle,
-                                          color: Colors.green)
-                                      : Container(),
+                                  RichText(
+                                    text: TextSpan(
+                                      text: 'Service: ',
+                                      style: DefaultTextStyle.of(context)
+                                          .style
+                                          .copyWith(
+                                              fontWeight: FontWeight.bold),
+                                      children: <TextSpan>[
+                                        TextSpan(
+                                            text: description,
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.normal)),
+                                      ],
+                                    ),
+                                  ),
+                                  RichText(
+                                    text: TextSpan(
+                                      text: 'Output: ',
+                                      style: DefaultTextStyle.of(context)
+                                          .style
+                                          .copyWith(
+                                              fontWeight: FontWeight.bold),
+                                      children: <TextSpan>[
+                                        TextSpan(
+                                          text: () {
+                                            String output =
+                                                service['extensions']
+                                                    ['plugin_output'];
+                                            if (output.length > 50) {
+                                              // adjust the length as needed
+                                              output = output.substring(0, 50) +
+                                                  '...';
+                                            }
+                                            return output;
+                                          }(),
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.normal),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  RichText(
+                                    text: TextSpan(
+                                      text: 'Current Attempt: ',
+                                      style: DefaultTextStyle.of(context)
+                                          .style
+                                          .copyWith(
+                                              fontWeight: FontWeight.bold),
+                                      children: <TextSpan>[
+                                        TextSpan(
+                                            text:
+                                                '${service['extensions']['current_attempt']}/${service['extensions']['max_check_attempts']}',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.normal)),
+                                      ],
+                                    ),
+                                  ),
+                                  RichText(
+                                    text: TextSpan(
+                                      text: 'Last Check: ',
+                                      style: DefaultTextStyle.of(context)
+                                          .style
+                                          .copyWith(
+                                              fontWeight: FontWeight.bold),
+                                      children: <TextSpan>[
+                                        TextSpan(
+                                            text:
+                                                '${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_check'] * 1000))}',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.normal)),
+                                      ],
+                                    ),
+                                  ),
+                                  RichText(
+                                    text: TextSpan(
+                                      text: 'Last Time OK: ',
+                                      style: DefaultTextStyle.of(context)
+                                          .style
+                                          .copyWith(
+                                              fontWeight: FontWeight.bold),
+                                      children: <TextSpan>[
+                                        TextSpan(
+                                            text:
+                                                '${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_time_ok'] * 1000))}',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.normal)),
+                                      ],
+                                    ),
+                                  ),
                                 ],
                               ),
-                              Row(
+                              trailing: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      service['extensions']['acknowledged'] == 1
+                                          ? Icon(Icons.check_circle,
+                                              color: Colors.green)
+                                          : Container(),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Positioned(
+                              top: 5,
+                              right: 10,
+                              child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(Icons.warning, color: color),
@@ -361,16 +468,19 @@ class _ServiceScreenState extends State<ServiceScreen> {
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+                            ),
+                          ]),
+                        );
+                      },
+                    ),
                   ),
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'reloadCriticalServices',
-        onPressed: _getService,
+        onPressed: () {
+          _getService;
+          _refreshIndicatorKey.currentState?.show();
+        },
         tooltip: 'Refresh',
         child: Icon(Icons.refresh),
         backgroundColor: Theme.of(context).colorScheme.surface,

@@ -23,6 +23,7 @@ dependencies:
   url_launcher: ^6.2.0
   flutter_svg: ^2.0.0
   shared_preferences: ^2.0.8
+  encrypt: ^5.0.1
 
 dev_dependencies:
   flutter_launcher_icons: "^0.13.1"

@@ -4,8 +4,7 @@ import 'package:ptp_4_monitoring_app/actions/service/AcknowledgeService.dart';
 import 'package:ptp_4_monitoring_app/actions/service/CommentService.dart';
 import 'package:ptp_4_monitoring_app/actions/service/DowntimeService.dart';
 import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
-
-import '../../services/secureStorage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ServiceActionScreen extends StatefulWidget {
   final dynamic service;
@@ -20,7 +19,9 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
   dynamic _service;
   String _dateFormat = 'dd.MM.yyyy, HH:mm';
   String _locale = 'de_DE';
-  var secureStorage = SecureStorage();
+
+  // Add a ScrollController
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -31,9 +32,9 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
   }
 
   void _loadDateFormatAndLocale() async {
-    _dateFormat =
-        await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
-    _locale = await secureStorage.readSecureData('locale') ?? 'de_DE';
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _dateFormat = prefs.getString('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
+    _locale = prefs.getString('locale') ?? 'de_DE';
   }
 
   void recheckService() {
@@ -72,7 +73,7 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
   Future<void> _getService() async {
     var api = ApiRequest();
     var data = await api.Request(
-        'domain-types/service/collections/all?query=%7B%22op%22%3A%20%22!%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=state&columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged');
+        'domain-types/service/collections/all?query=%7B%22op%22%3A%20%22!%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=state&columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged&columns=plugin_output');
 
     var services = data['value'];
     _service = services.firstWhere(
@@ -141,11 +142,19 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
                   children: <Widget>[
                     ListTile(
                       leading: stateIcon,
-                      title: Text(service['extensions']['host_name']),
+                      title: Text(
+                        service['extensions']['host_name'],
+                        style: TextStyle(
+                          fontSize: 20.0, // adjust the size as needed
+                          fontWeight: FontWeight.bold, // makes the text thicker
+                        ),
+                      ),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text('Service: $description'),
+                          Text(
+                              'Output: ${service['extensions']['plugin_output']}'),
                           Text(
                               'Current Attempt: ${service['extensions']['current_attempt']}/${service['extensions']['max_check_attempts']}'),
                           Text(
@@ -192,6 +201,11 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
                         ),
                       ],
                     ),
+                    SizedBox(height: 20),
+                    Divider(
+                      color: Colors.grey,
+                      height: 2.0,
+                    ),
                     Expanded(
                       child: FutureBuilder<List<dynamic>>(
                         future: _getComments(),
@@ -202,32 +216,36 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
                           } else if (snapshot.hasError) {
                             return Text('Error: ${snapshot.error}');
                           } else {
-                            return ListView.builder(
-                              itemCount: snapshot.data?.length ?? 0,
-                              itemBuilder: (context, index) {
-                                var comment = snapshot.data?[index];
-                                return ListTile(
-                                  title: Text(
-                                      'Author: ${comment['extensions']['author']}'),
-                                  subtitle: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                          'Comment: ${comment['extensions']['comment']}'),
-                                      Text(
-                                          'Persistent: ${comment['extensions']['persistent'] ? 'Yes' : 'No'}'),
-                                      Text(
-                                          'Entry Time: ${comment['extensions']['entry_time']}'),
-                                      if (comment['extensions']
-                                              ['expire_time'] !=
-                                          null)
+                            return Scrollbar(
+                              controller: _scrollController,
+                              child: ListView.builder(
+                                controller: _scrollController,
+                                itemCount: snapshot.data?.length ?? 0,
+                                itemBuilder: (context, index) {
+                                  var comment = snapshot.data?[index];
+                                  return ListTile(
+                                    title: Text(
+                                        'Author: ${comment['extensions']['author']}'),
+                                    subtitle: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
                                         Text(
-                                            'Expire Time: ${comment['extensions']['expire_time']}'),
-                                    ],
-                                  ),
-                                );
-                              },
+                                            'Comment: ${comment['extensions']['comment']}'),
+                                        Text(
+                                            'Persistent: ${comment['extensions']['persistent'] ? 'Yes' : 'No'}'),
+                                        Text(
+                                            'Entry Time: ${comment['extensions']['entry_time']}'),
+                                        if (comment['extensions']
+                                                ['expire_time'] !=
+                                            null)
+                                          Text(
+                                              'Expire Time: ${comment['extensions']['expire_time']}'),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
                             );
                           }
                         },

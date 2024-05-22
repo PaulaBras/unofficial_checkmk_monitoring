@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ptp_4_monitoring_app/screens/main/HostActionScreen.dart';
 import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../services/secureStorage.dart';
+import '../notify/notify.dart';
 
 enum HostState { OK, Warning, Critical, Unknown }
 
@@ -141,8 +142,12 @@ class _HostScreenState extends State<HostScreen> {
   Timer? _timer;
   String _dateFormat = 'dd.MM.yyyy, HH:mm';
   String _locale = 'de_DE';
-  var secureStorage = SecureStorage();
   String? _error;
+
+  final ScrollController _scrollController = ScrollController();
+
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
+      GlobalKey<RefreshIndicatorState>();
 
   @override
   void initState() {
@@ -153,9 +158,9 @@ class _HostScreenState extends State<HostScreen> {
   }
 
   void _loadDateFormatAndLocale() async {
-    _dateFormat =
-        await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
-    _locale = await secureStorage.readSecureData('locale') ?? 'de_DE';
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _dateFormat = prefs.getString('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
+    _locale = prefs.getString('locale') ?? 'de_DE';
   }
 
   @override
@@ -189,6 +194,7 @@ class _HostScreenState extends State<HostScreen> {
         }
       });
     }
+    NotificationService().checkTimer();
   }
 
   void _filterHosts() {
@@ -248,6 +254,7 @@ class _HostScreenState extends State<HostScreen> {
         ],
       ),
       body: RefreshIndicator(
+        key: _refreshIndicatorKey,
         onRefresh: _getHosts,
         child: _error != null
             ? Center(child: Text(_error!))
@@ -257,102 +264,178 @@ class _HostScreenState extends State<HostScreen> {
                         ? CircularProgressIndicator()
                         : Text('No services with selected status'),
                   )
-                : ListView.builder(
-                    itemCount: sortedHosts.length,
-                    itemBuilder: (context, index) {
-                      var host = sortedHosts[index];
-                      var state = host['extensions']['state'];
-                      String stateText;
-                      Icon stateIcon;
-                      Color color;
-                      switch (state) {
-                        case 0:
-                          stateText = 'OK';
-                          color = Colors.green;
-                          stateIcon =
-                              Icon(Icons.check_circle, color: Colors.green);
-                          break;
-                        // For testing only
-                        case 1:
-                          stateText = 'Warning';
-                          stateIcon = Icon(Icons.warning, color: Colors.yellow);
-                          color = Colors.yellow;
-                          break;
-                        case 2:
-                          stateText = 'Critical';
-                          stateIcon = Icon(Icons.error, color: Colors.red);
-                          color = Colors.red;
-                          break;
-                        case 3:
-                          stateText = 'UNKNOWN';
-                          stateIcon =
-                              Icon(Icons.help_outline, color: Colors.orange);
-                          color = Colors.orange;
-                          break;
-                        default:
-                          return Container(); // Return an empty container if the state is not 1, 2, or 3
-                      }
+                : Scrollbar(
+                    controller: _scrollController,
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      itemCount: sortedHosts.length,
+                      itemBuilder: (context, index) {
+                        var host = sortedHosts[index];
+                        var state = host['extensions']['state'];
+                        String stateText;
+                        Icon stateIcon;
+                        Color color;
+                        switch (state) {
+                          case 0:
+                            stateText = 'OK';
+                            color = Colors.green;
+                            stateIcon =
+                                Icon(Icons.check_circle, color: Colors.green);
+                            break;
+                          // For testing only
+                          case 1:
+                            stateText = 'Warning';
+                            stateIcon =
+                                Icon(Icons.warning, color: Colors.yellow);
+                            color = Colors.yellow;
+                            break;
+                          case 2:
+                            stateText = 'Critical';
+                            stateIcon = Icon(Icons.error, color: Colors.red);
+                            color = Colors.red;
+                            break;
+                          case 3:
+                            stateText = 'UNKNOWN';
+                            stateIcon =
+                                Icon(Icons.help_outline, color: Colors.orange);
+                            color = Colors.orange;
+                            break;
+                          default:
+                            return Container(); // Return an empty container if the state is not 1, 2, or 3
+                        }
 
-                      return Container(
-                        margin: const EdgeInsets.all(8.0),
-                        padding: const EdgeInsets.all(8.0),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10.0),
-                          border: Border.all(
-                            color: Theme.of(context).colorScheme.surface,
-                            width: 2.0,
+                        return Container(
+                          margin: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(8.0),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10.0),
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.surface,
+                              width: 2.0,
+                            ),
                           ),
-                        ),
-                        child: ListTile(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => HostActionScreen(
-                                  host: host,
+                          child: ListTile(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => HostActionScreen(
+                                    host: host,
+                                  ),
                                 ),
+                              );
+                            },
+                            title: Text(
+                              host['extensions']['name'],
+                              style: TextStyle(
+                                fontSize: 20.0, // adjust the size as needed
+                                fontWeight:
+                                    FontWeight.bold, // makes the text thicker
                               ),
-                            );
-                          },
-                          title: Text(host['extensions']['name']),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Address: ${host['extensions']['address']}'),
-                              Text(
-                                'Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_check'] * 1000))}',
-                              ),
-                              Text(
-                                'Last Time Up: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_time_up'] * 1000))}',
-                              ),
-                              Text(
-                                  'Total Services: ${host['extensions']['total_services']}'),
-                              Text(
-                                  'Acknowledged: ${host['extensions']['acknowledged'] == 1 ? 'Yes' : 'No'}'),
-                            ],
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                RichText(
+                                  text: TextSpan(
+                                    text: 'Address: ',
+                                    style: DefaultTextStyle.of(context)
+                                        .style
+                                        .copyWith(fontWeight: FontWeight.bold),
+                                    children: <TextSpan>[
+                                      TextSpan(
+                                          text:
+                                              '${host['extensions']['address']}',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.normal)),
+                                    ],
+                                  ),
+                                ),
+                                RichText(
+                                  text: TextSpan(
+                                    text: 'Last Check: ',
+                                    style: DefaultTextStyle.of(context)
+                                        .style
+                                        .copyWith(fontWeight: FontWeight.bold),
+                                    children: <TextSpan>[
+                                      TextSpan(
+                                          text:
+                                              '${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_check'] * 1000))}',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.normal)),
+                                    ],
+                                  ),
+                                ),
+                                RichText(
+                                  text: TextSpan(
+                                    text: 'Last Time Up: ',
+                                    style: DefaultTextStyle.of(context)
+                                        .style
+                                        .copyWith(fontWeight: FontWeight.bold),
+                                    children: <TextSpan>[
+                                      TextSpan(
+                                          text:
+                                              '${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_time_up'] * 1000))}',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.normal)),
+                                    ],
+                                  ),
+                                ),
+                                RichText(
+                                  text: TextSpan(
+                                    text: 'Total Services: ',
+                                    style: DefaultTextStyle.of(context)
+                                        .style
+                                        .copyWith(fontWeight: FontWeight.bold),
+                                    children: <TextSpan>[
+                                      TextSpan(
+                                          text:
+                                              '${host['extensions']['total_services']}',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.normal)),
+                                    ],
+                                  ),
+                                ),
+                                RichText(
+                                  text: TextSpan(
+                                    text: 'Acknowledged: ',
+                                    style: DefaultTextStyle.of(context)
+                                        .style
+                                        .copyWith(fontWeight: FontWeight.bold),
+                                    children: <TextSpan>[
+                                      TextSpan(
+                                          text:
+                                              '${host['extensions']['acknowledged'] == 1 ? 'Yes' : 'No'}',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.normal)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                stateIcon,
+                                Text(
+                                  stateText,
+                                  style: TextStyle(color: color),
+                                ),
+                              ],
+                            ),
                           ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              stateIcon,
-                              Text(
-                                stateText,
-                                style: TextStyle(color: color),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _getHosts,
+        onPressed: () {
+          _getHosts;
+          _refreshIndicatorKey.currentState?.show();
+        },
         tooltip: 'Refresh',
-        child: const Icon(
-          Icons.refresh,
-          color: Colors.black,
-        ),
+        child: Icon(Icons.refresh),
         backgroundColor: Theme.of(context).colorScheme.surface,
       ),
     );
