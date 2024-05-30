@@ -32,12 +32,13 @@ class _HostServiceScreenState extends State<HostServiceScreen> {
 
   Future<void> _getService() async {
     var api = ApiRequest();
-    var data = await api.Request(
-        'objects/host/${widget.hostName}/collections/services?columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged&columns=state&columns=comments&columns=is_flapping');
+    var data = await api.Request('objects/host/${widget.hostName}/collections/services?columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged&columns=state&columns=comments&columns=is_flapping');
 
     if (data == null) {
       Navigator.pop(context);
     } else {
+      data['value'].sort((a, b) => (a['extensions']['description'] as String).compareTo(b['extensions']['description'] as String));
+
       setState(() {
         _service = data;
       });
@@ -57,9 +58,7 @@ class _HostServiceScreenState extends State<HostServiceScreen> {
               itemBuilder: (context, index) {
                 var service = _service['value'][index];
                 var state = service['extensions']['state'];
-                var lastCheck = DateFormat(_dateFormat, _locale).format(
-                    DateTime.fromMillisecondsSinceEpoch(
-                        service['extensions']['last_check'] * 1000));
+                var lastCheck = DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_check'] * 1000));
                 String stateText;
                 Icon stateIcon;
                 Color color;
@@ -96,7 +95,7 @@ class _HostServiceScreenState extends State<HostServiceScreen> {
                   children: <Widget>[
                     ListTile(
                       leading: stateIcon,
-                      title: Text(service['extensions']['host_name']),
+                      title: Text(service['extensions']['description']),
                       subtitle: state == 0
                           ? Text('State: $stateText\nLast Check: $lastCheck')
                           : Text('State: $stateText\n'
@@ -119,8 +118,7 @@ class _HostServiceScreenState extends State<HostServiceScreen> {
           Icons.refresh,
           color: Colors.black, // Make the icon black
         ),
-        backgroundColor:
-            Theme.of(context).canvasColor, // Keep the button yellow
+        backgroundColor: Theme.of(context).canvasColor, // Keep the button yellow
       ),
     );
   }
