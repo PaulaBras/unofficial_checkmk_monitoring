@@ -114,11 +114,8 @@ class _HostServiceScreenState extends State<HostServiceScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: _getService,
         tooltip: 'Refresh',
-        child: const Icon(
-          Icons.refresh,
-          color: Colors.black, // Make the icon black
-        ),
-        backgroundColor: Theme.of(context).canvasColor, // Keep the button yellow
+        child: Icon(Icons.refresh),
+        backgroundColor: Theme.of(context).colorScheme.surface,
       ),
     );
   }
