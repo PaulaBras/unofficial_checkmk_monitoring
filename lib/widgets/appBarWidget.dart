@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../screens/myHomePage.dart';
+
 class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onTapLogo;
 
@@ -18,8 +20,10 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
       leading: GestureDetector(
         onTap: () {
           onTapLogo();
-          Navigator.pushNamed(
-              context, 'home_screen'); // Navigate to the main screen
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => MyHomePage()),
+          );
         },
         child: Container(
           margin: const EdgeInsets.all(10.0),

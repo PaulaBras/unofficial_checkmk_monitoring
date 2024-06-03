@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:ptp_4_monitoring_app/screens/dashboard/dashboard.dart';
 import 'package:ptp_4_monitoring_app/screens/main/HostScreen.dart';
 import 'package:ptp_4_monitoring_app/screens/main/ServiceScreen.dart';
 import 'package:ptp_4_monitoring_app/screens/setup/setupScreen.dart';
@@ -29,6 +30,7 @@ class _MyHomePageState extends State<MyHomePage> {
             body: IndexedStack(
               index: myHomePageLogic.currentIndex,
               children: [
+                DashboardScreen(),
                 ServiceScreen(),
                 HostScreen(),
                 SetupScreen(),

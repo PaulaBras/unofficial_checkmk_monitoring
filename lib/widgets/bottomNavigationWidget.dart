@@ -28,6 +28,10 @@ class BottomNavigationWidget extends StatelessWidget {
         child: BottomNavigationBar(
           items: const <BottomNavigationBarItem>[
             BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard),
+              label: 'Dashboard',
+            ),
+            BottomNavigationBarItem(
               icon: Icon(Icons.business),
               label: 'Services',
             ),
