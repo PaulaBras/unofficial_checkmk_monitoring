@@ -167,6 +167,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'reloadDashboardData',
         onPressed: fetchData,
         tooltip: 'Refresh',
         child: Icon(Icons.refresh),
