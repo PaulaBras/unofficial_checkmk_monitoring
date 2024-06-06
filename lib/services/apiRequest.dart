@@ -4,7 +4,8 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
-import 'package:ptp_4_monitoring_app/services/secureStorage.dart';
+
+import '/services/secureStorage.dart';
 
 class ApiRequest {
   bool _ignoreCertificate = false;

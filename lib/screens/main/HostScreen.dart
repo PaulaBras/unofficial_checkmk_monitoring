@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:ptp_4_monitoring_app/screens/main/HostActionScreen.dart';
-import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../notify/notify.dart';
+import '/screens/main/HostActionScreen.dart';
+import '/services/apiRequest.dart';
 
 enum HostState { OK, Warning, Critical, Unknown }
 

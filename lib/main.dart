@@ -7,19 +7,20 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:ptp_4_monitoring_app/colors.dart';
-import 'package:ptp_4_monitoring_app/screens/help/help.dart';
-import 'package:ptp_4_monitoring_app/screens/myHomePage.dart';
-import 'package:ptp_4_monitoring_app/screens/notify/notify.dart';
-import 'package:ptp_4_monitoring_app/screens/user/loginScreen.dart';
-import 'package:ptp_4_monitoring_app/screens/user/user.dart';
-import 'package:ptp_4_monitoring_app/screens/user/welcomeScreen.dart';
-import 'package:ptp_4_monitoring_app/services/notificationHandler.dart';
-import 'package:ptp_4_monitoring_app/services/secureStorage.dart';
-import 'package:ptp_4_monitoring_app/services/themeNotifier.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+
+import 'colors.dart';
+import 'screens/help/help.dart';
+import 'screens/myHomePage.dart';
+import 'screens/notify/notify.dart';
+import 'screens/user/loginScreen.dart';
+import 'screens/user/user.dart';
+import 'screens/user/welcomeScreen.dart';
+import 'services/notificationHandler.dart';
+import 'services/secureStorage.dart';
+import 'services/themeNotifier.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();

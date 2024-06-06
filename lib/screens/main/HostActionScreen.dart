@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:ptp_4_monitoring_app/actions/host/AcknowledgeHost.dart';
-import 'package:ptp_4_monitoring_app/actions/host/CommentHost.dart';
-import 'package:ptp_4_monitoring_app/actions/host/DowntimeHost.dart';
-import 'package:ptp_4_monitoring_app/screens/main/HostServicesScreen.dart';
-import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '/actions/host/AcknowledgeHost.dart';
+import '/actions/host/CommentHost.dart';
+import '/actions/host/DowntimeHost.dart';
+import '/screens/main/HostServicesScreen.dart';
+import '/services/apiRequest.dart';
 
 class HostActionScreen extends StatefulWidget {
   final dynamic host;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
+
+import '/services/apiRequest.dart';
 
 class CommentHostWidget extends StatefulWidget {
   final String hostName;

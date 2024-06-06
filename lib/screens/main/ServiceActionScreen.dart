@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:ptp_4_monitoring_app/actions/service/AcknowledgeService.dart';
-import 'package:ptp_4_monitoring_app/actions/service/CommentService.dart';
-import 'package:ptp_4_monitoring_app/actions/service/DowntimeService.dart';
-import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '/actions/service/AcknowledgeService.dart';
+import '/actions/service/CommentService.dart';
+import '/actions/service/DowntimeService.dart';
+import '/services/apiRequest.dart';
 
 class ServiceActionScreen extends StatefulWidget {
   final dynamic service;
@@ -162,10 +163,10 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
                           Text(
                               'Last Time OK: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_time_ok'] * 1000))}'),
                           Text(
-                              'Is Flapping: ${isFlapping == 1 ? 'Yes' : 'No'}'), // Display is_flapping
-                          if (isFlapping == 1)
-                            Icon(Icons
-                                .waves), // Display wave icon if is_flapping is 1
+                              'Is Flapping: ${isFlapping == 1 ? 'Yes' : 'No'}'),
+                          // Display is_flapping
+                          if (isFlapping == 1) Icon(Icons.waves),
+                          // Display wave icon if is_flapping is 1
                         ],
                       ),
                     ),

@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:ptp_4_monitoring_app/screens/dashboard/dashboard.dart';
-import 'package:ptp_4_monitoring_app/screens/main/HostScreen.dart';
-import 'package:ptp_4_monitoring_app/screens/main/ServiceScreen.dart';
-import 'package:ptp_4_monitoring_app/screens/setup/setupScreen.dart';
-import 'package:ptp_4_monitoring_app/widgets/appBarWidget.dart';
-import 'package:ptp_4_monitoring_app/widgets/bottomNavigationWidget.dart';
-import 'package:ptp_4_monitoring_app/widgets/settingsDrawer.dart';
+
+import '/screens/dashboard/dashboard.dart';
+import '/screens/main/HostScreen.dart';
+import '/screens/main/ServiceScreen.dart';
+import '/screens/setup/setupScreen.dart';
+import '/widgets/appBarWidget.dart';
+import '/widgets/bottomNavigationWidget.dart';
+import '/widgets/settingsDrawer.dart';
 
 class MyHomePage extends StatefulWidget {
   static const String id = 'my_home_page';
