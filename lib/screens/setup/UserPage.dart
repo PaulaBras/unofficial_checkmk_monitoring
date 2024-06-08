@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
 
 import '../../services/secureStorage.dart';
+import '/services/apiRequest.dart';
 
 class UserConfig extends StatefulWidget {
   @override

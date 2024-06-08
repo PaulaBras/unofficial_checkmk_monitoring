@@ -3,7 +3,11 @@ import 'dart:io';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:unofficial_checkmk_monitoring/services/apiRequest.dart';
+import 'package:unofficial_checkmk_monitoring/services/secureStorage.dart';
 
+import '../../models/credentials.dart';
+import '../../services/authService.dart';
 import '../../services/notificationHandler.dart';
 import 'notifyServiceCheck.dart';
 
@@ -91,14 +95,32 @@ class NotificationService {
   }
 
   void start() {
-    _timer = Timer.periodic(Duration(seconds: 5), (timer) => _checkServices());
+    _timer = Timer.periodic(Duration(seconds: 60), (timer) => _checkServices());
+  }
+
+  bool isRunning() {
+    return _timer != null && _timer!.isActive;
   }
 
   Future<void> _checkServices() async {
     try {
+      // Initialize the AuthenticationService
+      AuthenticationService authService =
+          AuthenticationService(SecureStorage(), ApiRequest());
+
+      // Load the credentials
+      Credentials? credentials = await authService.loadCredentials();
+
+      // If credentials are available, stop the service and return
+      if (credentials != null) {
+        stop();
+        return;
+      }
+
       await notificationServiceCheck.checkServices();
       var errorMessage = notificationServiceCheck.getErrorMessage();
       if (errorMessage != null) {
+        // Handle the error here
       } else {
         // Restart the timer if it was stopped
         if (_timer == null || !_timer!.isActive) {

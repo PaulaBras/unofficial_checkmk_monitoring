@@ -1,6 +1,5 @@
-import 'package:ptp_4_monitoring_app/services/secureStorage.dart';
-
 import '../models/credentials.dart';
+import '/services/secureStorage.dart';
 import 'apiRequest.dart';
 
 class AuthenticationService {

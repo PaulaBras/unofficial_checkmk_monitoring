@@ -1,4 +1,4 @@
-package rhkoeln.de.ptp_4_monitoring_app
+package com.checkmk.unofficial_checkmk_monitoring
 
 import io.flutter.embedding.android.FlutterActivity
 

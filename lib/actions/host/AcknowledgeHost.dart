@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:ptp_4_monitoring_app/services/apiRequest.dart';
+
+import '/services/apiRequest.dart';
 
 class AcknowledgeHostForm extends StatefulWidget {
   final dynamic service;
@@ -31,7 +32,14 @@ class _AcknowledgeHostFormState extends State<AcknowledgeHostForm> {
     var data = await api.Request(
       'domain-types/acknowledge/collections/host',
       method: 'POST',
-      body: {"acknowledge_type": "host", "sticky": _sticky, "persistent": _persistent, "notify": _notify, "comment": _commentController.text, "host_name": _hostNameController.text},
+      body: {
+        "acknowledge_type": "host",
+        "sticky": _sticky,
+        "persistent": _persistent,
+        "notify": _notify,
+        "comment": _commentController.text,
+        "host_name": _hostNameController.text
+      },
     );
 
     if (data == true) {
@@ -102,7 +110,8 @@ class _AcknowledgeHostFormState extends State<AcknowledgeHostForm> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          if (_formKey.currentState != null && _formKey.currentState!.validate()) {
+          if (_formKey.currentState != null &&
+              _formKey.currentState!.validate()) {
             acknowledgeHost();
           }
         },

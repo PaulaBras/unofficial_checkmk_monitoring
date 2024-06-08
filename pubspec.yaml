@@ -1,5 +1,5 @@
-name: ptp_4_monitoring_app
-description: "checkmk for RH Köln"
+name: unofficial_checkmk_monitoring
+description: "Unofficial CheckMK Monitoring"
 
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
@@ -24,6 +24,7 @@ dependencies:
   flutter_svg: ^2.0.0
   shared_preferences: ^2.0.8
   encrypt: ^5.0.1
+  flutter_background: ^1.2.0
 
 dev_dependencies:
   flutter_launcher_icons: "^0.13.1"

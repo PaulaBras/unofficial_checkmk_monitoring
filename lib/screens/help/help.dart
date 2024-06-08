@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:ptp_4_monitoring_app/screens/help/InfoPage.dart';
-import 'package:ptp_4_monitoring_app/screens/myHomePage.dart';
-import 'package:ptp_4_monitoring_app/widgets/appBarWidget.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '/screens/help/InfoPage.dart';
+import '/screens/myHomePage.dart';
+import '/widgets/appBarWidget.dart';
 
 class HelpScreen extends StatefulWidget {
   const HelpScreen({super.key});

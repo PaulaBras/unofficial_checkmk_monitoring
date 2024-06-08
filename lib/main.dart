@@ -2,24 +2,26 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_background/flutter_background.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:ptp_4_monitoring_app/colors.dart';
-import 'package:ptp_4_monitoring_app/screens/help/help.dart';
-import 'package:ptp_4_monitoring_app/screens/myHomePage.dart';
-import 'package:ptp_4_monitoring_app/screens/notify/notify.dart';
-import 'package:ptp_4_monitoring_app/screens/user/loginScreen.dart';
-import 'package:ptp_4_monitoring_app/screens/user/user.dart';
-import 'package:ptp_4_monitoring_app/screens/user/welcomeScreen.dart';
-import 'package:ptp_4_monitoring_app/services/notificationHandler.dart';
-import 'package:ptp_4_monitoring_app/services/secureStorage.dart';
-import 'package:ptp_4_monitoring_app/services/themeNotifier.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+
+import 'colors.dart';
+import 'screens/help/help.dart';
+import 'screens/myHomePage.dart';
+import 'screens/notify/notify.dart';
+import 'screens/user/loginScreen.dart';
+import 'screens/user/user.dart';
+import 'screens/user/welcomeScreen.dart';
+import 'services/notificationHandler.dart';
+import 'services/secureStorage.dart';
+import 'services/themeNotifier.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -49,22 +51,36 @@ void main() async {
 
   await _configureLocalTimeZone();
 
-  // Initialize the global notificationService variable
-  notificationService = NotificationService();
-
-  // Request notification permissions
-  await notificationService!.requestNotificationsPermission();
-
-  // Start the notification service
-  notificationService!.start();
-
-  // handle notification selection
-  selectNotificationStream.stream.listen((String? payload) async {
-    // Handle the user's response to the notification here
-    print('Notification selected with payload: $payload');
-  });
-
   SecureStorage storage = SecureStorage();
+
+  // Initialize the FlutterBackground plugin
+  final bool success = await FlutterBackground.initialize(
+      androidConfig: FlutterBackgroundAndroidConfig(
+    notificationTitle: "Unofficial CheckMK Monitoring App",
+    notificationText: "Monitoring in the background",
+    notificationIcon:
+        AndroidResource(name: 'launcher_icon', defType: 'drawable'),
+  ));
+
+  if (success) {
+    // Initialize the global notificationService variable
+    notificationService = NotificationService();
+
+    // Request notification permissions
+    await notificationService!.requestNotificationsPermission();
+
+    notificationService!.start();
+
+    // handle notification selection
+    selectNotificationStream.stream.listen((String? payload) async {
+      // Handle the user's response to the notification here
+      print('Notification selected with payload: $payload');
+    });
+
+    // Enable the background execution
+    await FlutterBackground.enableBackgroundExecution();
+  }
+
   SharedPreferences prefs = await SharedPreferences.getInstance();
 
   if (prefs.getBool('firstRun') ?? true) {

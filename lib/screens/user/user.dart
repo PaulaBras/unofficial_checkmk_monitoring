@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:provider/provider.dart';
-import 'package:ptp_4_monitoring_app/screens/myHomePage.dart';
-import 'package:ptp_4_monitoring_app/screens/user/loginScreen.dart'; // Import the login screen
-import 'package:ptp_4_monitoring_app/services/themeNotifier.dart';
-import 'package:ptp_4_monitoring_app/widgets/appBarWidget.dart';
 
 import '../../services/apiRequest.dart';
 import '../../services/authService.dart';
 import '../../services/secureStorage.dart';
+import '/screens/myHomePage.dart';
+import '/screens/user/loginScreen.dart';
+import '/services/themeNotifier.dart';
+import '/widgets/appBarWidget.dart';
 
 class UserScreen extends StatefulWidget {
   const UserScreen({super.key});
