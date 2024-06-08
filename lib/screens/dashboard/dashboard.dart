@@ -135,7 +135,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center, // Center the row
                 children: <Widget>[
-                  Text("Services: "),
+                  Text("Hosts: "),
                   StateWidget(count: hostOk, color: Colors.green),
                   StateWidget(
                       count: hostWarn,

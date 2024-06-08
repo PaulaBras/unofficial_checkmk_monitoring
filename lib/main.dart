@@ -116,6 +116,7 @@ class MyApp extends StatelessWidget {
       themeMode: themeNotifier.darkTheme ? ThemeMode.dark : ThemeMode.light,
       initialRoute: welcomeScreenId,
       onGenerateRoute: getRoute,
+      debugShowCheckedModeBanner: false,
     );
   }
 
