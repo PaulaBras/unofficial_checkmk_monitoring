@@ -61,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Login failed. Please check your credentials.')),
       );
-      Navigator.pushNamed(context, 'home_screen');
+      Navigator.pushNamed(context, 'login_screen');
     }
   }
 

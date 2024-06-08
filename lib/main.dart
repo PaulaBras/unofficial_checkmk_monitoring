@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_background/flutter_background.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -50,22 +51,36 @@ void main() async {
 
   await _configureLocalTimeZone();
 
-  // Initialize the global notificationService variable
-  notificationService = NotificationService();
-
-  // Request notification permissions
-  await notificationService!.requestNotificationsPermission();
-
-  // Start the notification service
-  notificationService!.start();
-
-  // handle notification selection
-  selectNotificationStream.stream.listen((String? payload) async {
-    // Handle the user's response to the notification here
-    print('Notification selected with payload: $payload');
-  });
-
   SecureStorage storage = SecureStorage();
+
+  // Initialize the FlutterBackground plugin
+  final bool success = await FlutterBackground.initialize(
+      androidConfig: FlutterBackgroundAndroidConfig(
+    notificationTitle: "Unofficial CheckMK Monitoring App",
+    notificationText: "Monitoring in the background",
+    notificationIcon:
+        AndroidResource(name: 'launcher_icon', defType: 'drawable'),
+  ));
+
+  if (success) {
+    // Initialize the global notificationService variable
+    notificationService = NotificationService();
+
+    // Request notification permissions
+    await notificationService!.requestNotificationsPermission();
+
+    notificationService!.start();
+
+    // handle notification selection
+    selectNotificationStream.stream.listen((String? payload) async {
+      // Handle the user's response to the notification here
+      print('Notification selected with payload: $payload');
+    });
+
+    // Enable the background execution
+    await FlutterBackground.enableBackgroundExecution();
+  }
+
   SharedPreferences prefs = await SharedPreferences.getInstance();
 
   if (prefs.getBool('firstRun') ?? true) {
