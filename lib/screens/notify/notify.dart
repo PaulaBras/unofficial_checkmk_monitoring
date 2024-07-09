@@ -194,6 +194,7 @@ class NotificationService {
       final bool? grantedNotificationPermission =
           await androidImplementation?.requestNotificationsPermission();
       _notificationsEnabled = grantedNotificationPermission ?? false;
+      await androidImplementation?.requestExactAlarmsPermission();
     }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('notificationsEnabled', _notificationsEnabled);
