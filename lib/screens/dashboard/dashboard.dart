@@ -12,10 +12,7 @@ class StateWidget extends StatelessWidget {
   final Color color;
   final Color textColor;
 
-  StateWidget(
-      {required this.count,
-      required this.color,
-      this.textColor = Colors.white});
+  StateWidget({required this.count, required this.color, this.textColor = Colors.white});
 
   @override
   Widget build(BuildContext context) {
@@ -47,9 +44,8 @@ class StateWidget extends StatelessWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int hostOk = 0;
-  int hostWarn = 0;
-  int hostCrit = 0;
-  int hostUnknown = 0;
+  int hostDown = 0;
+  int hostUnreach = 0;
   int totalHosts = 0;
   double percentageHostOk = 0;
   double percentageHostWarn = 0;
@@ -74,40 +70,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> fetchData() async {
     var api = ApiRequest();
-    var hostResponse =
-        await api.Request('domain-types/host/collections/all?columns=state');
-    var serviceResponse =
-        await api.Request('domain-types/service/collections/all?columns=state');
+    var hostResponse = await api.Request('domain-types/host/collections/all?columns=state');
+    var serviceResponse = await api.Request('domain-types/service/collections/all?columns=state');
 
     if (hostResponse != null && serviceResponse != null) {
       var hostData = hostResponse['value'];
       var serviceData = serviceResponse['value'];
 
       // Parse the host data and update the state counts
-      hostOk =
-          hostData.where((item) => item['extensions']['state'] == 0).length;
-      hostWarn =
-          hostData.where((item) => item['extensions']['state'] == 1).length;
-      hostCrit =
-          hostData.where((item) => item['extensions']['state'] == 2).length;
-      hostUnknown = hostData.length - hostOk - hostWarn - hostCrit;
-      totalHosts = hostOk + hostWarn + hostCrit + hostUnknown;
+      hostOk = hostData.where((item) => item['extensions']['state'] == 0).length;
+      hostDown = hostData.where((item) => item['extensions']['state'] == 1).length;
+      totalHosts = hostOk + hostDown + hostUnreach;
       if (totalHosts != 0) {
         percentageHostOk = hostOk / totalHosts;
-        percentageHostWarn = hostWarn / totalHosts;
-        percentageHostCrit = hostCrit / totalHosts;
-        percentageHostUnknown = hostUnknown / totalHosts;
+        percentageHostWarn = hostDown / totalHosts;
+        percentageHostCrit = hostUnreach / totalHosts;
       }
 
       // Parse the service data and update the state counts
-      serviceOk =
-          serviceData.where((item) => item['extensions']['state'] == 0).length;
-      serviceWarn =
-          serviceData.where((item) => item['extensions']['state'] == 1).length;
-      serviceCrit =
-          serviceData.where((item) => item['extensions']['state'] == 2).length;
-      serviceUnknown =
-          serviceData.length - serviceOk - serviceWarn - serviceCrit;
+      serviceOk = serviceData.where((item) => item['extensions']['state'] == 0).length;
+      serviceWarn = serviceData.where((item) => item['extensions']['state'] == 1).length;
+      serviceCrit = serviceData.where((item) => item['extensions']['state'] == 2).length;
+      serviceUnknown = serviceData.length - serviceOk - serviceWarn - serviceCrit;
       totalServices = serviceOk + serviceWarn + serviceCrit + serviceUnknown;
       if (totalServices != 0) {
         percentageServiceOk = serviceOk / totalServices;
@@ -133,16 +117,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             children: <Widget>[
               Row(
-                mainAxisAlignment: MainAxisAlignment.center, // Center the row
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Text("Hosts: "),
                   StateWidget(count: hostOk, color: Colors.green),
-                  StateWidget(
-                      count: hostWarn,
-                      color: Colors.yellow,
-                      textColor: Colors.black), // Make the text color black
-                  StateWidget(count: hostCrit, color: Colors.red),
-                  StateWidget(count: hostUnknown, color: Colors.orange),
+                  StateWidget(count: hostDown, color: Colors.black, textColor: Colors.white), // DOWN
+                  StateWidget(count: hostUnreach, color: Colors.deepPurple, textColor: Colors.white), // UNREACH
                 ],
               ),
               SizedBox(height: 20), // Add some space between the rows
@@ -151,10 +131,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: <Widget>[
                   Text("Services: "),
                   StateWidget(count: serviceOk, color: Colors.green),
-                  StateWidget(
-                      count: serviceWarn,
-                      color: Colors.yellow,
-                      textColor: Colors.black), // Make the text color black
+                  StateWidget(count: serviceWarn, color: Colors.yellow, textColor: Colors.black), // Make the text color black
                   StateWidget(count: serviceCrit, color: Colors.red),
                   StateWidget(count: serviceUnknown, color: Colors.orange),
                 ],
@@ -207,14 +184,11 @@ class _EventConsoleState extends State<EventConsole> {
         var lastCheck = item['extensions']['last_check'];
         var lastState = item['extensions']['last_state'];
         var lastNotification = item['extensions']['last_notification'];
-        return lastCheck > currentTime - 4 * 60 * 60 * 1000 &&
-            lastState != 'OK' &&
-            lastNotification != 'notification';
+        return lastCheck > currentTime - 4 * 60 * 60 * 1000 && lastState != 'OK' && lastNotification != 'notification';
       }).toList();
 
       // Sort the events chronologically
-      events.sort((a, b) => b['extensions']['last_check']
-          .compareTo(a['extensions']['last_check']));
+      events.sort((a, b) => b['extensions']['last_check'].compareTo(a['extensions']['last_check']));
 
       setState(() {});
     }
@@ -228,8 +202,7 @@ class _EventConsoleState extends State<EventConsole> {
         var event = events[index];
         return ListTile(
           title: Text('Service: ${event['name']}'),
-          subtitle: Text(
-              'Last check: ${DateTime.fromMillisecondsSinceEpoch(event['extensions']['last_check'])}\n'
+          subtitle: Text('Last check: ${DateTime.fromMillisecondsSinceEpoch(event['extensions']['last_check'])}\n'
               'Last state: ${event['extensions']['last_state']}\n'
               'Last hard state change: ${DateTime.fromMillisecondsSinceEpoch(event['extensions']['last_hard_state_change'])}\n'
               'Last critical time: ${DateTime.fromMillisecondsSinceEpoch(event['extensions']['last_time_critical'])}\n'
