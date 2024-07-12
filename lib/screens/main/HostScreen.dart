@@ -8,7 +8,7 @@ import '../notify/notify.dart';
 import '/screens/main/HostActionScreen.dart';
 import '/services/apiRequest.dart';
 
-enum HostState { OK, Warning, Critical, Unknown }
+enum HostState { OK, Down, Unreachable }
 
 class HostNameSearch extends SearchDelegate<String> {
   final List<dynamic> hosts;
@@ -44,13 +44,7 @@ class HostNameSearch extends SearchDelegate<String> {
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    final suggestions = query.isEmpty
-        ? hosts
-        : hosts
-            .where((host) => host['extensions']['name']
-                .toLowerCase()
-                .contains(query.toLowerCase()))
-            .toList();
+    final suggestions = query.isEmpty ? hosts : hosts.where((host) => host['extensions']['name'].toLowerCase().contains(query.toLowerCase())).toList();
 
     return ListView.builder(
       itemCount: suggestions.length,
@@ -61,8 +55,7 @@ class HostNameSearch extends SearchDelegate<String> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) =>
-                    HostActionScreen(host: suggestions[index]),
+                builder: (context) => HostActionScreen(host: suggestions[index]),
               ),
             );
           },
@@ -146,8 +139,7 @@ class _HostScreenState extends State<HostScreen> {
 
   final ScrollController _scrollController = ScrollController();
 
-  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
-      GlobalKey<RefreshIndicatorState>();
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
 
   @override
   void initState() {
@@ -171,8 +163,7 @@ class _HostScreenState extends State<HostScreen> {
 
   Future<void> _getHosts() async {
     var api = ApiRequest();
-    var data = await api.Request(
-        'domain-types/host/collections/all?query=%7B%22op%22%3A%20%22%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=name&columns=address&columns=last_check&columns=last_time_up&columns=state&columns=total_services&columns=acknowledged');
+    var data = await api.Request('domain-types/host/collections/all?query=%7B%22op%22%3A%20%22%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=name&columns=address&columns=last_check&columns=last_time_up&columns=state&columns=total_services&columns=acknowledged');
 
     var error = api.getErrorMessage();
     if (error != null) {
@@ -189,8 +180,7 @@ class _HostScreenState extends State<HostScreen> {
         _error = null;
         // Restart the timer if it was stopped
         if (_timer == null || !_timer!.isActive) {
-          _timer =
-              Timer.periodic(Duration(minutes: 1), (Timer t) => _getHosts());
+          _timer = Timer.periodic(Duration(minutes: 1), (Timer t) => _getHosts());
         }
       });
     }
@@ -215,8 +205,7 @@ class _HostScreenState extends State<HostScreen> {
     // Sort the services based on their state
     List<dynamic> sortedHosts = _filteredHosts;
     if (sortedHosts.isNotEmpty) {
-      sortedHosts.sort((a, b) =>
-          b['extensions']['state'].compareTo(a['extensions']['state']));
+      sortedHosts.sort((a, b) => b['extensions']['state'].compareTo(a['extensions']['state']));
     }
 
     return Scaffold(
@@ -260,9 +249,7 @@ class _HostScreenState extends State<HostScreen> {
             ? Center(child: Text(_error!))
             : _filteredHosts.isEmpty
                 ? Center(
-                    child: _allHosts.isEmpty
-                        ? CircularProgressIndicator()
-                        : Text('No services with selected status'),
+                    child: _allHosts.isEmpty ? CircularProgressIndicator() : Text('No services with selected status'),
                   )
                 : Scrollbar(
                     controller: _scrollController,
@@ -277,31 +264,22 @@ class _HostScreenState extends State<HostScreen> {
                         Color color;
                         switch (state) {
                           case 0:
-                            stateText = 'OK';
+                            stateText = 'UP';
                             color = Colors.green;
-                            stateIcon =
-                                Icon(Icons.check_circle, color: Colors.green);
+                            stateIcon = Icon(Icons.check_circle, color: Colors.green);
                             break;
-                          // For testing only
                           case 1:
-                            stateText = 'Warning';
-                            stateIcon =
-                                Icon(Icons.warning, color: Colors.yellow);
-                            color = Colors.yellow;
-                            break;
-                          case 2:
-                            stateText = 'Critical';
+                            stateText = 'DOWN';
                             stateIcon = Icon(Icons.error, color: Colors.red);
                             color = Colors.red;
                             break;
-                          case 3:
-                            stateText = 'UNKNOWN';
-                            stateIcon =
-                                Icon(Icons.help_outline, color: Colors.orange);
+                          case 2:
+                            stateText = 'UNREACH';
+                            stateIcon = Icon(Icons.help_outline, color: Colors.orange);
                             color = Colors.orange;
                             break;
                           default:
-                            return Container(); // Return an empty container if the state is not 1, 2, or 3
+                            return Container(); // Return an empty container if the state is not 0, 1, or 2
                         }
 
                         return Container(
@@ -329,8 +307,7 @@ class _HostScreenState extends State<HostScreen> {
                               host['extensions']['name'],
                               style: TextStyle(
                                 fontSize: 20.0, // adjust the size as needed
-                                fontWeight:
-                                    FontWeight.bold, // makes the text thicker
+                                fontWeight: FontWeight.bold, // makes the text thicker
                               ),
                             ),
                             subtitle: Column(
@@ -339,75 +316,45 @@ class _HostScreenState extends State<HostScreen> {
                                 RichText(
                                   text: TextSpan(
                                     text: 'Address: ',
-                                    style: DefaultTextStyle.of(context)
-                                        .style
-                                        .copyWith(fontWeight: FontWeight.bold),
+                                    style: DefaultTextStyle.of(context).style.copyWith(fontWeight: FontWeight.bold),
                                     children: <TextSpan>[
-                                      TextSpan(
-                                          text:
-                                              '${host['extensions']['address']}',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.normal)),
+                                      TextSpan(text: '${host['extensions']['address']}', style: TextStyle(fontWeight: FontWeight.normal)),
                                     ],
                                   ),
                                 ),
                                 RichText(
                                   text: TextSpan(
                                     text: 'Last Check: ',
-                                    style: DefaultTextStyle.of(context)
-                                        .style
-                                        .copyWith(fontWeight: FontWeight.bold),
+                                    style: DefaultTextStyle.of(context).style.copyWith(fontWeight: FontWeight.bold),
                                     children: <TextSpan>[
-                                      TextSpan(
-                                          text:
-                                              '${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_check'] * 1000))}',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.normal)),
+                                      TextSpan(text: '${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_check'] * 1000))}', style: TextStyle(fontWeight: FontWeight.normal)),
                                     ],
                                   ),
                                 ),
                                 RichText(
                                   text: TextSpan(
                                     text: 'Last Time Up: ',
-                                    style: DefaultTextStyle.of(context)
-                                        .style
-                                        .copyWith(fontWeight: FontWeight.bold),
+                                    style: DefaultTextStyle.of(context).style.copyWith(fontWeight: FontWeight.bold),
                                     children: <TextSpan>[
-                                      TextSpan(
-                                          text:
-                                              '${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_time_up'] * 1000))}',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.normal)),
+                                      TextSpan(text: '${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_time_up'] * 1000))}', style: TextStyle(fontWeight: FontWeight.normal)),
                                     ],
                                   ),
                                 ),
                                 RichText(
                                   text: TextSpan(
                                     text: 'Total Services: ',
-                                    style: DefaultTextStyle.of(context)
-                                        .style
-                                        .copyWith(fontWeight: FontWeight.bold),
+                                    style: DefaultTextStyle.of(context).style.copyWith(fontWeight: FontWeight.bold),
                                     children: <TextSpan>[
-                                      TextSpan(
-                                          text:
-                                              '${host['extensions']['total_services']}',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.normal)),
+                                      TextSpan(text: '${host['extensions']['total_services']}', style: TextStyle(fontWeight: FontWeight.normal)),
                                     ],
                                   ),
                                 ),
                                 RichText(
                                   text: TextSpan(
                                     text: 'Acknowledged: ',
-                                    style: DefaultTextStyle.of(context)
-                                        .style
-                                        .copyWith(fontWeight: FontWeight.bold),
+                                    style: DefaultTextStyle.of(context).style.copyWith(fontWeight: FontWeight.bold),
                                     children: <TextSpan>[
-                                      TextSpan(
-                                          text:
-                                              '${host['extensions']['acknowledged'] == 1 ? 'Yes' : 'No'}',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.normal)),
+                                      TextSpan(text: '${host['extensions']['acknowledged'] == 1 ? 'Yes' : 'No'}', style: TextStyle(fontWeight: FontWeight.normal)),
                                     ],
                                   ),
                                 ),
