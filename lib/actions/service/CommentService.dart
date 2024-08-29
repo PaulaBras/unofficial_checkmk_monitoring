@@ -94,7 +94,7 @@ class _CommentServiceWidgetState extends State<CommentServiceWidget> {
           Icons.check,
           color: Colors.white,
         ),
-        backgroundColor: Colors.green,
+        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
     );
   }

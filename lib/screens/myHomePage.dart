@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '/screens/dashboard/dashboard.dart';
 import '/screens/main/HostScreen.dart';
@@ -52,6 +53,10 @@ class _MyHomePageState extends State<MyHomePage> {
 class MyHomePageLogic extends ChangeNotifier {
   int _currentIndex = 0;
 
+  MyHomePageLogic() {
+    _loadStartIndex();
+  }
+
   int get currentIndex => _currentIndex;
 
   void updateCurrentIndex(int index) {
@@ -64,6 +69,18 @@ class MyHomePageLogic extends ChangeNotifier {
   }
 
   void navigateToMain() {
-    updateCurrentIndex(0);
+    updateCurrentIndex(_currentIndex);
+  }
+
+  Future<void> _loadStartIndex() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _currentIndex = prefs.getInt('start_index') ?? 0;
+    notifyListeners();
+  }
+
+  Future<void> updateStartIndex(int index) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('start_index', index);
+    notifyListeners();
   }
 }

@@ -261,7 +261,7 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
         onPressed: _getService,
         tooltip: 'Refresh',
         child: Icon(Icons.refresh),
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
     );
   }

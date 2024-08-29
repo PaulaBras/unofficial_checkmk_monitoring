@@ -94,7 +94,7 @@ class _CommentHostWidgetState extends State<CommentHostWidget> {
           Icons.check,
           color: Colors.white,
         ),
-        backgroundColor: Colors.green,
+        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
     );
   }

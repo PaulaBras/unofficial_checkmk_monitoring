@@ -120,7 +120,7 @@ class _AcknowledgeHostFormState extends State<AcknowledgeHostForm> {
           Icons.check,
           color: Colors.white,
         ),
-        backgroundColor: Colors.green,
+        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
     );
   }

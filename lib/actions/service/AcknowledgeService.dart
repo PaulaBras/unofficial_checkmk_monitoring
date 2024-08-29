@@ -131,7 +131,7 @@ class _AcknowledgeServiceFormState extends State<AcknowledgeServiceForm> {
           Icons.check,
           color: Colors.white,
         ),
-        backgroundColor: Colors.green,
+        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
     );
   }

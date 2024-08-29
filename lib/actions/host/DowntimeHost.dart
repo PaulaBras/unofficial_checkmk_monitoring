@@ -194,7 +194,7 @@ class _DowntimeHostWidgetState extends State<DowntimeHostWidget> {
           Icons.check,
           color: Colors.white,
         ),
-        backgroundColor: Colors.green,
+        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
     );
   }

@@ -1,32 +1,29 @@
 import 'package:flutter/material.dart';
 
-const lightColorScheme = ColorScheme(
-  brightness: Brightness.light,
-  primary: Color(0xFF2C3843), // Dark Grey
+const ColorScheme lightColorScheme = ColorScheme(
+  primary: Color(0xFF15D1A0),
   onPrimary: Colors.white,
-  primaryContainer: Color(0xFF2C3843), // Dark Grey
-  onPrimaryContainer: Colors.white,
-  secondary: Color(0xFF15D1A0), // Turquoise
+  secondary: Color(0xFF15D1A0),
   onSecondary: Colors.white,
-  error: Colors.red,
+  error: Colors.redAccent,
   onError: Colors.white,
-  background: Color(0xF3F3F3FF),
-  onBackground: Color(0xFF2C3843), // Dark Grey
-  surface: Color(0xFF15D1A0),
-  onSurface: Color(0xFF2C3843), // Dark Grey
+  background: Color(0xFFE6EBEB),
+  onBackground: Colors.black,
+  surface: Colors.white,
+  onSurface: Colors.black,
+  brightness: Brightness.light,
 );
-const darkColorScheme = ColorScheme(
-  brightness: Brightness.dark,
-  primary: Colors.white,
-  onPrimary: Color(0xFF2C3843), // Dark Grey
-  primaryContainer: Colors.white,
-  onPrimaryContainer: Color(0xFF2C3843), // Dark Grey
-  secondary: Color(0xFF15D1A0), // Turquoise
-  onSecondary: Colors.white,
-  error: Colors.red,
-  onError: Colors.white,
-  background: Color(0xFF2C3843), // Dark Grey
+
+const ColorScheme darkColorScheme = ColorScheme(
+  primary: Color(0xFF15D1A0),
+  secondary: Color(0xFF15D1A0),
+  background: Color(0xFF2C3843),
+  surface: Color(0xFF1E2533),
   onBackground: Colors.white,
-  surface: Color(0xFF15D1A0), // Turquoise
+  error: Colors.redAccent,
+  onError: Colors.white,
+  onPrimary: Colors.white,
+  onSecondary: Colors.white,
   onSurface: Colors.white,
+  brightness: Brightness.dark,
 );

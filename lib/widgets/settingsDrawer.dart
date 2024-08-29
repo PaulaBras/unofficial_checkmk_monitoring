@@ -4,7 +4,7 @@ class SettingsDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
@@ -12,7 +12,7 @@ class SettingsDrawer extends StatelessWidget {
             child: Text('Settings',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onPrimary,
+              color: Theme.of(context).colorScheme.surface,
             ),
           ),
           ListTile(

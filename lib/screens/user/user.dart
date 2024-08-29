@@ -22,6 +22,13 @@ class _UserScreenState extends State<UserScreen> {
   var apiRequest = ApiRequest(); // Create an ApiRequest instance
   late AuthenticationService authService; // Define authService
 
+  Map<String, int> pageNameToIndex = {
+    'Dashboard': 0,
+    'Service': 1,
+    'Host': 2,
+    'Setup': 3,
+  };
+
   void navigateToHomeScreen() {
     Navigator.pushNamed(context, 'home_screen');
   }
@@ -55,7 +62,7 @@ class _UserScreenState extends State<UserScreen> {
               width: 30,
               height: 30,
               colorFilter: ColorFilter.mode(
-                  Theme.of(context).colorScheme.surface, BlendMode.srcIn),
+                  Theme.of(context).colorScheme.primary, BlendMode.srcIn),
             ),
           ),
           // Headline
@@ -66,6 +73,29 @@ class _UserScreenState extends State<UserScreen> {
               setState(() {
                 themeNotifier.toggleTheme();
               });
+            },
+          ),
+          ListTile(
+            title: Text('Set Start Page'),
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (context) {
+                  return SimpleDialog(
+                    title: Text('Choose Start Page'),
+                    children: pageNameToIndex.keys.map((pageName) {
+                      return SimpleDialogOption(
+                        child: Text(pageName),
+                        onPressed: () {
+                          myHomePageLogic
+                              .updateStartIndex(pageNameToIndex[pageName]!);
+                          Navigator.pop(context);
+                        },
+                      );
+                    }).toList(),
+                  );
+                },
+              );
             },
           ),
           ListTile(
