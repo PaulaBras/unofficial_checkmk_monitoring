@@ -18,6 +18,7 @@ class ApiRequest {
       Map<String, dynamic>? body}) async {
     try {
       // Retrieve the credentials from secure storage
+      var protocol = await secureStorage.readSecureData('protocol');
       var server = await secureStorage.readSecureData('server');
       var username = await secureStorage.readSecureData('username');
       var password = await secureStorage.readSecureData('password');
@@ -29,8 +30,8 @@ class ApiRequest {
       _ignoreCertificate = ignoreCertificate?.toLowerCase() == 'true';
 
       // Construct the URL
-      final url =
-          Uri.parse('https://$server/$site/check_mk/api/1.0/' + apiRequestUri);
+      final url = Uri.parse(
+          '$protocol://$server/$site/check_mk/api/1.0/' + apiRequestUri);
       // Encode the username and password in the format username:password
       String basicAuth =
           'Basic ' + base64Encode(utf8.encode('$username:$password'));

@@ -20,6 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String _username = '';
   String _password = '';
   String _site = '';
+  String _protocol = 'https';
   bool _ignoreCertificate = false;
   final _formKey = GlobalKey<FormState>();
   bool _showLoginForm = false;
@@ -35,6 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
     authService.loadCredentials().then((credentials) {
       if (credentials != null) {
         setState(() {
+          _protocol = credentials.protocol;
           _server = credentials.server;
           _username = credentials.username;
           _password = credentials.password;
@@ -52,8 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _login() async {
-    bool loginSuccessful = await authService.login(
-        _server, _username, _password, _site, _ignoreCertificate);
+    bool loginSuccessful = await authService.login(_username, _password);
     if (loginSuccessful) {
       Navigator.pushNamed(context, 'home_screen');
     } else {
@@ -69,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       await authService.saveCredentials(
-          _server, _username, _password, _site, _ignoreCertificate);
+          _protocol, _server, _username, _password, _site, _ignoreCertificate);
       _login();
     }
   }
@@ -88,6 +89,21 @@ class _LoginScreenState extends State<LoginScreen> {
                   key: _formKey,
                   child: Column(
                     children: [
+                      DropdownButtonFormField<String>(
+                        value: _protocol,
+                        items: <String>['http', 'https']
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _protocol = newValue!;
+                          });
+                        },
+                      ),
                       CustomTextField(
                         initialValue: _server,
                         labelText: 'Server (Domain or IP)',

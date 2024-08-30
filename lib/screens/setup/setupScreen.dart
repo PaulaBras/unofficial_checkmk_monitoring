@@ -29,6 +29,7 @@ class _SetupScreenState extends State<SetupScreen> {
   bool _notificationSchedule = false;
   String _dateFormat = 'dd.MM.yyyy, HH:mm';
   String _locale = 'de_DE';
+  String _protocol = 'https';
   final _formKey = GlobalKey<FormState>();
   bool _isNotificationActive = false;
   bool _isNotificationScheduleActive = false;
@@ -44,6 +45,7 @@ class _SetupScreenState extends State<SetupScreen> {
 
   void _loadSettings() async {
     // Load settings from secure storage
+    _protocol = await secureStorage.readSecureData('protocol') ?? '';
     _serverController.text = await secureStorage.readSecureData('server') ?? '';
     _usernameController.text =
         await secureStorage.readSecureData('username') ?? '';
@@ -118,11 +120,7 @@ class _SetupScreenState extends State<SetupScreen> {
 
       // Login again
       bool loginSuccessful = await authService.login(
-          _serverController.text,
-          _usernameController.text,
-          _passwordController.text,
-          _siteController.text,
-          _ignoreCertificate);
+          _usernameController.text, _passwordController.text);
       if (loginSuccessful) {
         Navigator.pushNamed(context, 'home_screen');
       } else {
@@ -149,6 +147,21 @@ class _SetupScreenState extends State<SetupScreen> {
             key: _formKey,
             child: Column(
               children: <Widget>[
+                DropdownButtonFormField<String>(
+                  value: _protocol,
+                  items: <String>['http', 'https']
+                      .map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _protocol = newValue!;
+                    });
+                  },
+                ),
                 TextFormField(
                   controller: _serverController,
                   decoration: InputDecoration(

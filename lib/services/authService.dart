@@ -8,8 +8,7 @@ class AuthenticationService {
 
   AuthenticationService(this.secureStorage, this.apiRequest);
 
-  Future<bool> login(String server, String username, String password,
-      String site, bool ignoreCertificate) async {
+  Future<bool> login(String username, String password) async {
     try {
       await apiRequest.Request(
         '/objects/site_connection/prod/actions/login/invoke',
@@ -28,8 +27,9 @@ class AuthenticationService {
     }
   }
 
-  Future<void> saveCredentials(String server, String username, String password,
-      String site, bool ignoreCertificate) async {
+  Future<void> saveCredentials(String protocol, String server, String username,
+      String password, String site, bool ignoreCertificate) async {
+    await secureStorage.writeSecureData('protocol', protocol);
     await secureStorage.writeSecureData('server', server);
     await secureStorage.writeSecureData('username', username);
     await secureStorage.writeSecureData('password', password);
@@ -39,6 +39,7 @@ class AuthenticationService {
   }
 
   Future<Credentials?> loadCredentials() async {
+    String protocol = await secureStorage.readSecureData('protocol') ?? '';
     String server = await secureStorage.readSecureData('server') ?? '';
     String username = await secureStorage.readSecureData('username') ?? '';
     String password = await secureStorage.readSecureData('password') ?? '';
@@ -48,11 +49,13 @@ class AuthenticationService {
                 ?.toLowerCase() ==
             'true';
 
-    if (server.isNotEmpty &&
+    if (protocol.isNotEmpty &&
+        server.isNotEmpty &&
         username.isNotEmpty &&
         password.isNotEmpty &&
         site.isNotEmpty) {
-      return Credentials(server, username, password, site, ignoreCertificate);
+      return Credentials(
+          protocol, server, username, password, site, ignoreCertificate);
     } else {
       return null;
     }
