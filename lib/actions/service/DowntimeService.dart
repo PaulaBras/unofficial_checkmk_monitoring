@@ -7,8 +7,8 @@ import '/services/apiRequest.dart';
 class Downtime {
   String startTime;
   String endTime;
-  final String recur;
-  final int duration;
+  String recur;
+  int duration;
   String comment;
   String downtimeType;
   String serviceDescription;
@@ -54,8 +54,7 @@ class DowntimeServiceWidget extends StatefulWidget {
   final String hostName;
   final String serviceDescription;
 
-  DowntimeServiceWidget(
-      {required this.hostName, required this.serviceDescription});
+  DowntimeServiceWidget({required this.hostName, required this.serviceDescription});
 
   @override
   _DowntimeServiceWidgetState createState() => _DowntimeServiceWidgetState();
@@ -65,9 +64,11 @@ class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
   final _formKey = GlobalKey<FormState>();
   final _hostNameController = TextEditingController();
   final _serviceDescriptionController = TextEditingController();
+  final _durationController = TextEditingController(text: '0');
   Downtime? _downtime;
-  DateTime? _startTime;
-  DateTime? _endTime;
+  DateTime _startTime = DateTime.now();
+  DateTime _endTime = DateTime.now();
+  String _recur = 'fixed';
   String _dateFormat = 'dd.MM.yyyy, HH:mm';
   String _locale = 'de_DE';
 
@@ -75,11 +76,11 @@ class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
   void initState() {
     super.initState();
     _hostNameController.text = widget.hostName;
-    _loadDateFormatAndLocale();
     _serviceDescriptionController.text = widget.serviceDescription;
+    _loadDateFormatAndLocale();
     _downtime = Downtime(
-      startTime: _startTime.toString(),
-      endTime: _endTime.toString(),
+      startTime: DateFormat(_dateFormat, _locale).format(_startTime),
+      endTime: DateFormat(_dateFormat, _locale).format(_endTime),
       comment: '',
       downtimeType: 'service',
       serviceDescription: _serviceDescriptionController.text,
@@ -89,8 +90,10 @@ class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
 
   void _loadDateFormatAndLocale() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    _dateFormat = prefs.getString('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
-    _locale = prefs.getString('locale') ?? 'de_DE';
+    setState(() {
+      _dateFormat = prefs.getString('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
+      _locale = prefs.getString('locale') ?? 'de_DE';
+    });
   }
 
   @override
@@ -101,114 +104,136 @@ class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        key: _formKey,
-        child: Column(
-          children: <Widget>[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(_startTime == null
-                    ? 'Select Start Time'
-                    : 'Start Time: ${DateFormat(_dateFormat, _locale).format(_startTime!)}'),
-                ElevatedButton(
-                  onPressed: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime.now(),
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2100),
-                      locale: const Locale('en', 'GB'),
-                    );
-                    if (date != null) {
-                      final time = await showTimePicker(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: <Widget>[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(_startTime == null ? 'Select Start Time' : 'Start Time: ${DateFormat(_dateFormat, _locale).format(_startTime!)}'),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final date = await showDatePicker(
                         context: context,
-                        initialTime: TimeOfDay.now(),
-                        builder: (BuildContext context, Widget? child) {
-                          return MediaQuery(
-                            data: MediaQuery.of(context)
-                                .copyWith(alwaysUse24HourFormat: true),
-                            child: child!,
-                          );
-                        },
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                        locale: const Locale('en', 'GB'),
                       );
-                      if (time != null) {
-                        setState(() {
-                          _startTime = DateTime(
-                            date.year,
-                            date.month,
-                            date.day,
-                            time.hour,
-                            time.minute,
-                          );
-                        });
+                      if (date != null) {
+                        final time = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay.now(),
+                          builder: (BuildContext context, Widget? child) {
+                            return MediaQuery(
+                              data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+                              child: child!,
+                            );
+                          },
+                        );
+                        if (time != null) {
+                          setState(() {
+                            _startTime = DateTime(
+                              date.year,
+                              date.month,
+                              date.day,
+                              time.hour,
+                              time.minute,
+                            );
+                          });
+                        }
                       }
-                    }
-                  },
-                  child: Text('Select'),
-                ),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(_endTime == null
-                    ? 'Select End Time'
-                    : 'End Time: ${DateFormat(_dateFormat, _locale).format(_endTime!)}'),
-                ElevatedButton(
-                  onPressed: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime.now(),
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2100),
-                      locale: const Locale('en', 'GB'),
-                    );
-                    if (date != null) {
-                      final time = await showTimePicker(
+                    },
+                    child: Text('Select'),
+                  ),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(_endTime == null ? 'Select End Time' : 'End Time: ${DateFormat(_dateFormat, _locale).format(_endTime!)}'),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final date = await showDatePicker(
                         context: context,
-                        initialTime: TimeOfDay.now(),
-                        builder: (BuildContext context, Widget? child) {
-                          return MediaQuery(
-                            data: MediaQuery.of(context)
-                                .copyWith(alwaysUse24HourFormat: true),
-                            child: child!,
-                          );
-                        },
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                        locale: const Locale('en', 'GB'),
                       );
-                      if (time != null) {
-                        setState(() {
-                          _endTime = DateTime(
-                            date.year,
-                            date.month,
-                            date.day,
-                            time.hour,
-                            time.minute,
-                          );
-                        });
+                      if (date != null) {
+                        final time = await showTimePicker(
+                          context: context,
+                          initialTime: TimeOfDay.now(),
+                          builder: (BuildContext context, Widget? child) {
+                            return MediaQuery(
+                              data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+                              child: child!,
+                            );
+                          },
+                        );
+                        if (time != null) {
+                          setState(() {
+                            _endTime = DateTime(
+                              date.year,
+                              date.month,
+                              date.day,
+                              time.hour,
+                              time.minute,
+                            );
+                          });
+                        }
                       }
-                    }
-                  },
-                  child: Text('Select'),
-                ),
-              ],
-            ),
-            TextFormField(
-              decoration: InputDecoration(labelText: 'Comment'),
-              onSaved: (value) {
-                _downtime?.comment = value ?? '';
-              },
-            ),
-            TextFormField(
-              controller: _serviceDescriptionController,
-              decoration: InputDecoration(labelText: 'Service Description'),
-              enabled: false,
-            ),
-            TextFormField(
-              controller: _hostNameController,
-              decoration: InputDecoration(labelText: 'Host Name'),
-              enabled: false,
-            ),
-          ],
+                    },
+                    child: Text('Select'),
+                  ),
+                ],
+              ),
+              DropdownButtonFormField<String>(
+                value: _recur,
+                decoration: InputDecoration(labelText: 'Recur'),
+                items: ['fixed', 'hour', 'day', 'week', 'second_week', 'fourth_week', 'weekday_start', 'weekday_end', 'day_of_month'].map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (newValue) {
+                  setState(() {
+                    _recur = newValue!;
+                  });
+                },
+                onSaved: (newValue) {
+                  _downtime?.recur = newValue!;
+                },
+              ),
+              TextFormField(
+                controller: _durationController,
+                decoration: InputDecoration(labelText: 'Duration (minutes)'),
+                keyboardType: TextInputType.number,
+                onSaved: (value) {
+                  _downtime?.duration = int.tryParse(value ?? '0') ?? 0;
+                },
+              ),
+              TextFormField(
+                decoration: InputDecoration(labelText: 'Comment'),
+                onSaved: (value) {
+                  _downtime?.comment = value ?? '';
+                },
+              ),
+              TextFormField(
+                controller: _serviceDescriptionController,
+                decoration: InputDecoration(labelText: 'Service Description'),
+                enabled: false,
+              ),
+              TextFormField(
+                controller: _hostNameController,
+                decoration: InputDecoration(labelText: 'Host Name'),
+                enabled: false,
+              ),
+            ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
