@@ -54,7 +54,7 @@ class MyHomePageLogic extends ChangeNotifier {
   int _currentIndex = 0;
 
   MyHomePageLogic() {
-    _loadStartIndex();
+    loadStartIndex();
   }
 
   int get currentIndex => _currentIndex;
@@ -72,10 +72,11 @@ class MyHomePageLogic extends ChangeNotifier {
     updateCurrentIndex(_currentIndex);
   }
 
-  Future<void> _loadStartIndex() async {
+  Future<int> loadStartIndex() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     _currentIndex = prefs.getInt('start_index') ?? 0;
     notifyListeners();
+    return _currentIndex;
   }
 
   Future<void> updateStartIndex(int index) async {

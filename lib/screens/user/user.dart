@@ -21,6 +21,7 @@ class _UserScreenState extends State<UserScreen> {
   var secureStorage = SecureStorage();
   var apiRequest = ApiRequest(); // Create an ApiRequest instance
   late AuthenticationService authService; // Define authService
+  String _startPage = 'Dashboard';
 
   Map<String, int> pageNameToIndex = {
     'Dashboard': 0,
@@ -38,7 +39,12 @@ class _UserScreenState extends State<UserScreen> {
     super.initState();
     authService = AuthenticationService(
         secureStorage, apiRequest); // Initialize authService
-    // ... rest of your code
+    final myHomePageLogic = MyHomePageLogic();
+    myHomePageLogic.loadStartIndex().then((value) {
+      setState(() {
+        _startPage = pageNameToIndex.keys.elementAt(value);
+      });
+    });
   }
 
   @override
@@ -77,26 +83,24 @@ class _UserScreenState extends State<UserScreen> {
           ),
           ListTile(
             title: Text('Set Start Page'),
-            onTap: () {
-              showDialog(
-                context: context,
-                builder: (context) {
-                  return SimpleDialog(
-                    title: Text('Choose Start Page'),
-                    children: pageNameToIndex.keys.map((pageName) {
-                      return SimpleDialogOption(
-                        child: Text(pageName),
-                        onPressed: () {
-                          myHomePageLogic
-                              .updateStartIndex(pageNameToIndex[pageName]!);
-                          Navigator.pop(context);
-                        },
-                      );
-                    }).toList(),
-                  );
-                },
-              );
-            },
+            trailing: DropdownButton<String>(
+              value: _startPage,
+              items: pageNameToIndex.keys.map((pageName) {
+                return DropdownMenuItem<String>(
+                  value: pageName,
+                  child: Text(pageName),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                if (newValue != null) {
+                  setState(() {
+                    _startPage =
+                        newValue; // Update _startPage when a new page is selected
+                  });
+                  myHomePageLogic.updateStartIndex(pageNameToIndex[newValue]!);
+                }
+              },
+            ),
           ),
           ListTile(
             title: Text(

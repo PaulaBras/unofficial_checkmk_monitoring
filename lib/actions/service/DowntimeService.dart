@@ -117,11 +117,19 @@ class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
                       initialDate: DateTime.now(),
                       firstDate: DateTime(2000),
                       lastDate: DateTime(2100),
+                      locale: const Locale('en', 'GB'),
                     );
                     if (date != null) {
                       final time = await showTimePicker(
                         context: context,
                         initialTime: TimeOfDay.now(),
+                        builder: (BuildContext context, Widget? child) {
+                          return MediaQuery(
+                            data: MediaQuery.of(context)
+                                .copyWith(alwaysUse24HourFormat: true),
+                            child: child!,
+                          );
+                        },
                       );
                       if (time != null) {
                         setState(() {
@@ -153,11 +161,19 @@ class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
                       initialDate: DateTime.now(),
                       firstDate: DateTime(2000),
                       lastDate: DateTime(2100),
+                      locale: const Locale('en', 'GB'),
                     );
                     if (date != null) {
                       final time = await showTimePicker(
                         context: context,
                         initialTime: TimeOfDay.now(),
+                        builder: (BuildContext context, Widget? child) {
+                          return MediaQuery(
+                            data: MediaQuery.of(context)
+                                .copyWith(alwaysUse24HourFormat: true),
+                            child: child!,
+                          );
+                        },
                       );
                       if (time != null) {
                         setState(() {

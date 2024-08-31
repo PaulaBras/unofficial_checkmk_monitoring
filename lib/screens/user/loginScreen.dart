@@ -154,13 +154,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 16.0),
                       SwitchListTile(
-                        title: const Text('Ignore Certificate Warnings'),
+                        title: Text('Ignore Certificate Warnings'),
                         value: _ignoreCertificate,
-                        onChanged: (bool value) {
-                          setState(() {
-                            _ignoreCertificate = value;
-                          });
-                        },
+                        onChanged: _protocol == 'https'
+                            ? (bool value) {
+                                setState(() {
+                                  _ignoreCertificate = value;
+                                });
+                              }
+                            : null,
                       ),
                       const SizedBox(height: 24.0),
                       ElevatedButton(

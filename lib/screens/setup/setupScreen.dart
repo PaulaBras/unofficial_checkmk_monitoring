@@ -194,12 +194,14 @@ class _SetupScreenState extends State<SetupScreen> {
                 SwitchListTile(
                   title: Text('Ignore Certificate Warnings'),
                   value: _ignoreCertificate,
-                  onChanged: (bool value) {
-                    setState(() {
-                      _ignoreCertificate = value;
-                    });
-                    _saveSettings();
-                  },
+                  onChanged: _protocol == 'https'
+                      ? (bool value) {
+                          setState(() {
+                            _ignoreCertificate = value;
+                          });
+                          _saveSettings();
+                        }
+                      : null,
                 ),
                 SwitchListTile(
                   title: Text('Enable Notification'),
