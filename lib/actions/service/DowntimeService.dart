@@ -111,7 +111,7 @@ class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(_startTime == null ? 'Select Start Time' : 'Start Time: ${DateFormat(_dateFormat, _locale).format(_startTime!)}'),
+                  Text(_startTime == null ? 'Select Start Time' : 'Start Time: ${DateFormat(_dateFormat, _locale).format(_startTime)}'),
                   ElevatedButton(
                     onPressed: () async {
                       final date = await showDatePicker(
@@ -152,7 +152,7 @@ class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(_endTime == null ? 'Select End Time' : 'End Time: ${DateFormat(_dateFormat, _locale).format(_endTime!)}'),
+                  Text(_endTime == null ? 'Select End Time' : 'End Time: ${DateFormat(_dateFormat, _locale).format(_endTime)}'),
                   ElevatedButton(
                     onPressed: () async {
                       final date = await showDatePicker(

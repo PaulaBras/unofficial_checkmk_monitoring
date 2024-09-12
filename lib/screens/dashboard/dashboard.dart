@@ -7,38 +7,56 @@ class DashboardScreen extends StatefulWidget {
   _DashboardScreenState createState() => _DashboardScreenState();
 }
 
+class HexagonClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    final width = size.width;
+    final height = size.height;
+    final side = width / 2;
+
+    path.moveTo(width * 0.5, 0);
+    path.lineTo(width, height * 0.25);
+    path.lineTo(width, height * 0.75);
+    path.lineTo(width * 0.5, height);
+    path.lineTo(0, height * 0.75);
+    path.lineTo(0, height * 0.25);
+    path.close();
+
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
 class StateWidget extends StatelessWidget {
   final int count;
   final Color color;
   final Color textColor;
 
-  StateWidget(
-      {required this.count,
-      required this.color,
-      this.textColor = Colors.white});
+  StateWidget({
+    required this.count,
+    required this.color,
+    this.textColor = Colors.white,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(20),
-      decoration: BoxDecoration(
+    return ClipPath(
+      clipper: HexagonClipper(),
+      child: Container(
+        padding: EdgeInsets.all(20),
         color: color,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            spreadRadius: 5,
-            blurRadius: 7,
-            offset: Offset(0, 3),
+        child: Center(
+          child: Text(
+            '$count',
+            style: TextStyle(
+              color: textColor,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ],
-      ),
-      child: Text(
-        '$count',
-        style: TextStyle(
-          color: textColor,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
         ),
       ),
     );
