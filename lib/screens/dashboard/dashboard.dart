@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '/services/apiRequest.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -13,7 +12,6 @@ class HexagonClipper extends CustomClipper<Path> {
     final path = Path();
     final width = size.width;
     final height = size.height;
-    final side = width / 2;
 
     path.moveTo(width * 0.5, 0);
     path.lineTo(width, height * 0.25);
@@ -31,11 +29,13 @@ class HexagonClipper extends CustomClipper<Path> {
 }
 
 class StateWidget extends StatelessWidget {
+  final String label;
   final int count;
   final Color color;
   final Color textColor;
 
   StateWidget({
+    required this.label,
     required this.count,
     required this.color,
     this.textColor = Colors.white,
@@ -46,19 +46,54 @@ class StateWidget extends StatelessWidget {
     return ClipPath(
       clipper: HexagonClipper(),
       child: Container(
-        padding: EdgeInsets.all(20),
+        width: 100,
+        height: 115,
         color: color,
-        child: Center(
-          child: Text(
-            '$count',
-            style: TextStyle(
-              color: textColor,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: textColor,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
+            SizedBox(height: 4),
+            Text(
+              '$count',
+              style: TextStyle(
+                color: textColor,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+}
+
+class HexagonGrid extends StatelessWidget {
+  final List<StateWidget> hexagons;
+
+  HexagonGrid({required this.hexagons});
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      alignment: WrapAlignment.center,
+      runAlignment: WrapAlignment.center,
+      spacing: 8,
+      runSpacing: -30,
+      children: hexagons.map((hexagon) {
+        return Padding(
+          padding: EdgeInsets.only(top: hexagons.indexOf(hexagon).isEven ? 0 : 30),
+          child: hexagon,
+        );
+      }).toList(),
     );
   }
 }
@@ -105,6 +140,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           hostData.where((item) => item['extensions']['state'] == 0).length;
       hostDown =
           hostData.where((item) => item['extensions']['state'] == 1).length;
+      hostUnreach =
+          hostData.where((item) => item['extensions']['state'] == 2).length;
       totalHosts = hostOk + hostDown + hostUnreach;
       if (totalHosts != 0) {
         percentageHostOk = hostOk / totalHosts;
@@ -139,42 +176,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         title: Text('Dashboard'),
       ),
-      body: Padding(
-        padding: EdgeInsets.only(top: 20.0), // Add padding at the top
-        child: Center(
-          // Center the widgets
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Text("Hosts: "),
-                  StateWidget(count: hostOk, color: Colors.green),
-                  StateWidget(
-                      count: hostDown,
-                      color: Colors.black,
-                      textColor: Colors.white), // DOWN
-                  StateWidget(
-                      count: hostUnreach,
-                      color: Colors.deepPurple,
-                      textColor: Colors.white), // UNREACH
+              Text(
+                'Hosts and Services Overview',
+                style: Theme.of(context).textTheme.headline6,
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 20),
+              HexagonGrid(
+                hexagons: [
+                  StateWidget(label: 'Hosts UP', count: hostOk, color: Colors.green),
+                  StateWidget(label: 'Hosts DOWN', count: hostDown, color: Colors.red, textColor: Colors.white),
+                  StateWidget(label: 'Hosts UNREACH', count: hostUnreach, color: Colors.deepPurple, textColor: Colors.white),
+                  StateWidget(label: 'Services OK', count: serviceOk, color: Colors.green),
+                  StateWidget(label: 'Services WARN', count: serviceWarn, color: Colors.yellow, textColor: Colors.black),
+                  StateWidget(label: 'Services CRIT', count: serviceCrit, color: Colors.red, textColor: Colors.white),
+                  StateWidget(label: 'Services UNKNOWN', count: serviceUnknown, color: Colors.orange),
                 ],
               ),
-              SizedBox(height: 20), // Add some space between the rows
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center, // Center the row
-                children: <Widget>[
-                  Text("Services: "),
-                  StateWidget(count: serviceOk, color: Colors.green),
-                  StateWidget(
-                      count: serviceWarn,
-                      color: Colors.yellow,
-                      textColor: Colors.black), // Make the text color black
-                  StateWidget(count: serviceCrit, color: Colors.red),
-                  StateWidget(count: serviceUnknown, color: Colors.orange),
-                ],
+              SizedBox(height: 20),
+              Text(
+                'Event Console',
+                style: Theme.of(context).textTheme.headline6,
+                textAlign: TextAlign.center,
               ),
-              Expanded(
+              SizedBox(height: 10),
+              Container(
+                height: 300, // Fixed height for the EventConsole
                 child: EventConsole(),
               ),
             ],
