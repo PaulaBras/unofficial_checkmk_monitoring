@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '/services/apiRequest.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -54,6 +55,7 @@ class StateWidget extends StatelessWidget {
           children: [
             Text(
               label,
+              textAlign: TextAlign.center,
               style: TextStyle(
                 color: textColor,
                 fontSize: 14,
@@ -63,6 +65,7 @@ class StateWidget extends StatelessWidget {
             SizedBox(height: 4),
             Text(
               '$count',
+              textAlign: TextAlign.center,
               style: TextStyle(
                 color: textColor,
                 fontSize: 24,
@@ -126,22 +129,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> fetchData() async {
     var api = ApiRequest();
-    var hostResponse =
-        await api.Request('domain-types/host/collections/all?columns=state');
-    var serviceResponse =
-        await api.Request('domain-types/service/collections/all?columns=state');
+    var hostResponse = await api.Request('domain-types/host/collections/all?columns=state');
+    var serviceResponse = await api.Request('domain-types/service/collections/all?columns=state');
 
     if (hostResponse != null && serviceResponse != null) {
       var hostData = hostResponse['value'];
       var serviceData = serviceResponse['value'];
 
       // Parse the host data and update the state counts
-      hostOk =
-          hostData.where((item) => item['extensions']['state'] == 0).length;
-      hostDown =
-          hostData.where((item) => item['extensions']['state'] == 1).length;
-      hostUnreach =
-          hostData.where((item) => item['extensions']['state'] == 2).length;
+      hostOk = hostData.where((item) => item['extensions']['state'] == 0).length;
+      hostDown = hostData.where((item) => item['extensions']['state'] == 1).length;
+      hostUnreach = hostData.where((item) => item['extensions']['state'] == 2).length;
       totalHosts = hostOk + hostDown + hostUnreach;
       if (totalHosts != 0) {
         percentageHostOk = hostOk / totalHosts;
@@ -150,14 +148,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
 
       // Parse the service data and update the state counts
-      serviceOk =
-          serviceData.where((item) => item['extensions']['state'] == 0).length;
-      serviceWarn =
-          serviceData.where((item) => item['extensions']['state'] == 1).length;
-      serviceCrit =
-          serviceData.where((item) => item['extensions']['state'] == 2).length;
-      serviceUnknown =
-          serviceData.length - serviceOk - serviceWarn - serviceCrit;
+      serviceOk = serviceData.where((item) => item['extensions']['state'] == 0).length;
+      serviceWarn = serviceData.where((item) => item['extensions']['state'] == 1).length;
+      serviceCrit = serviceData.where((item) => item['extensions']['state'] == 2).length;
+      serviceUnknown = serviceData.length - serviceOk - serviceWarn - serviceCrit;
       totalServices = serviceOk + serviceWarn + serviceCrit + serviceUnknown;
       if (totalServices != 0) {
         percentageServiceOk = serviceOk / totalServices;
@@ -193,6 +187,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   StateWidget(label: 'Hosts UP', count: hostOk, color: Colors.green),
                   StateWidget(label: 'Hosts DOWN', count: hostDown, color: Colors.red, textColor: Colors.white),
                   StateWidget(label: 'Hosts UNREACH', count: hostUnreach, color: Colors.deepPurple, textColor: Colors.white),
+                ],
+              ),
+              SizedBox(height: 40), // Increased spacing between hosts and services
+              HexagonGrid(
+                hexagons: [
                   StateWidget(label: 'Services OK', count: serviceOk, color: Colors.green),
                   StateWidget(label: 'Services WARN', count: serviceWarn, color: Colors.yellow, textColor: Colors.black),
                   StateWidget(label: 'Services CRIT', count: serviceCrit, color: Colors.red, textColor: Colors.white),
@@ -255,14 +254,11 @@ class _EventConsoleState extends State<EventConsole> {
         var lastCheck = item['extensions']['last_check'];
         var lastState = item['extensions']['last_state'];
         var lastNotification = item['extensions']['last_notification'];
-        return lastCheck > currentTime - 4 * 60 * 60 * 1000 &&
-            lastState != 'OK' &&
-            lastNotification != 'notification';
+        return lastCheck > currentTime - 4 * 60 * 60 * 1000 && lastState != 'OK' && lastNotification != 'notification';
       }).toList();
 
       // Sort the events chronologically
-      events.sort((a, b) => b['extensions']['last_check']
-          .compareTo(a['extensions']['last_check']));
+      events.sort((a, b) => b['extensions']['last_check'].compareTo(a['extensions']['last_check']));
 
       setState(() {});
     }
@@ -276,8 +272,7 @@ class _EventConsoleState extends State<EventConsole> {
         var event = events[index];
         return ListTile(
           title: Text('Service: ${event['name']}'),
-          subtitle: Text(
-              'Last check: ${DateTime.fromMillisecondsSinceEpoch(event['extensions']['last_check'])}\n'
+          subtitle: Text('Last check: ${DateTime.fromMillisecondsSinceEpoch(event['extensions']['last_check'])}\n'
               'Last state: ${event['extensions']['last_state']}\n'
               'Last hard state change: ${DateTime.fromMillisecondsSinceEpoch(event['extensions']['last_hard_state_change'])}\n'
               'Last critical time: ${DateTime.fromMillisecondsSinceEpoch(event['extensions']['last_time_critical'])}\n'
