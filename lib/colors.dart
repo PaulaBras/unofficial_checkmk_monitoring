@@ -9,9 +9,6 @@ const ColorScheme lightColorScheme = ColorScheme(
   onError: Colors.white,
   surface: Colors.white,
   onSurface: Colors.black,
-  background: Colors.white,
-  // Added background color
-  onBackground: Colors.black,
   // Added onBackground color
   brightness: Brightness.light,
 );
@@ -25,9 +22,6 @@ const ColorScheme darkColorScheme = ColorScheme(
   onPrimary: Colors.white,
   onSecondary: Colors.white,
   onSurface: Colors.white,
-  background: Color(0xFF121212),
-  // Added background color
-  onBackground: Colors.white,
   // Added onBackground color
   brightness: Brightness.dark,
 );
