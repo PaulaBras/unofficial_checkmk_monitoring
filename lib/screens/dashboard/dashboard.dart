@@ -180,7 +180,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: <Widget>[
               Text(
                 'Hosts and Services Overview',
-                style: Theme.of(context).textTheme.headline6,
+                style: Theme.of(context).textTheme.titleLarge,
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 20),
@@ -203,7 +203,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               SizedBox(height: 20),
               Text(
                 'Event Console',
-                style: Theme.of(context).textTheme.headline6,
+                style: Theme.of(context).textTheme.titleLarge,
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 10),
