@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '/services/apiRequest.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -160,7 +159,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         percentageServiceUnknown = serviceUnknown / totalServices;
       }
 
-      setState(() {});
+      if (mounted) {
+        setState(() {});
+      }
     }
   }
 
@@ -169,6 +170,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Dashboard'),
+        automaticallyImplyLeading: false, // This will remove the back button
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -185,17 +187,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
               HexagonGrid(
                 hexagons: [
                   StateWidget(label: 'Hosts UP', count: hostOk, color: Colors.green),
-                  StateWidget(label: 'Hosts DOWN', count: hostDown, color: Colors.red, textColor: Colors.white),
-                  StateWidget(label: 'Hosts UNREACH', count: hostUnreach, color: Colors.deepPurple, textColor: Colors.white),
+                  StateWidget(label: 'Hosts DOWN', count: hostDown, color: Color(0xFFCC0000), textColor: Colors.white),
+                  StateWidget(label: 'Hosts UNREACH', count: hostUnreach, color: Colors.orange, textColor: Colors.white),
                 ],
               ),
-              SizedBox(height: 40), // Increased spacing between hosts and services
+              SizedBox(height: 40),
               HexagonGrid(
                 hexagons: [
                   StateWidget(label: 'Services OK', count: serviceOk, color: Colors.green),
                   StateWidget(label: 'Services WARN', count: serviceWarn, color: Colors.yellow, textColor: Colors.black),
                   StateWidget(label: 'Services CRIT', count: serviceCrit, color: Colors.red, textColor: Colors.white),
-                  StateWidget(label: 'Services UNKNOWN', count: serviceUnknown, color: Colors.orange),
+                  StateWidget(label: 'Services UNKNOWN', count: serviceUnknown, color: Colors.purple),
                 ],
               ),
               SizedBox(height: 20),
@@ -206,7 +208,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               SizedBox(height: 10),
               Container(
-                height: 300, // Fixed height for the EventConsole
+                height: 300,
                 child: EventConsole(),
               ),
             ],
@@ -246,10 +248,8 @@ class _EventConsoleState extends State<EventConsole> {
     if (serviceResponse != null && serviceResponse.containsKey('value')) {
       var serviceData = serviceResponse['value'];
 
-      // Get the current time
       var currentTime = DateTime.now().millisecondsSinceEpoch;
 
-      // Filter the events that happened in the last 4 hours and are not 'OK' or 'notification'
       events = serviceData.where((item) {
         var lastCheck = item['extensions']['last_check'];
         var lastState = item['extensions']['last_state'];
@@ -257,10 +257,11 @@ class _EventConsoleState extends State<EventConsole> {
         return lastCheck > currentTime - 4 * 60 * 60 * 1000 && lastState != 'OK' && lastNotification != 'notification';
       }).toList();
 
-      // Sort the events chronologically
       events.sort((a, b) => b['extensions']['last_check'].compareTo(a['extensions']['last_check']));
 
-      setState(() {});
+      if (mounted) {
+        setState(() {});
+      }
     }
   }
 

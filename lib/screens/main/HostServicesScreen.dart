@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '/services/apiRequest.dart';
+import 'ServiceActionScreen.dart';
 
 class HostServiceScreen extends StatefulWidget {
   final String hostName;
@@ -66,32 +67,26 @@ class _HostServiceScreenState extends State<HostServiceScreen> {
                         service['extensions']['last_check'] * 1000));
                 String stateText;
                 Icon stateIcon;
-                Color color;
 
                 switch (state) {
                   case 0:
                     stateText = 'OK';
                     stateIcon = Icon(Icons.check_circle, color: Colors.green);
-                    color = Colors.green;
                     break;
                   case 1:
                     stateIcon = Icon(Icons.warning, color: Colors.yellow);
                     stateText = 'Warning';
-                    color = Colors.yellow;
                     break;
                   case 2:
                     stateIcon = Icon(Icons.error, color: Colors.red);
                     stateText = 'Critical';
-                    color = Colors.red;
                     break;
                   case 3:
                     stateIcon = Icon(Icons.help_outline, color: Colors.orange);
                     stateText = 'UNKNOWN';
-                    color = Colors.orange;
                     break;
                   default:
                     stateText = 'N/A';
-                    color = Colors.grey;
                     stateIcon = Icon(Icons.help_outline, color: Colors.grey);
                 }
 
@@ -111,6 +106,16 @@ class _HostServiceScreenState extends State<HostServiceScreen> {
                               'Attempt: ${service['extensions']['current_attempt']}/${service['extensions']['max_check_attempts']}\n'
                               'Last Time OK: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_time_ok'] * 1000))}\n'
                               'Is Flapping: ${service['extensions']['is_flapping']}'),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ServiceActionScreen(
+                              service: service,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 );

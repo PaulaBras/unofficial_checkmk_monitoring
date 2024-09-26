@@ -25,15 +25,16 @@ class _HostActionScreenState extends State<HostActionScreen> {
   @override
   void initState() {
     super.initState();
-
     _loadDateFormatAndLocale();
     _getHost();
   }
 
   void _loadDateFormatAndLocale() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    _dateFormat = prefs.getString('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
-    _locale = prefs.getString('locale') ?? 'de_DE';
+    setState(() {
+      _dateFormat = prefs.getString('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
+      _locale = prefs.getString('locale') ?? 'de_DE';
+    });
   }
 
   void recheckHost() {
@@ -95,29 +96,22 @@ class _HostActionScreenState extends State<HostActionScreen> {
     var host = _host;
     var state = host['extensions']['state'];
     Icon stateIcon;
-    Color color;
 
     switch (state) {
       case 0:
         stateIcon = Icon(Icons.check_circle, color: Colors.green);
-        color = Colors.green;
         break;
       case 1:
         stateIcon = Icon(Icons.warning, color: Colors.yellow);
-        color = Colors.yellow;
         break;
       case 2:
         stateIcon = Icon(Icons.error, color: Colors.red);
-        color = Colors.red;
         break;
       case 3:
         stateIcon = Icon(Icons.help_outline, color: Colors.orange);
-        color = Colors.orange;
         break;
       default:
-        stateIcon =
-            Icon(Icons.help_outline, color: Colors.grey); // Default icon
-        color = Colors.grey;
+        stateIcon = Icon(Icons.help_outline, color: Colors.grey);
         break;
     }
 
@@ -127,82 +121,116 @@ class _HostActionScreenState extends State<HostActionScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: _getHost,
-        child: _host == null
-            ? Center(child: CircularProgressIndicator())
-            : Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    ListTile(
-                      leading: stateIcon,
-                      title: Text(
-                        host['extensions']['name'],
-                        style: TextStyle(
-                          fontSize: 20.0, // adjust the size as needed
-                          fontWeight: FontWeight.bold, // makes the text thicker
-                        ),
-                      ),
-                      subtitle: Text(
-                          'Address: ${host['extensions']['address']}\n'
-                          'Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_check'] * 1000))}\n'
-                          'Last Time Up: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_time_up'] * 1000))}\n'
-                          'State: ${host['extensions']['state']}\n'
-                          'Total Services: ${host['extensions']['total_services']}\n'
-                          'Acknowledged: ${host['extensions']['acknowledged'] == 1 ? 'Yes' : 'No'}'),
+        child: SingleChildScrollView(
+          physics: AlwaysScrollableScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                ListTile(
+                  leading: stateIcon,
+                  title: Text(
+                    host['extensions']['name'],
+                    style: TextStyle(
+                      fontSize: 20.0,
+                      fontWeight: FontWeight.bold,
                     ),
-                    SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        ElevatedButton.icon(
-                          icon: Icon(Icons.refresh),
-                          label: Text('Recheck'),
-                          onPressed:
-                              null, // Disable the button by setting onPressed to null
-                        ),
-                        ElevatedButton.icon(
-                          icon: Icon(Icons.check_circle),
-                          label: Text('Acknowledge'),
-                          onPressed: () => acknowledgeHost(context),
-                        ),
-                      ],
+                  ),
+                  subtitle: Text(
+                      'Address: ${host['extensions']['address']}\n'
+                      'Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_check'] * 1000))}\n'
+                      'Last Time Up: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_time_up'] * 1000))}\n'
+                      'State: ${host['extensions']['state']}\n'
+                      'Total Services: ${host['extensions']['total_services']}\n'
+                      'Acknowledged: ${host['extensions']['acknowledged'] == 1 ? 'Yes' : 'No'}'),
+                ),
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton.icon(
+                      icon: Icon(Icons.refresh),
+                      label: Text('Recheck'),
+                      onPressed: recheckHost,
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        ElevatedButton.icon(
-                          icon: Icon(Icons.timer),
-                          label: Text('Downtime'),
-                          onPressed: () => downtimeHost(context),
-                        ),
-                        ElevatedButton.icon(
-                          icon: Icon(Icons.comment),
-                          label: Text('Comment'),
-                          onPressed: () => commentHost(context),
-                        ),
-                      ],
+                    ElevatedButton.icon(
+                      icon: Icon(Icons.check_circle),
+                      label: Text('Acknowledge'),
+                      onPressed: () => acknowledgeHost(context),
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => HostServiceScreen(
-                                        hostName: host['extensions']['name'])),
-                              );
-                            },
-                            icon: Icon(Icons.electrical_services),
-                            label: Text('Services')),
-                      ],
-                    )
-                    // Update the rest of the widgets to work with host data instead of service data
                   ],
                 ),
-              ),
+                SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton.icon(
+                      icon: Icon(Icons.timer),
+                      label: Text('Downtime'),
+                      onPressed: () => downtimeHost(context),
+                    ),
+                    ElevatedButton.icon(
+                      icon: Icon(Icons.comment),
+                      label: Text('Comment'),
+                      onPressed: () => commentHost(context),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => HostServiceScreen(
+                              hostName: host['extensions']['name'],
+                            ),
+                          ),
+                        );
+                      },
+                      icon: Icon(Icons.electrical_services),
+                      label: Text('Services'),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+                Text(
+                  'Comments',
+                  style: Theme.of(context).textTheme.headline6,
+                ),
+                FutureBuilder<List<dynamic>>(
+                  future: _getComments(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return Text('No comments available.');
+                    } else {
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: snapshot.data!.length,
+                        itemBuilder: (context, index) {
+                          var comment = snapshot.data![index];
+                          return ListTile(
+                            title: Text('Author: ${comment['extensions']['author']}'),
+                            subtitle: Text('Comment: ${comment['extensions']['comment']}'),
+                          );
+                        },
+                      );
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'reloadHostActions',

@@ -102,7 +102,7 @@ class _SetupScreenState extends State<SetupScreen> {
     super.dispose();
   }
 
-  void _saveSettings() async {
+  Future<void> _saveSettings() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       await secureStorage.writeSecureData('server', _serverController.text);
@@ -122,7 +122,11 @@ class _SetupScreenState extends State<SetupScreen> {
       bool loginSuccessful = await authService.login(
           _usernameController.text, _passwordController.text);
       if (loginSuccessful) {
-        Navigator.pushNamed(context, 'home_screen');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Settings saved successfully')),
+        );
+        // Remove this line to prevent automatic navigation
+        // Navigator.pushNamed(context, 'home_screen');
       } else {
         // Show an error message
         ScaffoldMessenger.of(context).showSnackBar(
