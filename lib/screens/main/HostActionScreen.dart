@@ -200,7 +200,7 @@ class _HostActionScreenState extends State<HostActionScreen> {
                 SizedBox(height: 20),
                 Text(
                   'Comments',
-                  style: Theme.of(context).textTheme.headline6,
+                  style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 FutureBuilder<List<dynamic>>(
                   future: _getComments(),
