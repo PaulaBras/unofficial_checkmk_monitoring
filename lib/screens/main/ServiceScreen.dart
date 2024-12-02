@@ -334,7 +334,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(10.0),
                                 border: Border.all(
-                                  color: Theme.of(context).colorScheme.surface,
+                                  color: Theme.of(context).colorScheme.secondary, // Use secondary color for better visibility
                                   width: 2.0,
                                 ),
                               ),

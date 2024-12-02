@@ -17,9 +17,9 @@ dependencies:
   flutter_secure_storage: ^9.0.0
   flutter_local_notifications: ^18.0.1
   bcrypt: ^1.1.0
-  intl: 0.18.1  # Pinned to current version due to flutter_localizations constraint
+  intl: ^0.19.0
   flutter_datetime_picker: ^1.5.1
-  flutter_timezone: ^1.0.8
+  flutter_timezone: ^3.0.1
   flutter_background: ^1.2.0
   flutter_svg: ^2.0.10
   flutter_localizations:

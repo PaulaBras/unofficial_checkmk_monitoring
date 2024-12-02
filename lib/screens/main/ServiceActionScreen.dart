@@ -72,14 +72,23 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
   }
 
   Future<void> _getService() async {
-    var api = ApiRequest();
-    var data = await api.Request(
-        'domain-types/service/collections/all?host_name=${widget.service['extensions']['host_name']}&service_description=${widget.service['extensions']['description']}&columns=state&columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged&columns=plugin_output&columns=is_flapping');
+    try {
+      var api = ApiRequest();
+      var data = await api.Request(
+          'domain-types/service/collections/all?host_name=${widget.service['extensions']['host_name']}&service_description=${widget.service['extensions']['description']}&columns=state&columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged&columns=plugin_output&columns=is_flapping');
 
-    var services = data['value'];
-    _service = services.isNotEmpty ? services.first : widget.service;
-
-    setState(() {});
+      var services = data['value'];
+      
+      // Check if the widget is still mounted before calling setState
+      if (mounted) {
+        setState(() {
+          _service = services.isNotEmpty ? services.first : widget.service;
+        });
+      }
+    } catch (e) {
+      print('Error fetching service details: $e');
+      // Optionally show an error dialog or snackbar
+    }
   }
 
   Future<List<dynamic>> _getComments() async {
@@ -131,33 +140,42 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              ListTile(
-                leading: stateIcon,
-                title: Text(
-                  service['extensions']['host_name'],
-                  style: TextStyle(
-                    fontSize: 20.0, // adjust the size as needed
-                    fontWeight: FontWeight.bold, // makes the text thicker
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10.0),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.secondary,
+                    width: 2.0,
                   ),
                 ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Service: $description'),
-                    Text(
-                        'Output: ${service['extensions']['plugin_output']}'),
-                    Text(
-                        'Current Attempt: ${service['extensions']['current_attempt']}/${service['extensions']['max_check_attempts']}'),
-                    Text(
-                        'Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_check'] * 1000))}'),
-                    Text(
-                        'Last Time OK: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_time_ok'] * 1000))}'),
-                    Text(
-                        'Is Flapping: ${isFlapping == 1 ? 'Yes' : 'No'}'),
-                    // Display is_flapping
-                    if (isFlapping == 1) Icon(Icons.waves),
-                    // Display wave icon if is_flapping is 1
-                  ],
+                child: ListTile(
+                  leading: stateIcon,
+                  title: Text(
+                    service['extensions']['host_name'],
+                    style: TextStyle(
+                      fontSize: 20.0, // adjust the size as needed
+                      fontWeight: FontWeight.bold, // makes the text thicker
+                    ),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Service: $description'),
+                      Text(
+                          'Output: ${service['extensions']['plugin_output']}'),
+                      Text(
+                          'Current Attempt: ${service['extensions']['current_attempt']}/${service['extensions']['max_check_attempts']}'),
+                      Text(
+                          'Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_check'] * 1000))}'),
+                      Text(
+                          'Last Time OK: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_time_ok'] * 1000))}'),
+                      Text(
+                          'Is Flapping: ${isFlapping == 1 ? 'Yes' : 'No'}'),
+                      // Display is_flapping
+                      if (isFlapping == 1) Icon(Icons.waves),
+                      // Display wave icon if is_flapping is 1
+                    ],
+                  ),
                 ),
               ),
               SizedBox(height: 20),

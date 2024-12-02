@@ -133,6 +133,14 @@ class _UserScreenState extends State<UserScreen> {
           // User Interface Section
           Card(
             margin: const EdgeInsets.all(8),
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.secondary,
+                width: 1.5,
+              ),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -191,6 +199,14 @@ class _UserScreenState extends State<UserScreen> {
           // Notifications Section
           Card(
             margin: const EdgeInsets.all(8),
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.secondary,
+                width: 1.5,
+              ),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -283,6 +299,14 @@ class _UserScreenState extends State<UserScreen> {
           // Connection Settings Section
           Card(
             margin: const EdgeInsets.all(8),
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.secondary,
+                width: 1.5,
+              ),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -328,6 +352,14 @@ class _UserScreenState extends State<UserScreen> {
           // Localization Section
           Card(
             margin: const EdgeInsets.all(8),
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.secondary,
+                width: 1.5,
+              ),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -380,6 +412,14 @@ class _UserScreenState extends State<UserScreen> {
           // User Profile Section
           Card(
             margin: const EdgeInsets.all(8),
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.secondary,
+                width: 1.5,
+              ),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

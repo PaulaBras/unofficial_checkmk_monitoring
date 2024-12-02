@@ -329,7 +329,7 @@ class _HostScreenState extends State<HostScreen> {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10.0),
                             border: Border.all(
-                              color: Theme.of(context).colorScheme.surface,
+                              color: Theme.of(context).colorScheme.secondary, // Updated border color
                               width: 2.0,
                             ),
                           ),
