@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/apiRequest.dart';
 import '../../services/authService.dart';
 import '../../services/secureStorage.dart';
+import '../../services/notificationHandler.dart';
 import 'AreNotificationsActive.dart';
 import 'SetupNotificationSchedule.dart';
 
@@ -41,6 +42,9 @@ class _SetupScreenState extends State<SetupScreen> {
     authService = AuthenticationService(secureStorage, apiRequest);
     _loadSettings();
     _startNotificationCheckTask();
+    
+    // Initialize notifications
+    NotificationHandler.initializeNotifications();
   }
 
   void _loadSettings() async {
@@ -232,6 +236,17 @@ class _SetupScreenState extends State<SetupScreen> {
                   },
                 ),
                 ElevatedButton(
+                  onPressed: _notification ? () {
+                    // Send a test notification only if notifications are enabled
+                    NotificationHandler.showTestNotification();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Test notification sent')),
+                    );
+                  } : null, // Disable button if notifications are not enabled
+                  child: Text('Send Test Notification'),
+                ),
+
+                                ElevatedButton(
                   onPressed: () {
                     Navigator.push(
                       context,

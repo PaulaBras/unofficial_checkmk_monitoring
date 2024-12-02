@@ -136,7 +136,7 @@ class HostScreen extends StatefulWidget {
 }
 
 class _HostScreenState extends State<HostScreen> {
-  List<dynamic> _allHosts = []; // Add this line to store all hosts
+  List<dynamic> _allHosts = [];
   List<dynamic> _filteredHosts = [];
   Set<HostState> _filterStates = {...HostState.values};
   Timer? _timer;
@@ -154,29 +154,50 @@ class _HostScreenState extends State<HostScreen> {
     super.initState();
     _loadDateFormatAndLocale();
     _getHosts();
-    _timer = Timer.periodic(Duration(minutes: 1), (Timer t) => _getHosts());
+    _startPeriodicRefresh();
+  }
+
+  void _startPeriodicRefresh() {
+    _timer?.cancel(); // Cancel any existing timer
+    _timer = Timer.periodic(Duration(minutes: 1), (Timer t) {
+      if (mounted) {
+        _getHosts();
+      } else {
+        t.cancel(); // Cancel the timer if the widget is no longer mounted
+      }
+    });
   }
 
   void _loadDateFormatAndLocale() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    _dateFormat = prefs.getString('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
-    _locale = prefs.getString('locale') ?? 'de_DE';
+    if (mounted) {
+      setState(() {
+        _dateFormat = prefs.getString('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
+        _locale = prefs.getString('locale') ?? 'de_DE';
+      });
+    }
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
 
   Future<void> _getHosts() async {
+    if (!mounted) return;
+
     var api = ApiRequest();
     var data = await api.Request(
         'domain-types/host/collections/all?query=%7B%22op%22%3A%20%22%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=name&columns=address&columns=last_check&columns=last_time_up&columns=state&columns=total_services&columns=acknowledged');
 
     var error = api.getErrorMessage();
+    
+    // Check if widget is still mounted before calling setState
+    if (!mounted) return;
+
     if (error != null) {
-      // Stop the timer
       setState(() {
         _error = error;
         _allHosts = [];
@@ -187,14 +208,18 @@ class _HostScreenState extends State<HostScreen> {
         _allHosts = data['value'];
         _filterHosts();
         _error = null;
-        // Restart the timer if it was stopped
-        if (_timer == null || !_timer!.isActive) {
-          _timer =
-              Timer.periodic(Duration(minutes: 1), (Timer t) => _getHosts());
-        }
       });
+
+      // Restart periodic refresh if needed
+      if (_timer == null || !_timer!.isActive) {
+        _startPeriodicRefresh();
+      }
     }
-    NotificationService().checkTimer();
+
+    // Only call checkTimer if the widget is still mounted
+    if (mounted) {
+      NotificationService().checkTimer();
+    }
   }
 
   void _filterHosts() {

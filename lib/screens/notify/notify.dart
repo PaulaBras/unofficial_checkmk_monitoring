@@ -40,31 +40,23 @@ class NotificationService {
     // android notification settings
     final AndroidInitializationSettings androidInitializationSettings =
         AndroidInitializationSettings('@mipmap/launcher_icon');
+    
     // ios notification settings
     final DarwinInitializationSettings initializationSettingsDarwin =
         DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
-      onDidReceiveLocalNotification:
-          (int id, String? title, String? body, String? payload) async {
-        didReceiveLocalNotificationStream.add(
-          ReceivedNotification(
-            id: id,
-            title: title,
-            body: body,
-            payload: payload,
-          ),
-        );
-      },
       notificationCategories: darwinNotificationCategories,
     );
+    
     // linux notification settings
     final LinuxInitializationSettings initializationSettingsLinux =
         LinuxInitializationSettings(
       defaultActionName: 'Open notification',
       defaultIcon: AssetsLinuxIcon('images/checkmk-icon-green.png'),
     );
+    
     // initialize the settings
     final InitializationSettings initializationSettings =
         InitializationSettings(
@@ -150,8 +142,6 @@ class NotificationService {
   Future<void> requestNotificationsPermission() async {
     _isAndroidPermissionGranted();
     _requestPermissions();
-    //_configureDidReceiveLocalNotificationSubject();
-    //_configureSelectNotificationSubject();
   }
 
   Future<void> _isAndroidPermissionGranted() async {
