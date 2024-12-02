@@ -2,55 +2,34 @@ import 'package:flutter/material.dart';
 
 class BottomNavigationWidget extends StatelessWidget {
   final int currentIndex;
-  final void Function(int) onItemTapped;
+  final Function(int) onItemTapped;
 
   const BottomNavigationWidget({
-    super.key,
+    Key? key,
     required this.currentIndex,
     required this.onItemTapped,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: Theme.of(context).copyWith(
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(
-                color: Colors.grey,
-                width: 2.0), // Adjust color and width as needed
-          ),
+    return BottomNavigationBar(
+      currentIndex: currentIndex,
+      onTap: onItemTapped,
+      type: BottomNavigationBarType.fixed,
+      items: [
+        BottomNavigationBarItem(
+          icon: Icon(Icons.dashboard),
+          label: 'Dashboard',
         ),
-        child: BottomNavigationBar(
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard),
-              label: 'Dashboard',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.business),
-              label: 'Services',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Hosts',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.settings),
-              label: 'Setup',
-            ),
-          ],
-          currentIndex: currentIndex,
-          selectedItemColor: Theme.of(context).colorScheme.primary,
-          unselectedItemColor: Theme.of(context).colorScheme.onSurface,
-          onTap: onItemTapped,
-          elevation: 0.0,
+        BottomNavigationBarItem(
+          icon: Icon(Icons.miscellaneous_services),
+          label: 'Services',
         ),
-      ),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.computer),
+          label: 'Hosts',
+        ),
+      ],
     );
   }
 }

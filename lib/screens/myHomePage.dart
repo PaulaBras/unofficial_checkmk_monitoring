@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '/screens/dashboard/dashboard.dart';
 import '/screens/main/HostScreen.dart';
 import '/screens/main/ServiceScreen.dart';
-import '/screens/setup/setupScreen.dart';
 import '/widgets/appBarWidget.dart';
 import '/widgets/bottomNavigationWidget.dart';
 import '/widgets/settingsDrawer.dart';
@@ -57,7 +56,6 @@ class _MyHomePageState extends State<MyHomePage> {
                   DashboardScreen(),
                   ServiceScreen(),
                   HostScreen(),
-                  SetupScreen(),
                 ],
               ),
               bottomNavigationBar: BottomNavigationWidget(

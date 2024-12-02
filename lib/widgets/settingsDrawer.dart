@@ -1,34 +1,69 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../screens/user/user.dart';
+import '../screens/user/loginScreen.dart';
+import '../screens/help/help.dart';
+import '../services/authService.dart';
+import '../services/secureStorage.dart';
+import '../services/apiRequest.dart';
+import '../colors.dart';
 
 class SettingsDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      backgroundColor: Theme.of(context).colorScheme.surface,
       child: ListView(
         padding: EdgeInsets.zero,
-        children: [
+        children: <Widget>[
           DrawerHeader(
-            child: Text('Settings',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
+              color: lightColorScheme.primary,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SvgPicture.asset(
+                  'images/checkmk-logo-white.svg',
+                  height: 80,
+                  width: 80,
+                  colorFilter: ColorFilter.mode(
+                    Colors.white, 
+                    BlendMode.srcIn
+                  ),
+                ),
+              ],
             ),
           ),
           ListTile(
-            title: Text('Help'),
+            leading: Icon(Icons.settings, color: lightColorScheme.primary),
+            title: Text('Settings'),
             onTap: () {
-              // Update the state of the app
-              // Then close the drawer
-              Navigator.pushNamed(context, 'help_screen');
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => UserScreen()),
+              );
             },
           ),
           ListTile(
-            title: Text('User'),
+            leading: Icon(Icons.help, color: lightColorScheme.primary),
+            title: Text('Help'),
             onTap: () {
-              // Update the state of the app
-              // Then close the drawer
-              Navigator.pushNamed(context, 'user_screen');
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => HelpScreen()),
+              );
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.logout, color: lightColorScheme.primary),
+            title: Text('Logout'),
+            onTap: () async {
+              var secureStorage = SecureStorage();
+              var apiRequest = ApiRequest();
+              var authService = AuthenticationService(secureStorage, apiRequest);
+              
+              await authService.logout(() {});
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => LoginScreen()),
+              );
             },
           ),
         ],

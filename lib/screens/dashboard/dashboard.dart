@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '/services/apiRequest.dart';
+import 'dart:async';
 
 class DashboardScreen extends StatefulWidget {
   @override
@@ -121,6 +122,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   double percentageServiceUnknown = 0;
 
   bool _isLoading = true;
+  DateTime? _lastFetchTime;
+  static const Duration _cacheDuration = Duration(minutes: 1);
 
   @override
   void initState() {
@@ -128,7 +131,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     fetchData();
   }
 
-  Future<void> fetchData() async {
+  Future<void> fetchData({bool forceRefresh = false}) async {
+    // Check if data is cached and not expired
+    if (!forceRefresh && _lastFetchTime != null && 
+        DateTime.now().difference(_lastFetchTime!) < _cacheDuration) {
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -164,6 +173,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         percentageServiceCrit = serviceCrit / totalServices;
         percentageServiceUnknown = serviceUnknown / totalServices;
       }
+
+      // Update last fetch time
+      _lastFetchTime = DateTime.now();
     }
 
     if (mounted) {
@@ -178,65 +190,69 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Dashboard'),
-        automaticallyImplyLeading: false, // This will remove the back button
+        automaticallyImplyLeading: false,
       ),
-      body: _isLoading 
-        ? Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Loading dashboard data...', style: Theme.of(context).textTheme.bodyMedium),
-              ],
-            ),
-          )
-        : SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
+      body: RefreshIndicator(
+        onRefresh: () => fetchData(forceRefresh: true),
+        child: _isLoading 
+          ? Center(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Text(
-                    'Hosts and Services Overview',
-                    style: Theme.of(context).textTheme.titleLarge,
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 20),
-                  HexagonGrid(
-                    hexagons: [
-                      StateWidget(label: 'Hosts UP', count: hostOk, color: Colors.green),
-                      StateWidget(label: 'Hosts DOWN', count: hostDown, color: Color(0xFFCC0000), textColor: Colors.white),
-                      StateWidget(label: 'Hosts UNREACH', count: hostUnreach, color: Colors.orange, textColor: Colors.white),
-                    ],
-                  ),
-                  SizedBox(height: 40),
-                  HexagonGrid(
-                    hexagons: [
-                      StateWidget(label: 'Services OK', count: serviceOk, color: Colors.green),
-                      StateWidget(label: 'Services WARN', count: serviceWarn, color: Colors.yellow, textColor: Colors.black),
-                      StateWidget(label: 'Services CRIT', count: serviceCrit, color: Colors.red, textColor: Colors.white),
-                      StateWidget(label: 'Services UNKNOWN', count: serviceUnknown, color: Colors.purple),
-                    ],
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    'Event Console',
-                    style: Theme.of(context).textTheme.titleLarge,
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 10),
-                  Container(
-                    height: 300,
-                    child: EventConsole(),
-                  ),
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Loading dashboard data...', style: Theme.of(context).textTheme.bodyMedium),
                 ],
               ),
+            )
+          : SingleChildScrollView(
+              physics: AlwaysScrollableScrollPhysics(),
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Text(
+                      'Hosts and Services Overview',
+                      style: Theme.of(context).textTheme.titleLarge,
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 20),
+                    HexagonGrid(
+                      hexagons: [
+                        StateWidget(label: 'Hosts UP', count: hostOk, color: Colors.green),
+                        StateWidget(label: 'Hosts DOWN', count: hostDown, color: Color(0xFFCC0000), textColor: Colors.white),
+                        StateWidget(label: 'Hosts UNREACH', count: hostUnreach, color: Colors.orange, textColor: Colors.white),
+                      ],
+                    ),
+                    SizedBox(height: 40),
+                    HexagonGrid(
+                      hexagons: [
+                        StateWidget(label: 'Services OK', count: serviceOk, color: Colors.green),
+                        StateWidget(label: 'Services WARN', count: serviceWarn, color: Colors.yellow, textColor: Colors.black),
+                        StateWidget(label: 'Services CRIT', count: serviceCrit, color: Colors.red, textColor: Colors.white),
+                        StateWidget(label: 'Services UNKNOWN', count: serviceUnknown, color: Colors.purple),
+                      ],
+                    ),
+                    SizedBox(height: 20),
+                    Text(
+                      'Event Console',
+                      style: Theme.of(context).textTheme.titleLarge,
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 10),
+                    Container(
+                      height: 300,
+                      child: EventConsole(),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
+      ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'reloadDashboardData',
-        onPressed: fetchData,
+        onPressed: () => fetchData(forceRefresh: true),
         tooltip: 'Refresh',
         child: Icon(Icons.refresh),
         backgroundColor: Theme.of(context).colorScheme.primary,
