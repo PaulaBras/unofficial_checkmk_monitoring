@@ -27,12 +27,12 @@ build_android:
   script:
     - flutter build appbundle --release
     - flutter build apk --release
-    - cp build/app/outputs/bundle/release/app-release.aab pv-solar.aab
-    - cp build/app/outputs/flutter-apk/app-release.apk pv-solar.apk
+    - cp build/app/outputs/bundle/release/app-release.aab unofficial_check_mk.aab
+    - cp build/app/outputs/flutter-apk/app-release.apk unofficial_check_mk.apk
   artifacts:
     name: "android-build-${CI_COMMIT_SHORT_SHA}"
     paths:
-      - pv-solar.aab
-      - pv-solar.apk
+      - unofficial_check_mk.aab
+      - unofficial_check_mk.apk
   only:
     - main  # This job will run only for the main branch

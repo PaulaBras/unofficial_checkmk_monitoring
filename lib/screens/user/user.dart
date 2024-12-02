@@ -7,15 +7,12 @@ import '../../services/apiRequest.dart';
 import '../../services/authService.dart';
 import '../../services/secureStorage.dart';
 import '../../services/notificationHandler.dart';
-import '/screens/myHomePage.dart';
-import '/screens/user/loginScreen.dart';
-import '/services/themeNotifier.dart';
-import '/widgets/appBarWidget.dart';
+import '../../services/themeNotifier.dart';
+import '../myHomePage.dart';
 import '../setup/ConnectionSettingsWidget.dart';
-import '../notify/notify.dart';
 import '../setup/AreNotificationsActive.dart';
 import '../setup/SetupNotificationSchedule.dart';
-import '../../colors.dart';
+import '../user/loginScreen.dart';
 
 class UserScreen extends StatefulWidget {
   final bool fromDrawer;
@@ -27,9 +24,9 @@ class UserScreen extends StatefulWidget {
 }
 
 class _UserScreenState extends State<UserScreen> {
-  var secureStorage = SecureStorage();
-  var apiRequest = ApiRequest();
-  late AuthenticationService authService;
+  final SecureStorage _secureStorage = SecureStorage();
+  final ApiRequest _apiRequest = ApiRequest();
+  late AuthenticationService _authService;
   final CheckmkNotificationService _notificationService = CheckmkNotificationService();
   
   String _startPage = 'Dashboard';
@@ -40,14 +37,14 @@ class _UserScreenState extends State<UserScreen> {
   bool _isConnectionSettingsExpanded = false;
 
   // Service state notification settings
-  Map<String, bool> _serviceStateNotifications = {
+  final Map<String, bool> _serviceStateNotifications = {
     'green': true,
     'warning': true,
     'critical': true,
     'unknown': true,
   };
 
-  Map<String, int> pageNameToIndex = {
+  final Map<String, int> _pageNameToIndex = {
     'Dashboard': 0,
     'Service': 1,
     'Host': 2,
@@ -56,11 +53,11 @@ class _UserScreenState extends State<UserScreen> {
   @override
   void initState() {
     super.initState();
-    authService = AuthenticationService(secureStorage, apiRequest);
+    _authService = AuthenticationService(_secureStorage, _apiRequest);
     final myHomePageLogic = MyHomePageLogic();
     myHomePageLogic.loadStartIndex().then((value) {
       setState(() {
-        _startPage = pageNameToIndex.keys.elementAt(value);
+        _startPage = _pageNameToIndex.keys.elementAt(value);
       });
     });
     _loadSettings();
@@ -81,7 +78,7 @@ class _UserScreenState extends State<UserScreen> {
 
   void _loadServiceNotificationSettings() async {
     for (var state in _serviceStateNotifications.keys) {
-      String? savedSetting = await secureStorage.readSecureData('notify_$state');
+      String? savedSetting = await _secureStorage.readSecureData('notify_$state');
       setState(() {
         _serviceStateNotifications[state] = savedSetting?.toLowerCase() != 'false';
       });
@@ -100,12 +97,12 @@ class _UserScreenState extends State<UserScreen> {
 
     // Save service state notification settings
     for (var entry in _serviceStateNotifications.entries) {
-      await secureStorage.writeSecureData('notify_${entry.key}', entry.value.toString());
+      await _secureStorage.writeSecureData('notify_${entry.key}', entry.value.toString());
     }
   }
 
   void _toggleServiceNotification(String state, bool value) async {
-    await secureStorage.writeSecureData('notify_$state', value.toString());
+    await _secureStorage.writeSecureData('notify_$state', value.toString());
     setState(() {
       _serviceStateNotifications[state] = value;
     });
@@ -119,9 +116,9 @@ class _UserScreenState extends State<UserScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Settings'),
+        title: const Text('Settings'),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () {
             if (widget.fromDrawer) {
               Navigator.pop(context);
@@ -135,7 +132,7 @@ class _UserScreenState extends State<UserScreen> {
         children: <Widget>[
           // User Interface Section
           Card(
-            margin: EdgeInsets.all(8),
+            margin: const EdgeInsets.all(8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -150,8 +147,8 @@ class _UserScreenState extends State<UserScreen> {
                         colorFilter: ColorFilter.mode(
                             colorScheme.primary, BlendMode.srcIn),
                       ),
-                      SizedBox(width: 10),
-                      Text(
+                      const SizedBox(width: 10),
+                      const Text(
                         'User interface',
                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
@@ -159,7 +156,7 @@ class _UserScreenState extends State<UserScreen> {
                   ),
                 ),
                 SwitchListTile(
-                  title: Text('Dark Theme'),
+                  title: const Text('Dark Theme'),
                   value: themeNotifier.darkTheme,
                   onChanged: (value) {
                     setState(() {
@@ -168,10 +165,10 @@ class _UserScreenState extends State<UserScreen> {
                   },
                 ),
                 ListTile(
-                  title: Text('Set Start Page'),
+                  title: const Text('Set Start Page'),
                   trailing: DropdownButton<String>(
                     value: _startPage,
-                    items: pageNameToIndex.keys.map((pageName) {
+                    items: _pageNameToIndex.keys.map((pageName) {
                       return DropdownMenuItem<String>(
                         value: pageName,
                         child: Text(pageName),
@@ -182,7 +179,7 @@ class _UserScreenState extends State<UserScreen> {
                         setState(() {
                           _startPage = newValue;
                         });
-                        myHomePageLogic.updateStartIndex(pageNameToIndex[newValue]!);
+                        myHomePageLogic.updateStartIndex(_pageNameToIndex[newValue]!);
                       }
                     },
                   ),
@@ -193,7 +190,7 @@ class _UserScreenState extends State<UserScreen> {
 
           // Notifications Section
           Card(
-            margin: EdgeInsets.all(8),
+            margin: const EdgeInsets.all(8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -202,8 +199,8 @@ class _UserScreenState extends State<UserScreen> {
                   child: Row(
                     children: [
                       Icon(Icons.notifications, color: colorScheme.primary),
-                      SizedBox(width: 10),
-                      Text(
+                      const SizedBox(width: 10),
+                      const Text(
                         'Notifications',
                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
@@ -211,7 +208,7 @@ class _UserScreenState extends State<UserScreen> {
                   ),
                 ),
                 SwitchListTile(
-                  title: Text('Enable Notification'),
+                  title: const Text('Enable Notification'),
                   value: _notification,
                   onChanged: _notificationSchedule
                       ? null
@@ -223,7 +220,7 @@ class _UserScreenState extends State<UserScreen> {
                         },
                 ),
                 SwitchListTile(
-                  title: Text('Enable Schedule Notification'),
+                  title: const Text('Enable Schedule Notification'),
                   value: _notificationSchedule,
                   onChanged: (bool value) async {
                     setState(() {
@@ -237,7 +234,7 @@ class _UserScreenState extends State<UserScreen> {
                 
                 // Service State Notification Settings
                 ExpansionTile(
-                  title: Text('Service State Notifications'),
+                  title: const Text('Service State Notifications'),
                   children: _serviceStateNotifications.keys.map((state) {
                     return SwitchListTile(
                       title: Text('Notify on $state state'),
@@ -258,13 +255,13 @@ class _UserScreenState extends State<UserScreen> {
                         'Notifications are working correctly!'
                       );
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Test notification sent'), duration: Duration(seconds: 1)),
+                        const SnackBar(content: Text('Test notification sent'), duration: Duration(seconds: 1)),
                       );
                     } : null,
-                    child: Text('Send Test Notification'),
+                    child: const Text('Send Test Notification'),
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: ElevatedButton(
@@ -275,17 +272,17 @@ class _UserScreenState extends State<UserScreen> {
                             builder: (context) => NotificationSchedulePage()),
                       );
                     },
-                    child: Text('Setup Notification Schedule'),
+                    child: const Text('Setup Notification Schedule'),
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
               ],
             ),
           ),
 
           // Connection Settings Section
           Card(
-            margin: EdgeInsets.all(8),
+            margin: const EdgeInsets.all(8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -294,8 +291,8 @@ class _UserScreenState extends State<UserScreen> {
                   child: Row(
                     children: [
                       Icon(Icons.settings_ethernet, color: colorScheme.primary),
-                      SizedBox(width: 10),
-                      Text(
+                      const SizedBox(width: 10),
+                      const Text(
                         'Connection',
                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
@@ -310,7 +307,7 @@ class _UserScreenState extends State<UserScreen> {
                         _isConnectionSettingsExpanded = !_isConnectionSettingsExpanded;
                       });
                     },
-                    child: Text('Manage Connection'),
+                    child: const Text('Manage Connection'),
                   ),
                 ),
                 if (_isConnectionSettingsExpanded) 
@@ -330,7 +327,7 @@ class _UserScreenState extends State<UserScreen> {
 
           // Localization Section
           Card(
-            margin: EdgeInsets.all(8),
+            margin: const EdgeInsets.all(8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -339,8 +336,8 @@ class _UserScreenState extends State<UserScreen> {
                   child: Row(
                     children: [
                       Icon(Icons.language, color: colorScheme.primary),
-                      SizedBox(width: 10),
-                      Text(
+                      const SizedBox(width: 10),
+                      const Text(
                         'Localization',
                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
@@ -350,7 +347,7 @@ class _UserScreenState extends State<UserScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: DropdownButtonFormField<String>(
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Language',
                       border: OutlineInputBorder(),
                     ),
@@ -375,14 +372,14 @@ class _UserScreenState extends State<UserScreen> {
                     }).toList(),
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
               ],
             ),
           ),
 
           // User Profile Section
           Card(
-            margin: EdgeInsets.all(8),
+            margin: const EdgeInsets.all(8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -395,8 +392,8 @@ class _UserScreenState extends State<UserScreen> {
                         width: 30,
                         height: 30,
                       ),
-                      SizedBox(width: 10),
-                      Text(
+                      const SizedBox(width: 10),
+                      const Text(
                         'User profile',
                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
@@ -407,16 +404,16 @@ class _UserScreenState extends State<UserScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: ElevatedButton(
                     onPressed: () async {
-                      await authService.logout(() {});
+                      await _authService.logout(() {});
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
                             builder: (context) => LoginScreen()),
                       );
                     },
-                    child: Text('Logout'),
+                    child: const Text('Logout'),
                   ),
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
               ],
             ),
           ),

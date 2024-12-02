@@ -16,7 +16,6 @@ import 'package:timezone/timezone.dart' as tz;
 import 'colors.dart';
 import 'screens/help/help.dart';
 import 'screens/myHomePage.dart';
-import 'screens/notify/notify.dart' hide NotificationService;
 import 'screens/user/loginScreen.dart';
 import 'screens/user/user.dart';
 import 'screens/user/welcomeScreen.dart';
@@ -43,26 +42,26 @@ CheckmkNotificationService? notificationService;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  Future<void> _configureLocalTimeZone() async {
+  Future<void> configureLocalTimeZone() async {
     if (kIsWeb || Platform.isLinux) {
       return;
     }
     tz.initializeTimeZones();
-    final String? timeZoneName = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(timeZoneName!));
+    final timeZoneName = await FlutterTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(timeZoneName));
   }
 
-  await _configureLocalTimeZone();
+  await configureLocalTimeZone();
 
-  SecureStorage storage = SecureStorage();
-  AuthenticationService authService = AuthenticationService(storage, ApiRequest());
+  final SecureStorage storage = SecureStorage();
+  final AuthenticationService authService = AuthenticationService(storage, ApiRequest());
 
   // Check if credentials are already saved
-  var savedCredentials = await authService.loadCredentials();
-  String initialRoute = savedCredentials != null ? homeScreenId : welcomeScreenId;
+  final savedCredentials = await authService.loadCredentials();
+  final initialRoute = savedCredentials != null ? homeScreenId : welcomeScreenId;
 
   // Initialize the FlutterBackground plugin
-  final bool success = await FlutterBackground.initialize(
+  final success = await FlutterBackground.initialize(
       androidConfig: FlutterBackgroundAndroidConfig(
     notificationTitle: "Unofficial CheckMK Monitoring App",
     notificationText: "Monitoring in the background",
@@ -80,8 +79,9 @@ void main() async {
     notificationService!.start();
 
     // handle notification selection
-    selectNotificationStream.stream.listen((String? payload) async {
+    selectNotificationStream.stream.listen((payload) async {
       // Handle the user's response to the notification here
+      // ignore: avoid_print
       print('Notification selected with payload: $payload');
     });
 
@@ -89,11 +89,11 @@ void main() async {
     await FlutterBackground.enableBackgroundExecution();
   }
 
-  SharedPreferences prefs = await SharedPreferences.getInstance();
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
 
   if (prefs.getBool('firstRun') ?? true) {
     await storage.init();
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setString('dateFormat', 'dd.MM.yyyy, HH:mm');
     prefs.setString('locale', 'de_DE');
     prefs.setBool('firstRun', false);
@@ -103,7 +103,7 @@ void main() async {
     Intl.defaultLocale = 'de_DE';
     runApp(
       ChangeNotifierProvider<ThemeNotifier>(
-        create: (_) => new ThemeNotifier(),
+        create: (_) => ThemeNotifier(),
         child: MyApp(initialRoute: initialRoute),
       ),
     );
@@ -113,7 +113,7 @@ void main() async {
 class MyApp extends StatelessWidget {
   final String initialRoute;
 
-  const MyApp({Key? key, required this.initialRoute}) : super(key: key);
+  const MyApp({super.key, required this.initialRoute});
 
   @override
   Widget build(BuildContext context) {
@@ -127,12 +127,12 @@ class MyApp extends StatelessWidget {
       initialRoute: initialRoute,
       onGenerateRoute: getRoute,
       debugShowCheckedModeBanner: false,
-      localizationsDelegates: [
+      localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: [
+      supportedLocales: const [
         Locale('en'),
       ],
     );

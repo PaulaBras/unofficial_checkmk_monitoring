@@ -43,9 +43,9 @@ class Downtime {
     );
 
     if (data == true) {
-      print("Downtime created successfully");
+      debugPrint("Downtime created successfully");
     } else {
-      print("Failed to create downtime");
+      debugPrint("Failed to create downtime");
     }
   }
 }
@@ -54,7 +54,11 @@ class DowntimeServiceWidget extends StatefulWidget {
   final String hostName;
   final String serviceDescription;
 
-  DowntimeServiceWidget({required this.hostName, required this.serviceDescription});
+  const DowntimeServiceWidget({
+    super.key, 
+    required this.hostName, 
+    required this.serviceDescription
+  });
 
   @override
   _DowntimeServiceWidgetState createState() => _DowntimeServiceWidgetState();
@@ -111,7 +115,7 @@ class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(_startTime == null ? 'Select Start Time' : 'Start Time: ${DateFormat(_dateFormat, _locale).format(_startTime)}'),
+                  Text('Start Time: ${DateFormat(_dateFormat, _locale).format(_startTime)}'),
                   ElevatedButton(
                     onPressed: () async {
                       final date = await showDatePicker(
@@ -145,14 +149,14 @@ class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
                         }
                       }
                     },
-                    child: Text('Select'),
+                    child: const Text('Select'),
                   ),
                 ],
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(_endTime == null ? 'Select End Time' : 'End Time: ${DateFormat(_dateFormat, _locale).format(_endTime)}'),
+                  Text('End Time: ${DateFormat(_dateFormat, _locale).format(_endTime)}'),
                   ElevatedButton(
                     onPressed: () async {
                       final date = await showDatePicker(
@@ -186,13 +190,13 @@ class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
                         }
                       }
                     },
-                    child: Text('Select'),
+                    child: const Text('Select'),
                   ),
                 ],
               ),
               DropdownButtonFormField<String>(
                 value: _recur,
-                decoration: InputDecoration(labelText: 'Recur'),
+                decoration: const InputDecoration(labelText: 'Recur'),
                 items: ['fixed', 'hour', 'day', 'week', 'second_week', 'fourth_week', 'weekday_start', 'weekday_end', 'day_of_month'].map((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
@@ -201,35 +205,41 @@ class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
                 }).toList(),
                 onChanged: (newValue) {
                   setState(() {
-                    _recur = newValue!;
+                    _recur = newValue ?? 'fixed';
                   });
                 },
                 onSaved: (newValue) {
-                  _downtime?.recur = newValue!;
+                  if (_downtime != null) {
+                    _downtime!.recur = newValue ?? 'fixed';
+                  }
                 },
               ),
               TextFormField(
                 controller: _durationController,
-                decoration: InputDecoration(labelText: 'Duration (minutes)'),
+                decoration: const InputDecoration(labelText: 'Duration (minutes)'),
                 keyboardType: TextInputType.number,
                 onSaved: (value) {
-                  _downtime?.duration = int.tryParse(value ?? '0') ?? 0;
+                  if (_downtime != null) {
+                    _downtime!.duration = int.tryParse(value ?? '0') ?? 0;
+                  }
                 },
               ),
               TextFormField(
-                decoration: InputDecoration(labelText: 'Comment'),
+                decoration: const InputDecoration(labelText: 'Comment'),
                 onSaved: (value) {
-                  _downtime?.comment = value ?? '';
+                  if (_downtime != null) {
+                    _downtime!.comment = value ?? '';
+                  }
                 },
               ),
               TextFormField(
                 controller: _serviceDescriptionController,
-                decoration: InputDecoration(labelText: 'Service Description'),
+                decoration: const InputDecoration(labelText: 'Service Description'),
                 enabled: false,
               ),
               TextFormField(
                 controller: _hostNameController,
-                decoration: InputDecoration(labelText: 'Host Name'),
+                decoration: const InputDecoration(labelText: 'Host Name'),
                 enabled: false,
               ),
             ],

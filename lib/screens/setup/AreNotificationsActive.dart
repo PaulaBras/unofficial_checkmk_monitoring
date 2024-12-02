@@ -29,21 +29,16 @@ class AreNotificationsActive {
     print(_workingHoursEnd);
 
     _notifyDuringWorkingHours =
-        (await secureStorage.readSecureData('notifyDuringWorkingHours'))
-                    ?.toLowerCase() ==
-                'true' ??
-            true;
+        (await secureStorage.readSecureData('notifyDuringWorkingHours') ?? 'true')
+            .toLowerCase() == 'true';
     _notifyDuringOffHours =
-        (await secureStorage.readSecureData('notifyDuringOffHours'))
-                    ?.toLowerCase() ==
-                'true' ??
-            false;
+        (await secureStorage.readSecureData('notifyDuringOffHours') ?? 'false')
+            .toLowerCase() == 'true';
 
     for (int i = 0; i < 7; i++) {
-      _selectedDays[i] = (await secureStorage.readSecureData('selectedDay$i'))
-                  ?.toLowerCase() ==
-              'true' ??
-          (i < 5);
+      _selectedDays[i] = 
+        (await secureStorage.readSecureData('selectedDay$i') ?? (i < 5 ? 'true' : 'false'))
+            .toLowerCase() == 'true';
     }
   }
 

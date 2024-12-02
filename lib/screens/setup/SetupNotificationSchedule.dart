@@ -35,10 +35,12 @@ class _NotificationSchedulePageState extends State<NotificationSchedulePage> {
   }
 
   Future<void> _loadSettings() async {
-    _selectedTimeZone = await secureStorage.readSecureData('timeZone') ?? 'UTC';
-    _dateFormat =
+    _selectedTimeZone = 
+        await secureStorage.readSecureData('timeZone') ?? 'UTC';
+    _dateFormat = 
         await secureStorage.readSecureData('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
-    _locale = await secureStorage.readSecureData('locale') ?? 'de_DE';
+    _locale = 
+        await secureStorage.readSecureData('locale') ?? 'de_DE';
 
     final startHour = int.parse(
         await secureStorage.readSecureData('workingHoursStartHour') ?? '8');
@@ -52,22 +54,17 @@ class _NotificationSchedulePageState extends State<NotificationSchedulePage> {
         await secureStorage.readSecureData('workingHoursEndMinute') ?? '0');
     _workingHoursEnd = TimeOfDay(hour: endHour, minute: endMinute);
 
-    _notifyDuringWorkingHours =
-        (await secureStorage.readSecureData('notifyDuringWorkingHours'))
-                    ?.toLowerCase() ==
-                'true' ??
-            true;
-    _notifyDuringOffHours =
-        (await secureStorage.readSecureData('notifyDuringOffHours'))
-                    ?.toLowerCase() ==
-                'true' ??
-            false;
+    _notifyDuringWorkingHours = 
+        (await secureStorage.readSecureData('notifyDuringWorkingHours') ?? 'true')
+            .toLowerCase() == 'true';
+    _notifyDuringOffHours = 
+        (await secureStorage.readSecureData('notifyDuringOffHours') ?? 'false')
+            .toLowerCase() == 'true';
 
     for (int i = 0; i < 7; i++) {
-      _selectedDays[i] = (await secureStorage.readSecureData('selectedDay$i'))
-                  ?.toLowerCase() ==
-              'true' ??
-          (i < 5);
+      _selectedDays[i] = 
+        (await secureStorage.readSecureData('selectedDay$i') ?? (i < 5 ? 'true' : 'false'))
+            .toLowerCase() == 'true';
     }
 
     setState(() {});
