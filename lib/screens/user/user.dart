@@ -30,7 +30,7 @@ class _UserScreenState extends State<UserScreen> {
   var secureStorage = SecureStorage();
   var apiRequest = ApiRequest();
   late AuthenticationService authService;
-  final NotificationService _notificationService = NotificationService();
+  final CheckmkNotificationService _notificationService = CheckmkNotificationService();
   
   String _startPage = 'Dashboard';
   bool _notification = true;
@@ -38,6 +38,14 @@ class _UserScreenState extends State<UserScreen> {
   String _dateFormat = 'dd.MM.yyyy, HH:mm';
   String _locale = 'de_DE';
   bool _isConnectionSettingsExpanded = false;
+
+  // Service state notification settings
+  Map<String, bool> _serviceStateNotifications = {
+    'green': true,
+    'warning': true,
+    'critical': true,
+    'unknown': true,
+  };
 
   Map<String, int> pageNameToIndex = {
     'Dashboard': 0,
@@ -56,6 +64,7 @@ class _UserScreenState extends State<UserScreen> {
       });
     });
     _loadSettings();
+    _loadServiceNotificationSettings();
   }
 
   void _loadSettings() async {
@@ -70,6 +79,15 @@ class _UserScreenState extends State<UserScreen> {
     });
   }
 
+  void _loadServiceNotificationSettings() async {
+    for (var state in _serviceStateNotifications.keys) {
+      String? savedSetting = await secureStorage.readSecureData('notify_$state');
+      setState(() {
+        _serviceStateNotifications[state] = savedSetting?.toLowerCase() != 'false';
+      });
+    }
+  }
+
   Future<void> _saveSettings() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('dateFormat', _dateFormat);
@@ -79,6 +97,18 @@ class _UserScreenState extends State<UserScreen> {
       enabled: _notification,
       schedule: _notificationSchedule ? 'default' : '',
     );
+
+    // Save service state notification settings
+    for (var entry in _serviceStateNotifications.entries) {
+      await secureStorage.writeSecureData('notify_${entry.key}', entry.value.toString());
+    }
+  }
+
+  void _toggleServiceNotification(String state, bool value) async {
+    await secureStorage.writeSecureData('notify_$state', value.toString());
+    setState(() {
+      _serviceStateNotifications[state] = value;
+    });
   }
 
   @override
@@ -204,6 +234,21 @@ class _UserScreenState extends State<UserScreen> {
                     _saveSettings();
                   },
                 ),
+                
+                // Service State Notification Settings
+                ExpansionTile(
+                  title: Text('Service State Notifications'),
+                  children: _serviceStateNotifications.keys.map((state) {
+                    return SwitchListTile(
+                      title: Text('Notify on $state state'),
+                      value: _serviceStateNotifications[state] ?? true,
+                      onChanged: (bool? value) {
+                        _toggleServiceNotification(state, value ?? true);
+                      },
+                    );
+                  }).toList(),
+                ),
+
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: ElevatedButton(

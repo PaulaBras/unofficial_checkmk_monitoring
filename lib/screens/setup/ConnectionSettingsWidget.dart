@@ -23,6 +23,16 @@ class _ConnectionSettingsWidgetState extends State<ConnectionSettingsWidget> {
   final _siteController = TextEditingController();
   
   bool _ignoreCertificate = false;
+  bool _enableNotifications = false;
+  
+  // Service state notification settings
+  Map<String, bool> _serviceStateNotifications = {
+    'green': true,
+    'warning': true,
+    'critical': true,
+    'unknown': true,
+  };
+
   String _protocol = 'https';
   final _formKey = GlobalKey<FormState>();
 
@@ -40,6 +50,13 @@ class _ConnectionSettingsWidgetState extends State<ConnectionSettingsWidget> {
     _passwordController.text = await secureStorage.readSecureData('password') ?? '';
     _siteController.text = await secureStorage.readSecureData('site') ?? '';
     _ignoreCertificate = (await secureStorage.readSecureData('ignoreCertificate'))?.toLowerCase() == 'true';
+    _enableNotifications = (await secureStorage.readSecureData('enableNotifications'))?.toLowerCase() == 'true';
+    
+    // Load service state notification settings
+    for (var state in _serviceStateNotifications.keys) {
+      String? savedSetting = await secureStorage.readSecureData('notify_$state');
+      _serviceStateNotifications[state] = savedSetting?.toLowerCase() != 'false';
+    }
     
     setState(() {});
   }
@@ -52,6 +69,12 @@ class _ConnectionSettingsWidgetState extends State<ConnectionSettingsWidget> {
       await secureStorage.writeSecureData('password', _passwordController.text);
       await secureStorage.writeSecureData('site', _siteController.text);
       await secureStorage.writeSecureData('ignoreCertificate', _ignoreCertificate.toString());
+      await secureStorage.writeSecureData('enableNotifications', _enableNotifications.toString());
+      
+      // Save service state notification settings
+      for (var entry in _serviceStateNotifications.entries) {
+        await secureStorage.writeSecureData('notify_${entry.key}', entry.value.toString());
+      }
 
       bool loginSuccessful = await authService.login(
         _usernameController.text, 
@@ -70,6 +93,7 @@ class _ConnectionSettingsWidgetState extends State<ConnectionSettingsWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Existing connection settings fields...
           DropdownButtonFormField<String>(
             value: _protocol,
             decoration: InputDecoration(
@@ -152,7 +176,33 @@ class _ConnectionSettingsWidgetState extends State<ConnectionSettingsWidget> {
                   }
                 : null,
           ),
-          SizedBox(height: 16),
+          SwitchListTile(
+            title: Text('Enable Background Notifications'),
+            value: _enableNotifications,
+            onChanged: (bool value) {
+              setState(() {
+                _enableNotifications = value;
+              });
+            },
+          ),
+
+          // Service State Notification Settings
+          ExpansionTile(
+            title: Text('Service State Notifications'),
+            children: _serviceStateNotifications.keys.map((state) {
+              return SwitchListTile(
+                title: Text('Notify on $state state'),
+                value: _serviceStateNotifications[state] ?? true,
+                onChanged: (bool? value) {
+                  setState(() {
+                    _serviceStateNotifications[state] = value ?? true;
+                  });
+                },
+              );
+            }).toList(),
+          ),
+
+          // Save and Close buttons
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

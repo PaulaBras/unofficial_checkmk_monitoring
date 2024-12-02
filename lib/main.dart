@@ -16,7 +16,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'colors.dart';
 import 'screens/help/help.dart';
 import 'screens/myHomePage.dart';
-import 'screens/notify/notify.dart';
+import 'screens/notify/notify.dart' hide NotificationService;
 import 'screens/user/loginScreen.dart';
 import 'screens/user/user.dart';
 import 'screens/user/welcomeScreen.dart';
@@ -24,7 +24,7 @@ import 'services/notificationHandler.dart';
 import 'services/secureStorage.dart';
 import 'services/themeNotifier.dart';
 import 'services/authService.dart';
-import 'services/apiRequest.dart';  // Added import for ApiRequest
+import 'services/apiRequest.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -38,7 +38,7 @@ const String userScreenId = 'user_screen';
 
 String? selectedNotificationPayload;
 
-NotificationService? notificationService;
+CheckmkNotificationService? notificationService;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -72,7 +72,7 @@ void main() async {
 
   if (success) {
     // Initialize the global notificationService variable
-    notificationService = NotificationService();
+    notificationService = CheckmkNotificationService();
 
     // Request notification permissions
     await notificationService!.requestNotificationsPermission();
