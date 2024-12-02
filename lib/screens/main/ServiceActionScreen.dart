@@ -74,18 +74,12 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
   Future<void> _getService() async {
     var api = ApiRequest();
     var data = await api.Request(
-        'domain-types/service/collections/all?query=%7B%22op%22%3A%20%22!%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=state&columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged&columns=plugin_output');
+        'domain-types/service/collections/all?host_name=${widget.service['extensions']['host_name']}&service_description=${widget.service['extensions']['description']}&columns=state&columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged&columns=plugin_output&columns=is_flapping');
 
     var services = data['value'];
-    _service = services.firstWhere(
-        (service) => service['id'] == widget.service['id'],
-        orElse: () => null);
+    _service = services.isNotEmpty ? services.first : widget.service;
 
-    if (_service == null) {
-      Navigator.pop(context);
-    } else {
-      setState(() {});
-    }
+    setState(() {});
   }
 
   Future<List<dynamic>> _getComments() async {
@@ -97,14 +91,7 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_service == null) {
-      return Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-    var service = _service;
+    var service = _service ?? widget.service;
     var state = service['extensions']['state'];
     var description = service['extensions']['description'];
     var isFlapping = service['extensions']['is_flapping'];
@@ -139,127 +126,125 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: _getService,
-        child: _service == null
-            ? Center(child: CircularProgressIndicator())
-            : Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              ListTile(
+                leading: stateIcon,
+                title: Text(
+                  service['extensions']['host_name'],
+                  style: TextStyle(
+                    fontSize: 20.0, // adjust the size as needed
+                    fontWeight: FontWeight.bold, // makes the text thicker
+                  ),
+                ),
+                subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    ListTile(
-                      leading: stateIcon,
-                      title: Text(
-                        service['extensions']['host_name'],
-                        style: TextStyle(
-                          fontSize: 20.0, // adjust the size as needed
-                          fontWeight: FontWeight.bold, // makes the text thicker
-                        ),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Service: $description'),
-                          Text(
-                              'Output: ${service['extensions']['plugin_output']}'),
-                          Text(
-                              'Current Attempt: ${service['extensions']['current_attempt']}/${service['extensions']['max_check_attempts']}'),
-                          Text(
-                              'Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_check'] * 1000))}'),
-                          Text(
-                              'Last Time OK: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_time_ok'] * 1000))}'),
-                          Text(
-                              'Is Flapping: ${isFlapping == 1 ? 'Yes' : 'No'}'),
-                          // Display is_flapping
-                          if (isFlapping == 1) Icon(Icons.waves),
-                          // Display wave icon if is_flapping is 1
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        ElevatedButton.icon(
-                          icon: Icon(Icons.refresh),
-                          label: Text('Recheck'),
-                          onPressed:
-                              null, // Disable the button by setting onPressed to null
-                        ),
-                        ElevatedButton.icon(
-                          icon: Icon(Icons.check_circle),
-                          label: Text('Acknowledge'),
-                          onPressed: () => acknowledgeService(context),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        ElevatedButton.icon(
-                          icon: Icon(Icons.timer),
-                          label: Text('Downtime'),
-                          onPressed: () => downtimeService(context),
-                        ),
-                        ElevatedButton.icon(
-                          icon: Icon(Icons.comment),
-                          label: Text('Comment'),
-                          onPressed: () => commentService(context),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 20),
-                    Divider(
-                      color: Colors.grey,
-                      height: 2.0,
-                    ),
-                    Expanded(
-                      child: FutureBuilder<List<dynamic>>(
-                        future: _getComments(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return Center(child: CircularProgressIndicator());
-                          } else if (snapshot.hasError) {
-                            return Text('Error: ${snapshot.error}');
-                          } else {
-                            return Scrollbar(
-                              controller: _scrollController,
-                              child: ListView.builder(
-                                controller: _scrollController,
-                                itemCount: snapshot.data?.length ?? 0,
-                                itemBuilder: (context, index) {
-                                  var comment = snapshot.data?[index];
-                                  return ListTile(
-                                    title: Text(
-                                        'Author: ${comment['extensions']['author']}'),
-                                    subtitle: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                            'Comment: ${comment['extensions']['comment']}'),
-                                        Text(
-                                            'Persistent: ${comment['extensions']['persistent'] ? 'Yes' : 'No'}'),
-                                        Text(
-                                            'Entry Time: ${comment['extensions']['entry_time']}'),
-                                        if (comment['extensions']
-                                                ['expire_time'] !=
-                                            null)
-                                          Text(
-                                              'Expire Time: ${comment['extensions']['expire_time']}'),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              ),
-                            );
-                          }
-                        },
-                      ),
-                    ),
+                  children: [
+                    Text('Service: $description'),
+                    Text(
+                        'Output: ${service['extensions']['plugin_output']}'),
+                    Text(
+                        'Current Attempt: ${service['extensions']['current_attempt']}/${service['extensions']['max_check_attempts']}'),
+                    Text(
+                        'Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_check'] * 1000))}'),
+                    Text(
+                        'Last Time OK: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_time_ok'] * 1000))}'),
+                    Text(
+                        'Is Flapping: ${isFlapping == 1 ? 'Yes' : 'No'}'),
+                    // Display is_flapping
+                    if (isFlapping == 1) Icon(Icons.waves),
+                    // Display wave icon if is_flapping is 1
                   ],
                 ),
               ),
+              SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton.icon(
+                    icon: Icon(Icons.refresh),
+                    label: Text('Recheck'),
+                    onPressed:
+                        null, // Disable the button by setting onPressed to null
+                  ),
+                  ElevatedButton.icon(
+                    icon: Icon(Icons.check_circle),
+                    label: Text('Acknowledge'),
+                    onPressed: () => acknowledgeService(context),
+                  ),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton.icon(
+                    icon: Icon(Icons.timer),
+                    label: Text('Downtime'),
+                    onPressed: () => downtimeService(context),
+                  ),
+                  ElevatedButton.icon(
+                    icon: Icon(Icons.comment),
+                    label: Text('Comment'),
+                    onPressed: () => commentService(context),
+                  ),
+                ],
+              ),
+              SizedBox(height: 20),
+              Divider(
+                color: Colors.grey,
+                height: 2.0,
+              ),
+              Expanded(
+                child: FutureBuilder<List<dynamic>>(
+                  future: _getComments(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    } else {
+                      return Scrollbar(
+                        controller: _scrollController,
+                        child: ListView.builder(
+                          controller: _scrollController,
+                          itemCount: snapshot.data?.length ?? 0,
+                          itemBuilder: (context, index) {
+                            var comment = snapshot.data?[index];
+                            return ListTile(
+                              title: Text(
+                                  'Author: ${comment['extensions']['author']}'),
+                              subtitle: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                      'Comment: ${comment['extensions']['comment']}'),
+                                  Text(
+                                      'Persistent: ${comment['extensions']['persistent'] ? 'Yes' : 'No'}'),
+                                  Text(
+                                      'Entry Time: ${comment['extensions']['entry_time']}'),
+                                  if (comment['extensions']
+                                          ['expire_time'] !=
+                                      null)
+                                    Text(
+                                        'Expire Time: ${comment['extensions']['expire_time']}'),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'reloadServiceActions',
