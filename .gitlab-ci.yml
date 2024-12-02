@@ -1,0 +1,38 @@
+image: ghcr.io/cirruslabs/flutter:3.24.3
+
+stages:
+  - test
+  - build
+
+variables:
+  ANDROID_COMPILE_SDK: "33"
+  ANDROID_BUILD_TOOLS: "33.0.0"
+  ANDROID_SDK_TOOLS:   "9477386"
+
+cache:
+  paths:
+    - .pub-cache/
+    - .dart_tool/
+
+before_script:
+  - flutter pub get
+
+analyze:
+  stage: test
+  script:
+    - flutter analyze
+
+build_android:
+  stage: build
+  script:
+    - flutter build appbundle --release
+    - flutter build apk --release
+    - cp build/app/outputs/bundle/release/app-release.aab pv-solar.aab
+    - cp build/app/outputs/flutter-apk/app-release.apk pv-solar.apk
+  artifacts:
+    name: "android-build-${CI_COMMIT_SHORT_SHA}"
+    paths:
+      - pv-solar.aab
+      - pv-solar.apk
+  only:
+    - main  # This job will run only for the main branch
