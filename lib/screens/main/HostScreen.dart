@@ -247,6 +247,7 @@ class _HostScreenState extends State<HostScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Host Overview'),
+        automaticallyImplyLeading: false, // Remove the back button
         actions: [
           IconButton(
             icon: Icon(Icons.filter_list),

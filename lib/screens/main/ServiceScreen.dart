@@ -255,6 +255,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Services Overview"),
+        automaticallyImplyLeading: false, // Remove the back button
         actions: [
           IconButton(
             icon: Icon(Icons.filter_list),

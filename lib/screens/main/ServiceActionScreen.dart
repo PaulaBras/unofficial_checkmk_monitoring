@@ -112,6 +112,10 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
     Color color;
 
     switch (state) {
+      case 0:
+        stateIcon = Icon(Icons.check_circle, color: Colors.green);
+        color = Colors.green;
+        break;
       case 1:
         stateIcon = Icon(Icons.warning, color: Colors.yellow);
         color = Colors.yellow;
@@ -125,7 +129,8 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
         color = Colors.orange;
         break;
       default:
-        return Container(); // Return an empty container if the state is not 1, 2, or 3
+        stateIcon = Icon(Icons.help_outline, color: Colors.grey);
+        color = Colors.grey;
     }
 
     return Scaffold(
