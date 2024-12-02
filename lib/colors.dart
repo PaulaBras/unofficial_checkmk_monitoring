@@ -7,10 +7,8 @@ const ColorScheme lightColorScheme = ColorScheme(
   onSecondary: Colors.white,         // White text on secondary color
   error: Color(0xFFD32F2F),         // More defined error color
   onError: Colors.white,             // White text on error color
-  surface: Colors.white,             // White surface
+  surface: Color(0xFFF5F5F5),        // Light grey surface
   onSurface: Colors.black87,         // Dark text on surface
-  background: Color(0xFFF5F5F5),    // Light grey background
-  onBackground: Colors.black87,      // Dark text on background
   brightness: Brightness.light,
 );
 
@@ -21,9 +19,7 @@ const ColorScheme darkColorScheme = ColorScheme(
   onSecondary: Colors.white,          // White text on secondary color
   error: Color(0xFFEF5350),          // Softer red for error
   onError: Colors.white,              // White text on error color
-  surface: Color(0xFF1E2533),        // Dark surface
+  surface: Color(0xFF121212),         // Very dark surface
   onSurface: Colors.white,            // White text on surface
-  background: Color(0xFF121212),     // Very dark background
-  onBackground: Colors.white,         // White text on background
   brightness: Brightness.dark,
 );

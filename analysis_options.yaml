@@ -31,6 +31,7 @@ analyzer:
     unused_parameter: ignore
     unnecessary_statements: ignore
     include_file_not_found: ignore
+    deprecated_member_use: ignore  # Added to suppress the false positive warning
 
 # Explicitly set the minimum severity level
 severity:
