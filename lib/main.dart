@@ -23,6 +23,8 @@ import 'screens/user/welcomeScreen.dart';
 import 'services/notificationHandler.dart';
 import 'services/secureStorage.dart';
 import 'services/themeNotifier.dart';
+import 'services/authService.dart';
+import 'services/apiRequest.dart';  // Added import for ApiRequest
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -53,6 +55,11 @@ void main() async {
   await _configureLocalTimeZone();
 
   SecureStorage storage = SecureStorage();
+  AuthenticationService authService = AuthenticationService(storage, ApiRequest());
+
+  // Check if credentials are already saved
+  var savedCredentials = await authService.loadCredentials();
+  String initialRoute = savedCredentials != null ? homeScreenId : welcomeScreenId;
 
   // Initialize the FlutterBackground plugin
   final bool success = await FlutterBackground.initialize(
@@ -97,14 +104,16 @@ void main() async {
     runApp(
       ChangeNotifierProvider<ThemeNotifier>(
         create: (_) => new ThemeNotifier(),
-        child: MyApp(),
+        child: MyApp(initialRoute: initialRoute),
       ),
     );
   });
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  final String initialRoute;
+
+  const MyApp({Key? key, required this.initialRoute}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -115,7 +124,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(useMaterial3: true, colorScheme: lightColorScheme),
       darkTheme: ThemeData(useMaterial3: true, colorScheme: darkColorScheme),
       themeMode: themeNotifier.darkTheme ? ThemeMode.dark : ThemeMode.light,
-      initialRoute: welcomeScreenId,
+      initialRoute: initialRoute,
       onGenerateRoute: getRoute,
       debugShowCheckedModeBanner: false,
       localizationsDelegates: [

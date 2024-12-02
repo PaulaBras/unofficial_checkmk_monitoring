@@ -7,6 +7,7 @@ import '../../services/apiRequest.dart';
 import '../../services/authService.dart';
 import '../../services/secureStorage.dart';
 import '../../services/notificationHandler.dart';
+import '../../screens/notify/notify.dart';
 import 'AreNotificationsActive.dart';
 import 'SetupNotificationSchedule.dart';
 
@@ -26,101 +27,68 @@ class _SetupScreenState extends State<SetupScreen> {
   final _passwordController = TextEditingController();
   final _siteController = TextEditingController();
   bool _ignoreCertificate = false;
-  bool _notification = false;
+  bool _notification = true; // Default to true
   bool _notificationSchedule = false;
   String _dateFormat = 'dd.MM.yyyy, HH:mm';
   String _locale = 'de_DE';
   String _protocol = 'https';
   final _formKey = GlobalKey<FormState>();
-  bool _isNotificationActive = false;
-  bool _isNotificationScheduleActive = false;
   Timer? _notificationCheckTask;
+
+  // Notification service instance
+  final NotificationService _notificationService = NotificationService();
 
   @override
   void initState() {
     super.initState();
     authService = AuthenticationService(secureStorage, apiRequest);
     _loadSettings();
-    _startNotificationCheckTask();
-    
-    // Initialize notifications
-    NotificationHandler.initializeNotifications();
   }
 
   void _loadSettings() async {
-    // Load settings from secure storage
+    // Load server and authentication details
     _protocol = await secureStorage.readSecureData('protocol') ?? '';
     _serverController.text = await secureStorage.readSecureData('server') ?? '';
-    _usernameController.text =
-        await secureStorage.readSecureData('username') ?? '';
-    _passwordController.text =
-        await secureStorage.readSecureData('password') ?? '';
+    _usernameController.text = await secureStorage.readSecureData('username') ?? '';
+    _passwordController.text = await secureStorage.readSecureData('password') ?? '';
     _siteController.text = await secureStorage.readSecureData('site') ?? '';
-    _ignoreCertificate =
-        (await secureStorage.readSecureData('ignoreCertificate'))
-                    ?.toLowerCase() ==
-                'true' ??
-            false;
-    // Load settings from shared preferences
+    _ignoreCertificate = (await secureStorage.readSecureData('ignoreCertificate'))?.toLowerCase() == 'true' ?? false;
+
+    // Load notification settings
+    var notificationSettings = await _notificationService.loadNotificationSettings();
+    setState(() {
+      _notification = notificationSettings['enabled'];
+      _notificationSchedule = notificationSettings['schedule'] != null && notificationSettings['schedule'] != '';
+    });
+
+    // Load other preferences
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    _notification =
-        (await secureStorage.readSecureData('notification'))?.toLowerCase() ==
-                'true' ??
-            false;
-    _notification = (await secureStorage.readSecureData('notificationSchedule'))
-                ?.toLowerCase() ==
-            'true' ??
-        false;
     _dateFormat = prefs.getString('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
     _locale = prefs.getString('locale') ?? 'de_DE';
-    _isNotificationActive =
-        (await secureStorage.readSecureData('notification'))?.toLowerCase() ==
-                'true' ??
-            false;
-    _isNotificationScheduleActive =
-        (await secureStorage.readSecureData('notificationSchedule'))
-                    ?.toLowerCase() ==
-                'true' ??
-            false;
-    if (_notificationSchedule) {
-      var notifier = AreNotificationsActive();
-      _notification = await notifier.areNotificationsActive();
-    }
-    setState(() {});
-  }
-
-  void _startNotificationCheckTask() {
-    _notificationCheckTask =
-        Timer.periodic(Duration(minutes: 5), (timer) async {
-      if (_isNotificationActive || _isNotificationScheduleActive) {
-        var notifier = AreNotificationsActive();
-        _notification = await notifier.areNotificationsActive();
-        _saveSettings();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _notificationCheckTask?.cancel();
-    super.dispose();
   }
 
   Future<void> _saveSettings() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
+      
+      // Save server and authentication details
       await secureStorage.writeSecureData('server', _serverController.text);
       await secureStorage.writeSecureData('username', _usernameController.text);
       await secureStorage.writeSecureData('password', _passwordController.text);
       await secureStorage.writeSecureData('site', _siteController.text);
-      await secureStorage.writeSecureData(
-          'ignoreCertificate', _ignoreCertificate.toString());
-      await secureStorage.writeSecureData(
-          'notification', _notification.toString());
-      await secureStorage.writeSecureData(
-          'notificationSchedule', _notificationSchedule.toString());
-      await secureStorage.writeSecureData('dateFormat', _dateFormat);
-      await secureStorage.writeSecureData('locale', _locale);
+      await secureStorage.writeSecureData('ignoreCertificate', _ignoreCertificate.toString());
+      await secureStorage.writeSecureData('protocol', _protocol);
+
+      // Save notification settings
+      await _notificationService.saveNotificationSettings(
+        enabled: _notification,
+        schedule: _notificationSchedule ? 'default' : '',
+      );
+
+      // Save locale and date format preferences
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('dateFormat', _dateFormat);
+      await prefs.setString('locale', _locale);
 
       // Login again
       bool loginSuccessful = await authService.login(
@@ -129,13 +97,9 @@ class _SetupScreenState extends State<SetupScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Settings saved successfully')),
         );
-        // Remove this line to prevent automatic navigation
-        // Navigator.pushNamed(context, 'home_screen');
       } else {
-        // Show an error message
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Login failed. Please check your credentials.')),
+          SnackBar(content: Text('Login failed. Please check your credentials.')),
         );
       }
     }
@@ -238,15 +202,17 @@ class _SetupScreenState extends State<SetupScreen> {
                 ElevatedButton(
                   onPressed: _notification ? () {
                     // Send a test notification only if notifications are enabled
-                    NotificationHandler.showTestNotification();
+                    _notificationService.sendNotification(
+                      'Test Notification', 
+                      'Notifications are working correctly!'
+                    );
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Test notification sent')),
                     );
                   } : null, // Disable button if notifications are not enabled
                   child: Text('Send Test Notification'),
                 ),
-
-                                ElevatedButton(
+                ElevatedButton(
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -286,5 +252,14 @@ class _SetupScreenState extends State<SetupScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _serverController.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
+    _siteController.dispose();
+    super.dispose();
   }
 }

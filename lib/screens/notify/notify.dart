@@ -17,6 +17,10 @@ class NotificationService {
   Map<String, dynamic> _cache;
   late NotificationServiceCheck notificationServiceCheck;
 
+  // Notification settings keys
+  static const String _notificationsEnabledKey = 'notifications_enabled';
+  static const String _notificationScheduleKey = 'notifications_schedule';
+
   // Private constructor
   NotificationService._()
       : _cache = {},
@@ -25,8 +29,51 @@ class NotificationService {
     _initialize();
   }
 
+  // Save notification settings
+  Future<void> saveNotificationSettings({
+    bool? enabled,
+    String? schedule,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    // If enabled is not provided, load the current value
+    bool currentEnabled = await isNotificationsEnabled();
+    enabled ??= currentEnabled;
+
+    // Save enabled status
+    await prefs.setBool(_notificationsEnabledKey, enabled);
+
+    // Save schedule if provided
+    if (schedule != null) {
+      await prefs.setString(_notificationScheduleKey, schedule);
+    }
+
+    // If enabled, start the notification service
+    if (enabled) {
+      start();
+    } else {
+      stop();
+    }
+  }
+
+  // Load notification settings
+  Future<Map<String, dynamic>> loadNotificationSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    return {
+      'enabled': prefs.getBool(_notificationsEnabledKey) ?? true, // Default to true
+      'schedule': prefs.getString(_notificationScheduleKey) ?? '', // Empty schedule by default
+    };
+  }
+
+  // Check if notifications are currently enabled
+  Future<bool> isNotificationsEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_notificationsEnabledKey) ?? true; // Default to true
+  }
+
   Future<void> _initialize() async {
-    // Define the Darwin notification categories
+    // Existing initialization code remains the same...
     final List<DarwinNotificationCategory> darwinNotificationCategories =
         <DarwinNotificationCategory>[
       DarwinNotificationCategory(
@@ -37,11 +84,9 @@ class NotificationService {
       ),
     ];
 
-    // android notification settings
     final AndroidInitializationSettings androidInitializationSettings =
         AndroidInitializationSettings('@mipmap/launcher_icon');
     
-    // ios notification settings
     final DarwinInitializationSettings initializationSettingsDarwin =
         DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -50,14 +95,12 @@ class NotificationService {
       notificationCategories: darwinNotificationCategories,
     );
     
-    // linux notification settings
     final LinuxInitializationSettings initializationSettingsLinux =
         LinuxInitializationSettings(
       defaultActionName: 'Open notification',
       defaultIcon: AssetsLinuxIcon('images/checkmk-icon-green.png'),
     );
     
-    // initialize the settings
     final InitializationSettings initializationSettings =
         InitializationSettings(
       android: androidInitializationSettings,
@@ -76,6 +119,11 @@ class NotificationService {
         }
       },
     );
+
+    // Automatically start notifications if enabled (default to true)
+    if (await isNotificationsEnabled()) {
+      start();
+    }
   }
 
   // Static instance
@@ -87,7 +135,10 @@ class NotificationService {
   }
 
   void start() {
-    _timer = Timer.periodic(Duration(seconds: 60), (timer) => _checkServices());
+    // Only start if not already running
+    if (!isRunning()) {
+      _timer = Timer.periodic(Duration(seconds: 60), (timer) => _checkServices());
+    }
   }
 
   bool isRunning() {
@@ -192,6 +243,10 @@ class NotificationService {
 
   Future<void> sendNotification(String title, String body,
       {String? payload}) async {
+    // Check if notifications are enabled before sending
+    bool isEnabled = await isNotificationsEnabled();
+    if (!isEnabled) return;
+
     // android notification settings
     const AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(

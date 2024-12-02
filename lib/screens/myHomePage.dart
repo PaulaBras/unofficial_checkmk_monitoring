@@ -103,8 +103,8 @@ class MyHomePageLogic extends ChangeNotifier {
   }
 
   Future<int> loadStartIndex() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    _currentIndex = prefs.getInt('start_index') ?? 0;
+    // Always default to Dashboard (index 0) when the app starts
+    _currentIndex = 0;
     notifyListeners();
     return _currentIndex;
   }

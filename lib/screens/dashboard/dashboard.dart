@@ -120,6 +120,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   double percentageServiceCrit = 0;
   double percentageServiceUnknown = 0;
 
+  bool _isLoading = true;
+
   @override
   void initState() {
     super.initState();
@@ -127,6 +129,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> fetchData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     var api = ApiRequest();
     var hostResponse = await api.Request('domain-types/host/collections/all?columns=state');
     var serviceResponse = await api.Request('domain-types/service/collections/all?columns=state');
@@ -158,10 +164,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         percentageServiceCrit = serviceCrit / totalServices;
         percentageServiceUnknown = serviceUnknown / totalServices;
       }
+    }
 
-      if (mounted) {
-        setState(() {});
-      }
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -172,49 +180,60 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: Text('Dashboard'),
         automaticallyImplyLeading: false, // This will remove the back button
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Text(
-                'Hosts and Services Overview',
-                style: Theme.of(context).textTheme.titleLarge,
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 20),
-              HexagonGrid(
-                hexagons: [
-                  StateWidget(label: 'Hosts UP', count: hostOk, color: Colors.green),
-                  StateWidget(label: 'Hosts DOWN', count: hostDown, color: Color(0xFFCC0000), textColor: Colors.white),
-                  StateWidget(label: 'Hosts UNREACH', count: hostUnreach, color: Colors.orange, textColor: Colors.white),
+      body: _isLoading 
+        ? Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Loading dashboard data...', style: Theme.of(context).textTheme.bodyMedium),
+              ],
+            ),
+          )
+        : SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Text(
+                    'Hosts and Services Overview',
+                    style: Theme.of(context).textTheme.titleLarge,
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 20),
+                  HexagonGrid(
+                    hexagons: [
+                      StateWidget(label: 'Hosts UP', count: hostOk, color: Colors.green),
+                      StateWidget(label: 'Hosts DOWN', count: hostDown, color: Color(0xFFCC0000), textColor: Colors.white),
+                      StateWidget(label: 'Hosts UNREACH', count: hostUnreach, color: Colors.orange, textColor: Colors.white),
+                    ],
+                  ),
+                  SizedBox(height: 40),
+                  HexagonGrid(
+                    hexagons: [
+                      StateWidget(label: 'Services OK', count: serviceOk, color: Colors.green),
+                      StateWidget(label: 'Services WARN', count: serviceWarn, color: Colors.yellow, textColor: Colors.black),
+                      StateWidget(label: 'Services CRIT', count: serviceCrit, color: Colors.red, textColor: Colors.white),
+                      StateWidget(label: 'Services UNKNOWN', count: serviceUnknown, color: Colors.purple),
+                    ],
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    'Event Console',
+                    style: Theme.of(context).textTheme.titleLarge,
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 10),
+                  Container(
+                    height: 300,
+                    child: EventConsole(),
+                  ),
                 ],
               ),
-              SizedBox(height: 40),
-              HexagonGrid(
-                hexagons: [
-                  StateWidget(label: 'Services OK', count: serviceOk, color: Colors.green),
-                  StateWidget(label: 'Services WARN', count: serviceWarn, color: Colors.yellow, textColor: Colors.black),
-                  StateWidget(label: 'Services CRIT', count: serviceCrit, color: Colors.red, textColor: Colors.white),
-                  StateWidget(label: 'Services UNKNOWN', count: serviceUnknown, color: Colors.purple),
-                ],
-              ),
-              SizedBox(height: 20),
-              Text(
-                'Event Console',
-                style: Theme.of(context).textTheme.titleLarge,
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 10),
-              Container(
-                height: 300,
-                child: EventConsole(),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'reloadDashboardData',
         onPressed: fetchData,
@@ -233,6 +252,7 @@ class EventConsole extends StatefulWidget {
 
 class _EventConsoleState extends State<EventConsole> {
   List<Map<String, dynamic>> events = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -241,6 +261,10 @@ class _EventConsoleState extends State<EventConsole> {
   }
 
   Future<void> fetchData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     var api = ApiRequest();
     var serviceResponse = await api.Request(
         'domain-types/service/collections/all?columns=last_check&columns=last_hard_state&columns=last_hard_state_change&column=last_notification&column=last_state&column=last_state_change&column=last_time_critical&column=last_time_ok&column=last_time_unknown&column=last_time_warning');
@@ -258,29 +282,42 @@ class _EventConsoleState extends State<EventConsole> {
       }).toList();
 
       events.sort((a, b) => b['extensions']['last_check'].compareTo(a['extensions']['last_check']));
+    }
 
-      if (mounted) {
-        setState(() {});
-      }
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: events.length,
-      itemBuilder: (context, index) {
-        var event = events[index];
-        return ListTile(
-          title: Text('Service: ${event['name']}'),
-          subtitle: Text('Last check: ${DateTime.fromMillisecondsSinceEpoch(event['extensions']['last_check'])}\n'
-              'Last state: ${event['extensions']['last_state']}\n'
-              'Last hard state change: ${DateTime.fromMillisecondsSinceEpoch(event['extensions']['last_hard_state_change'])}\n'
-              'Last critical time: ${DateTime.fromMillisecondsSinceEpoch(event['extensions']['last_time_critical'])}\n'
-              'Last unknown time: ${DateTime.fromMillisecondsSinceEpoch(event['extensions']['last_time_unknown'])}\n'
-              'Last warning time: ${DateTime.fromMillisecondsSinceEpoch(event['extensions']['last_time_warning'])}'),
+    return _isLoading
+      ? Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Loading event console...', style: Theme.of(context).textTheme.bodyMedium),
+            ],
+          ),
+        )
+      : ListView.builder(
+          itemCount: events.length,
+          itemBuilder: (context, index) {
+            var event = events[index];
+            return ListTile(
+              title: Text('Service: ${event['name']}'),
+              subtitle: Text('Last check: ${DateTime.fromMillisecondsSinceEpoch(event['extensions']['last_check'])}\n'
+                  'Last state: ${event['extensions']['last_state']}\n'
+                  'Last hard state change: ${DateTime.fromMillisecondsSinceEpoch(event['extensions']['last_hard_state_change'])}\n'
+                  'Last critical time: ${DateTime.fromMillisecondsSinceEpoch(event['extensions']['last_time_critical'])}\n'
+                  'Last unknown time: ${DateTime.fromMillisecondsSinceEpoch(event['extensions']['last_time_unknown'])}\n'
+                  'Last warning time: ${DateTime.fromMillisecondsSinceEpoch(event['extensions']['last_time_warning'])}'),
+            );
+          },
         );
-      },
-    );
   }
 }
