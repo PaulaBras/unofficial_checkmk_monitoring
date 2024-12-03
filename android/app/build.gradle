@@ -30,7 +30,7 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace "com.checkmk.unofficial_checkmk_monitoring"
     compileSdk 34
-    ndkVersion flutter.ndkVersion
+    ndkVersion "25.1.8937393"
 
     compileOptions {
         // Enable Java 8+ features on older Android versions
@@ -109,4 +109,7 @@ dependencies {
     // Add missing Android X and Flutter dependencies
     implementation 'androidx.annotation:annotation:1.7.1'
     implementation 'androidx.core:core:1.13.1'
+    
+    // Add javax.annotation dependency for R8
+    implementation 'com.google.code.findbugs:jsr305:3.0.2'
 }
