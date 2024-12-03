@@ -17,6 +17,8 @@ class CheckmkNotificationService {
   Timer? _backgroundCheckTimer;
   Map<String, dynamic> _previousHostStatus = {};
   Map<String, dynamic> _previousServiceStatus = {};
+  Set<String> _notifiedHosts = {};
+  Set<String> _notifiedServices = {};
 
   // Map host states to their string representations
   final Map<int, String> _hostStateMap = {
@@ -74,78 +76,114 @@ class CheckmkNotificationService {
   }
 
   void start() {
-    _startPeriodicStatusCheck();
+    _startPeriodicStatusCheck(initialCheck: true);
   }
 
   void stop() {
     _backgroundCheckTimer?.cancel();
   }
 
-  void _startPeriodicStatusCheck() async {
-    // Check if background notifications are enabled
-    String? enableNotifications = await _secureStorage.readSecureData('enableNotifications');
-    bool isNotificationEnabled = enableNotifications?.toLowerCase() == 'true';
+  Future<void> _startPeriodicStatusCheck({bool initialCheck = false}) async {
+    // Attempt to read notifications setting, default to true if not set
+    String? enableNotifications = await _secureStorage.readSecureData('enableNotifications') ?? 'true';
+
+    bool isNotificationEnabled = enableNotifications.toLowerCase() == 'true';
+
+    print('[DEBUG] Notification Settings:');
+    print('  - Notifications Enabled: $isNotificationEnabled');
+    print('  - Enable Notifications Value: $enableNotifications');
 
     if (isNotificationEnabled) {
       _backgroundCheckTimer?.cancel();
+      
+      // Perform initial check if specified
+      if (initialCheck) {
+        await _performBackgroundCheck();
+      }
+      
       _backgroundCheckTimer = Timer.periodic(Duration(seconds: 60), (_) {
         _performBackgroundCheck();
       });
     }
   }
 
-  void _performBackgroundCheck() async {
+  Future<void> _performBackgroundCheck() async {
     try {
-      var hostStatus = await _fetchHostStatus();
-      var serviceStatus = await _fetchServiceStatus();
+      var hostResponse = await _fetchHostStatus();
+      var serviceResponse = await _fetchServiceStatus();
 
-      _checkAndNotifyHostChanges(hostStatus);
-      _checkAndNotifyServiceChanges(serviceStatus);
+      print('[DEBUG] Background Check:');
+      print('  - Host Status: $hostResponse');
+      print('  - Service Status: $serviceResponse');
+
+      if (hostResponse != null && serviceResponse != null) {
+        _checkAndNotifyHostChanges(hostResponse['value'], initialCheck: true);
+        await _checkAndNotifyServiceChanges(serviceResponse['value'], initialCheck: true);
+      }
     } catch (e) {
       print('Background check error: $e');
     }
   }
 
-  Future<Map<String, dynamic>> _fetchHostStatus() async {
+  Future<Map<String, dynamic>?> _fetchHostStatus() async {
     try {
-      var response = await _apiRequest.Request('objects/host');
-      return response ?? {};
+      var response = await _apiRequest.Request('domain-types/host/collections/all?columns=state');
+      return response;
     } catch (e) {
       print('Error fetching host status: $e');
-      return {};
+      return null;
     }
   }
 
-  Future<Map<String, dynamic>> _fetchServiceStatus() async {
+  Future<Map<String, dynamic>?> _fetchServiceStatus() async {
     try {
-      var response = await _apiRequest.Request('objects/service');
-      return response ?? {};
+      var response = await _apiRequest.Request('domain-types/service/collections/all?columns=state');
+      return response;
     } catch (e) {
       print('Error fetching service status: $e');
-      return {};
+      return null;
     }
   }
 
-  void _checkAndNotifyHostChanges(Map<String, dynamic> currentStatus) {
-    currentStatus.forEach((hostName, hostDetails) {
+  void _checkAndNotifyHostChanges(List<dynamic> currentStatus, {bool initialCheck = false}) {
+    // Convert list to map for easier processing
+    Map<String, dynamic> hostMap = {
+      for (var host in currentStatus)
+        host['extensions']['name']: {'status': host['extensions']['state']}
+    };
+
+    hostMap.forEach((hostName, hostDetails) {
       var previousHostDetails = _previousHostStatus[hostName];
       var currentState = hostDetails['status'];
       
-      // Always notify for hosts (up, down, unreachable)
-      if (previousHostDetails == null || 
-          previousHostDetails['status'] != currentState) {
+      // Notify for hosts that are not 'Up' and have a status change
+      bool shouldNotify = 
+          (previousHostDetails == null || 
+           previousHostDetails['status'] != currentState);
+      
+      if (currentState != 0 || 
+          (previousHostDetails != null && previousHostDetails['status'] != 0)) {
+        print('[DEBUG] Host Status Check:');
+        print('  - Host: $hostName');
+        print('  - Current State: ${_hostStateMap[currentState] ?? 'Unknown'}');
+        print('  - Previous State: ${previousHostDetails != null ? _hostStateMap[previousHostDetails['status']] : 'None'}');
+        print('  - Should Notify: $shouldNotify');
+      }
+
+      if (shouldNotify) {
         _showNotification(
-          title: 'Host Status Change: $hostName',
+          title: 'Host Status: $hostName',
           body: 'Status: ${_hostStateMap[currentState] ?? 'Unknown'}',
           payload: 'host_status_change'
         );
+        _notifiedHosts.add(hostName);
       }
     });
 
-    _previousHostStatus = currentStatus;
+    _previousHostStatus = hostMap;
   }
 
-  void _checkAndNotifyServiceChanges(Map<String, dynamic> currentStatus) async {
+  Future<void> _checkAndNotifyServiceChanges(List<dynamic> currentStatus, {bool initialCheck = false}) async {
     // Load service state notification settings
     Map<String, bool> serviceStateSettings = {
       'green': true,
@@ -154,12 +192,25 @@ class CheckmkNotificationService {
       'unknown': true,
     };
 
-    for (var state in serviceStateSettings.keys) {
+    // Asynchronously load notification settings for each state
+    await Future.wait(serviceStateSettings.keys.map((state) async {
       String? savedSetting = await _secureStorage.readSecureData('notify_$state');
       serviceStateSettings[state] = savedSetting?.toLowerCase() != 'false';
-    }
+      print('[DEBUG] Notification Setting for $state: ${serviceStateSettings[state]}');
+    }));
 
-    currentStatus.forEach((serviceName, serviceDetails) {
+    // Convert list to map for easier processing
+    Map<String, dynamic> serviceMap = {
+      for (var service in currentStatus)
+        service['extensions']['description']: {
+          'name': service['extensions']['host_name'],
+          'status': service['extensions']['state'],
+          'current_attempt': 5,  // Assuming max attempts reached
+          'max_attempts': 5
+        }
+    };
+
+    serviceMap.forEach((serviceName, serviceDetails) {
       var previousServiceDetails = _previousServiceStatus[serviceName];
       var currentState = serviceDetails['status'];
       var currentStateString = _serviceStateMap[currentState] ?? 'unknown';
@@ -170,23 +221,38 @@ class CheckmkNotificationService {
       
       // Send notification if:
       // 1. Status changed
-      // 2. Current attempts equal max attempts
-      // 3. Notification for this state is enabled
-      bool statusChanged = previousServiceDetails == null || 
-          previousServiceDetails['status'] != currentState;
+      // 2. Not just a transition to green
+      bool shouldNotify = 
+          (previousServiceDetails == null || 
+           previousServiceDetails['status'] != currentState) &&
+          (currentStateString != 'green' || 
+           (previousServiceDetails != null && 
+            _serviceStateMap[previousServiceDetails['status']] != 'green'));
       
-      if (statusChanged && 
-          currentAttempts == maxAttempts && 
-          (serviceStateSettings[currentStateString] ?? true)) {
+      if (currentStateString != 'green' || 
+          (previousServiceDetails != null && 
+           _serviceStateMap[previousServiceDetails['status']] != 'green')) {
+        print('[DEBUG] Service Status Check:');
+        print('  - Service: $serviceName');
+        print('  - Host: ${serviceDetails['name']}');
+        print('  - Current State: $currentStateString');
+        print('  - Current Attempts: $currentAttempts');
+        print('  - Max Attempts: $maxAttempts');
+        print('  - Previous State: ${previousServiceDetails != null ? _serviceStateMap[previousServiceDetails['status']] : 'None'}');
+        print('  - Should Notify: $shouldNotify');
+      }
+
+      if (shouldNotify) {
         _showNotification(
           title: 'Service Status Change: $serviceName',
-          body: 'Status: $currentStateString, Attempts: $currentAttempts/$maxAttempts',
+          body: 'Host: ${serviceDetails['name']}, Status: $currentStateString, Attempts: $currentAttempts/$maxAttempts',
           payload: 'service_status_change'
         );
+        _notifiedServices.add(serviceName);
       }
     });
 
-    _previousServiceStatus = currentStatus;
+    _previousServiceStatus = serviceMap;
   }
 
   Future<void> _showNotification({
@@ -212,6 +278,11 @@ class CheckmkNotificationService {
       android: androidDetails,
       iOS: iosDetails,
     );
+
+    print('[DEBUG] Showing Notification:');
+    print('  - Title: $title');
+    print('  - Body: $body');
+    print('  - Payload: $payload');
 
     await flutterLocalNotificationsPlugin.show(
       DateTime.now().millisecondsSinceEpoch.remainder(100000),
