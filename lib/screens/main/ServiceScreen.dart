@@ -154,6 +154,10 @@ class _StateFilterDialogState extends State<StateFilterDialog> {
 }
 
 class ServiceScreen extends StatefulWidget {
+  final int? initialStateFilter;
+
+  ServiceScreen({this.initialStateFilter});
+
   @override
   _ServiceScreenState createState() => _ServiceScreenState();
 }
@@ -177,6 +181,18 @@ class _ServiceScreenState extends State<ServiceScreen> {
   void initState() {
     super.initState();
     _loadDateFormatAndLocale();
+    
+    // Apply initial filter if provided
+    if (widget.initialStateFilter != null) {
+      if (widget.initialStateFilter == 0) {
+        // Services OK - clear the filter since we only show non-OK services by default
+        _filterStates = {};
+      } else if (widget.initialStateFilter! <= 3) {
+        // For Warning (1), Critical (2), Unknown (3)
+        _filterStates = {ServiceState.values[widget.initialStateFilter! - 1]};
+      }
+    }
+    
     _getService();
     _timer = Timer.periodic(Duration(minutes: 1), (Timer t) => _getService());
   }

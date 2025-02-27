@@ -7,7 +7,9 @@ import '/screens/myHomePage.dart';
 import '/widgets/appBarWidget.dart';
 
 class HelpScreen extends StatefulWidget {
-  const HelpScreen({super.key});
+  final bool fromDrawer;
+  
+  const HelpScreen({super.key, this.fromDrawer = false});
 
   @override
   _HelpScreenState createState() => _HelpScreenState();
@@ -28,8 +30,18 @@ class _HelpScreenState extends State<HelpScreen> {
     final myHomePageLogic = MyHomePageLogic();
 
     return Scaffold(
-      appBar: AppBarWidget(
-        onTapLogo: () => myHomePageLogic.navigateToMain(),
+      appBar: AppBar(
+        title: const Text('Help'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (widget.fromDrawer) {
+              Navigator.pop(context);
+            } else {
+              myHomePageLogic.navigateToMain();
+            }
+          },
+        ),
       ),
       body: ListView(
         children: <Widget>[

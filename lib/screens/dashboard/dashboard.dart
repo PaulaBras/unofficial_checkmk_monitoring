@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '/services/apiRequest.dart';
 import 'dart:async';
+import '/screens/main/HostScreen.dart';
+import '/screens/main/ServiceScreen.dart';
 
 class DashboardScreen extends StatefulWidget {
   @override
@@ -34,45 +36,50 @@ class StateWidget extends StatelessWidget {
   final int count;
   final Color color;
   final Color textColor;
+  final VoidCallback? onTap;
 
   StateWidget({
     required this.label,
     required this.count,
     required this.color,
     this.textColor = Colors.white,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ClipPath(
-      clipper: HexagonClipper(),
-      child: Container(
-        width: 100,
-        height: 115,
-        color: color,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: textColor,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipPath(
+        clipper: HexagonClipper(),
+        child: Container(
+          width: 100,
+          height: 115,
+          color: color,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            SizedBox(height: 4),
-            Text(
-              '$count',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: textColor,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+              SizedBox(height: 4),
+              Text(
+                '$count',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -220,18 +227,57 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     SizedBox(height: 20),
                     HexagonGrid(
                       hexagons: [
-                        StateWidget(label: 'Hosts UP', count: hostOk, color: Colors.green),
-                        StateWidget(label: 'Hosts DOWN', count: hostDown, color: Color(0xFFCC0000), textColor: Colors.white),
-                        StateWidget(label: 'Hosts UNREACH', count: hostUnreach, color: Colors.orange, textColor: Colors.white),
+                        StateWidget(
+                          label: 'Hosts UP', 
+                          count: hostOk, 
+                          color: Colors.green,
+                          onTap: () => _navigateToHostScreen(context, 0),
+                        ),
+                        StateWidget(
+                          label: 'Hosts DOWN', 
+                          count: hostDown, 
+                          color: Color(0xFFCC0000), 
+                          textColor: Colors.white,
+                          onTap: () => _navigateToHostScreen(context, 1),
+                        ),
+                        StateWidget(
+                          label: 'Hosts UNREACH', 
+                          count: hostUnreach, 
+                          color: Colors.orange, 
+                          textColor: Colors.white,
+                          onTap: () => _navigateToHostScreen(context, 2),
+                        ),
                       ],
                     ),
                     SizedBox(height: 40),
                     HexagonGrid(
                       hexagons: [
-                        StateWidget(label: 'Services OK', count: serviceOk, color: Colors.green),
-                        StateWidget(label: 'Services WARN', count: serviceWarn, color: Colors.yellow, textColor: Colors.black),
-                        StateWidget(label: 'Services CRIT', count: serviceCrit, color: Colors.red, textColor: Colors.white),
-                        StateWidget(label: 'Services UNKNOWN', count: serviceUnknown, color: Colors.purple),
+                        StateWidget(
+                          label: 'Services OK', 
+                          count: serviceOk, 
+                          color: Colors.green,
+                          onTap: () => _navigateToServiceScreen(context, 0),
+                        ),
+                        StateWidget(
+                          label: 'Services WARN', 
+                          count: serviceWarn, 
+                          color: Colors.yellow, 
+                          textColor: Colors.black,
+                          onTap: () => _navigateToServiceScreen(context, 1),
+                        ),
+                        StateWidget(
+                          label: 'Services CRIT', 
+                          count: serviceCrit, 
+                          color: Colors.red, 
+                          textColor: Colors.white,
+                          onTap: () => _navigateToServiceScreen(context, 2),
+                        ),
+                        StateWidget(
+                          label: 'Services UNKNOWN', 
+                          count: serviceUnknown, 
+                          color: Colors.purple,
+                          onTap: () => _navigateToServiceScreen(context, 3),
+                        ),
                       ],
                     ),
                     SizedBox(height: 20),
@@ -256,6 +302,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
         tooltip: 'Refresh',
         child: Icon(Icons.refresh),
         backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
+    );
+  }
+
+  void _navigateToHostScreen(BuildContext context, int stateFilter) {
+    // Navigate to the host screen with the selected state filter
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HostScreen(initialStateFilter: stateFilter),
+      ),
+    );
+  }
+
+  void _navigateToServiceScreen(BuildContext context, int stateFilter) {
+    // Navigate to the service screen with the selected state filter
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ServiceScreen(initialStateFilter: stateFilter),
       ),
     );
   }

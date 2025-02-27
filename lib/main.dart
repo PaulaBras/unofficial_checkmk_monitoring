@@ -60,13 +60,15 @@ void main() async {
   final savedCredentials = await authService.loadCredentials();
   final initialRoute = savedCredentials != null ? homeScreenId : welcomeScreenId;
 
-  // Initialize the FlutterBackground plugin
+  // Initialize the FlutterBackground plugin with minimal notification
+  // We'll use our own persistent notification instead
   final success = await FlutterBackground.initialize(
       androidConfig: FlutterBackgroundAndroidConfig(
-    notificationTitle: "Unofficial CheckMK Monitoring App",
-    notificationText: "Monitoring in the background",
+    notificationTitle: "CheckMK Monitoring",
+    notificationText: "Background service running",
     notificationIcon:
         AndroidResource(name: 'launcher_icon', defType: 'drawable'),
+    // We'll use our own notification, so we don't need to set importance here
   ));
 
   if (success) {
@@ -75,7 +77,11 @@ void main() async {
 
     // Request notification permissions
     await notificationService!.requestNotificationsPermission();
-
+    
+    // Set initial background state (app starts in foreground)
+    notificationService!.setAppInBackground(false);
+    
+    // Start the notification service
     notificationService!.start();
 
     // handle notification selection
@@ -110,10 +116,50 @@ void main() async {
   });
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   final String initialRoute;
 
   const MyApp({super.key, required this.initialRoute});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    // Update the notification service with the app's background state
+    if (notificationService != null) {
+      switch (state) {
+        case AppLifecycleState.resumed:
+          // App is in the foreground
+          notificationService!.setAppInBackground(false);
+          break;
+        case AppLifecycleState.inactive:
+        case AppLifecycleState.paused:
+        case AppLifecycleState.detached:
+          // App is in the background or closed
+          notificationService!.setAppInBackground(true);
+          break;
+        default:
+          break;
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -124,7 +170,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(useMaterial3: true, colorScheme: lightColorScheme),
       darkTheme: ThemeData(useMaterial3: true, colorScheme: darkColorScheme),
       themeMode: themeNotifier.darkTheme ? ThemeMode.dark : ThemeMode.light,
-      initialRoute: initialRoute,
+      initialRoute: widget.initialRoute,
       onGenerateRoute: getRoute,
       debugShowCheckedModeBanner: false,
       localizationsDelegates: const [

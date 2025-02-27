@@ -131,6 +131,10 @@ class _StateFilterDialogState extends State<StateFilterDialog> {
 }
 
 class HostScreen extends StatefulWidget {
+  final int? initialStateFilter;
+
+  HostScreen({this.initialStateFilter});
+
   @override
   _HostScreenState createState() => _HostScreenState();
 }
@@ -153,6 +157,12 @@ class _HostScreenState extends State<HostScreen> {
   void initState() {
     super.initState();
     _loadDateFormatAndLocale();
+    
+    // Apply initial filter if provided
+    if (widget.initialStateFilter != null) {
+      _filterStates = {HostState.values[widget.initialStateFilter!]};
+    }
+    
     _getHosts();
     _startPeriodicRefresh();
   }

@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter/services.dart';
+import 'package:flutter_background/flutter_background.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../screens/setup/AreNotificationsActive.dart';
 import '../services/apiRequest.dart';
 import '../services/secureStorage.dart';
 
@@ -13,12 +16,15 @@ class CheckmkNotificationService {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   final ApiRequest _apiRequest = ApiRequest();
   final SecureStorage _secureStorage = SecureStorage();
+  final AreNotificationsActive _notificationsActive = AreNotificationsActive();
   
   Timer? _backgroundCheckTimer;
   Map<String, dynamic> _previousHostStatus = {};
   Map<String, dynamic> _previousServiceStatus = {};
   Set<String> _notifiedHosts = {};
   Set<String> _notifiedServices = {};
+  bool _isAppInBackground = false;
+  int _persistentNotificationId = 9999; // Unique ID for the persistent notification
 
   // Map host states to their string representations
   final Map<int, String> _hostStateMap = {
@@ -54,6 +60,17 @@ class CheckmkNotificationService {
       await prefs.setString('notifications_schedule', schedule);
     }
   }
+  
+  // Track app lifecycle state
+  void setAppInBackground(bool isInBackground) {
+    _isAppInBackground = isInBackground;
+    
+    if (isInBackground) {
+      _showPersistentNotification();
+    } else {
+      _removePersistentNotification();
+    }
+  }
 
   Future<void> requestNotificationsPermission() async {
     if (Platform.isAndroid) {
@@ -73,6 +90,38 @@ class CheckmkNotificationService {
             sound: true,
           );
     }
+    
+    // Initialize notification channels
+    await _initializeNotificationChannels();
+  }
+
+  Future<void> _initializeNotificationChannels() async {
+    if (Platform.isAndroid) {
+      const AndroidNotificationChannel statusChannel = AndroidNotificationChannel(
+        'checkmk_status_channel',
+        'Status Changes',
+        description: 'Notifications for CheckMK status changes',
+        importance: Importance.high,
+      );
+      
+      const AndroidNotificationChannel persistentChannel = AndroidNotificationChannel(
+        'checkmk_persistent_channel',
+        'Background Service',
+        description: 'Notification indicating the app is running in the background',
+        importance: Importance.low,
+      );
+      
+      final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+          FlutterLocalNotificationsPlugin();
+      
+      await flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(statusChannel);
+          
+      await flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(persistentChannel);
+    }
   }
 
   void start() {
@@ -81,6 +130,7 @@ class CheckmkNotificationService {
 
   void stop() {
     _backgroundCheckTimer?.cancel();
+    _removePersistentNotification();
   }
 
   Future<void> _startPeriodicStatusCheck({bool initialCheck = false}) async {
@@ -104,21 +154,34 @@ class CheckmkNotificationService {
       _backgroundCheckTimer = Timer.periodic(Duration(seconds: 60), (_) {
         _performBackgroundCheck();
       });
+    } else {
+      _backgroundCheckTimer?.cancel();
+      _removePersistentNotification();
     }
   }
 
   Future<void> _performBackgroundCheck() async {
     try {
+      // Check if notifications should be active based on schedule
+      bool shouldNotify = await _notificationsActive.areNotificationsActive();
+      
+      if (!shouldNotify || !_isAppInBackground) {
+        // Skip notification checks if notifications are not active or app is in foreground
+        return;
+      }
+      
       var hostResponse = await _fetchHostStatus();
       var serviceResponse = await _fetchServiceStatus();
 
       print('[DEBUG] Background Check:');
-      print('  - Host Status: $hostResponse');
-      print('  - Service Status: $serviceResponse');
+      print('  - App in Background: $_isAppInBackground');
+      print('  - Notifications Active: $shouldNotify');
+      print('  - Host Status: ${hostResponse != null ? 'Received' : 'Failed'}');
+      print('  - Service Status: ${serviceResponse != null ? 'Received' : 'Failed'}');
 
       if (hostResponse != null && serviceResponse != null) {
-        _checkAndNotifyHostChanges(hostResponse['value'], initialCheck: true);
-        await _checkAndNotifyServiceChanges(serviceResponse['value'], initialCheck: true);
+        _checkAndNotifyHostChanges(hostResponse['value']);
+        await _checkAndNotifyServiceChanges(serviceResponse['value']);
       }
     } catch (e) {
       print('Background check error: $e');
@@ -145,7 +208,10 @@ class CheckmkNotificationService {
     }
   }
 
-  void _checkAndNotifyHostChanges(List<dynamic> currentStatus, {bool initialCheck = false}) {
+  void _checkAndNotifyHostChanges(List<dynamic> currentStatus) {
+    // Only send notifications if app is in background
+    if (!_isAppInBackground) return;
+    
     // Convert list to map for easier processing
     Map<String, dynamic> hostMap = {
       for (var host in currentStatus)
@@ -156,7 +222,7 @@ class CheckmkNotificationService {
       var previousHostDetails = _previousHostStatus[hostName];
       var currentState = hostDetails['status'];
       
-      // Notify for hosts that are not 'Up' and have a status change
+      // Notify for hosts that have a status change
       bool shouldNotify = 
           (previousHostDetails == null || 
            previousHostDetails['status'] != currentState);
@@ -171,7 +237,7 @@ class CheckmkNotificationService {
       }
 
       if (shouldNotify) {
-        _showNotification(
+        _showStatusNotification(
           title: 'Host Status: $hostName',
           body: 'Status: ${_hostStateMap[currentState] ?? 'Unknown'}',
           payload: 'host_status_change'
@@ -183,7 +249,10 @@ class CheckmkNotificationService {
     _previousHostStatus = hostMap;
   }
 
-  Future<void> _checkAndNotifyServiceChanges(List<dynamic> currentStatus, {bool initialCheck = false}) async {
+  Future<void> _checkAndNotifyServiceChanges(List<dynamic> currentStatus) async {
+    // Only send notifications if app is in background
+    if (!_isAppInBackground) return;
+    
     // Load service state notification settings
     Map<String, bool> serviceStateSettings = {
       'green': true,
@@ -205,8 +274,8 @@ class CheckmkNotificationService {
         service['extensions']['description']: {
           'name': service['extensions']['host_name'],
           'status': service['extensions']['state'],
-          'current_attempt': 5,  // Assuming max attempts reached
-          'max_attempts': 5
+          'current_attempt': service['extensions']['current_attempt'] ?? 5,
+          'max_attempts': service['extensions']['max_check_attempts'] ?? 5
         }
     };
 
@@ -229,6 +298,11 @@ class CheckmkNotificationService {
            (previousServiceDetails != null && 
             _serviceStateMap[previousServiceDetails['status']] != 'green'));
       
+      // Only notify if the state setting is enabled
+      if (serviceStateSettings[currentStateString] != true) {
+        shouldNotify = false;
+      }
+      
       if (currentStateString != 'green' || 
           (previousServiceDetails != null && 
            _serviceStateMap[previousServiceDetails['status']] != 'green')) {
@@ -243,7 +317,7 @@ class CheckmkNotificationService {
       }
 
       if (shouldNotify) {
-        _showNotification(
+        _showStatusNotification(
           title: 'Service Status Change: $serviceName',
           body: 'Host: ${serviceDetails['name']}, Status: $currentStateString, Attempts: $currentAttempts/$maxAttempts',
           payload: 'service_status_change'
@@ -255,7 +329,7 @@ class CheckmkNotificationService {
     _previousServiceStatus = serviceMap;
   }
 
-  Future<void> _showNotification({
+  Future<void> _showStatusNotification({
     required String title, 
     required String body, 
     String? payload
@@ -279,7 +353,7 @@ class CheckmkNotificationService {
       iOS: iosDetails,
     );
 
-    print('[DEBUG] Showing Notification:');
+    print('[DEBUG] Showing Status Notification:');
     print('  - Title: $title');
     print('  - Body: $body');
     print('  - Payload: $payload');
@@ -292,10 +366,54 @@ class CheckmkNotificationService {
       payload: payload,
     );
   }
+  
+  Future<void> _showPersistentNotification() async {
+    // Check if notifications are enabled
+    String? enableNotifications = await _secureStorage.readSecureData('enableNotifications') ?? 'true';
+    bool isNotificationEnabled = enableNotifications.toLowerCase() == 'true';
+    
+    if (!isNotificationEnabled) return;
+    
+    // Create a persistent notification to show the app is running in background
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'checkmk_persistent_channel',
+      'Background Service',
+      channelDescription: 'Notification indicating the app is running in the background',
+      importance: Importance.low,
+      priority: Priority.low,
+      ongoing: true,
+      autoCancel: false,
+      showWhen: false,
+    );
+
+    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+      presentAlert: false,
+      presentBadge: false,
+      presentSound: false,
+    );
+
+    const NotificationDetails platformDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    print('[DEBUG] Showing Persistent Notification');
+
+    await flutterLocalNotificationsPlugin.show(
+      _persistentNotificationId,
+      'CheckMK Monitoring Active',
+      'Monitoring hosts and services in the background',
+      platformDetails,
+    );
+  }
+  
+  Future<void> _removePersistentNotification() async {
+    await flutterLocalNotificationsPlugin.cancel(_persistentNotificationId);
+  }
 
   // Public method to match the previous implementation's signature
   Future<void> sendNotification(String title, String body, {String? payload}) async {
-    await _showNotification(
+    await _showStatusNotification(
       title: title, 
       body: body, 
       payload: payload

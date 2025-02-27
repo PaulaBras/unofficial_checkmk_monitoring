@@ -39,7 +39,7 @@ class SettingsDrawer extends StatelessWidget {
             title: Text('Settings'),
             onTap: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => UserScreen()),
+                MaterialPageRoute(builder: (context) => UserScreen(fromDrawer: true)),
               );
             },
           ),
@@ -48,7 +48,7 @@ class SettingsDrawer extends StatelessWidget {
             title: Text('Help'),
             onTap: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => HelpScreen()),
+                MaterialPageRoute(builder: (context) => HelpScreen(fromDrawer: true)),
               );
             },
           ),
