@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 
@@ -21,6 +22,8 @@ class CheckmkNotificationService {
   Timer? _backgroundCheckTimer;
   Map<String, dynamic> _previousHostStatus = {};
   Map<String, dynamic> _previousServiceStatus = {};
+  final String _previousHostStatusKey = 'previous_host_status';
+  final String _previousServiceStatusKey = 'previous_service_status';
   Set<String> _notifiedHosts = {};
   Set<String> _notifiedServices = {};
   bool _isAppInBackground = false;
@@ -124,8 +127,57 @@ class CheckmkNotificationService {
     }
   }
 
-  void start() {
+  Future<void> start() async {
+    // Load previous statuses from storage
+    await _loadPreviousStatuses();
     _startPeriodicStatusCheck(initialCheck: true);
+  }
+  
+  Future<void> _loadPreviousStatuses() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? savedHostStatus = prefs.getString(_previousHostStatusKey);
+    String? savedServiceStatus = prefs.getString(_previousServiceStatusKey);
+    
+    if (savedHostStatus != null) {
+      try {
+        Map<String, dynamic> decoded = Map<String, dynamic>.from(
+          Map<String, dynamic>.from(
+            jsonDecode(savedHostStatus) as Map
+          ).map((key, value) => MapEntry(key, value as dynamic))
+        );
+        _previousHostStatus = decoded;
+        print('[DEBUG] Loaded previous host status from storage: ${_previousHostStatus.length} hosts');
+      } catch (e) {
+        print('Error loading previous host status: $e');
+        _previousHostStatus = {};
+      }
+    }
+    
+    if (savedServiceStatus != null) {
+      try {
+        Map<String, dynamic> decoded = Map<String, dynamic>.from(
+          Map<String, dynamic>.from(
+            jsonDecode(savedServiceStatus) as Map
+          ).map((key, value) => MapEntry(key, value as dynamic))
+        );
+        _previousServiceStatus = decoded;
+        print('[DEBUG] Loaded previous service status from storage: ${_previousServiceStatus.length} services');
+      } catch (e) {
+        print('Error loading previous service status: $e');
+        _previousServiceStatus = {};
+      }
+    }
+  }
+  
+  Future<void> _savePreviousStatuses() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    try {
+      await prefs.setString(_previousHostStatusKey, jsonEncode(_previousHostStatus));
+      await prefs.setString(_previousServiceStatusKey, jsonEncode(_previousServiceStatus));
+      print('[DEBUG] Saved statuses to storage: ${_previousHostStatus.length} hosts, ${_previousServiceStatus.length} services');
+    } catch (e) {
+      print('Error saving previous statuses: $e');
+    }
   }
 
   void stop() {
@@ -148,7 +200,7 @@ class CheckmkNotificationService {
       
       // Perform initial check if specified
       if (initialCheck) {
-        await _performBackgroundCheck();
+        await _performBackgroundCheck(isInitialCheck: true);
       }
       
       _backgroundCheckTimer = Timer.periodic(Duration(seconds: 60), (_) {
@@ -160,13 +212,18 @@ class CheckmkNotificationService {
     }
   }
 
-  Future<void> _performBackgroundCheck() async {
+  Future<void> _performBackgroundCheck({bool isInitialCheck = false}) async {
     try {
       // Check if notifications should be active based on schedule
       bool shouldNotify = await _notificationsActive.areNotificationsActive();
       
-      if (!shouldNotify || !_isAppInBackground) {
+      // If this is an initial check after app restart, we don't want to send notifications
+      // We just want to update the status maps
+      bool skipNotifications = isInitialCheck || !_isAppInBackground || !shouldNotify;
+      
+      if (skipNotifications && !isInitialCheck) {
         // Skip notification checks if notifications are not active or app is in foreground
+        // But continue if it's an initial check to update the status maps
         return;
       }
       
@@ -176,12 +233,20 @@ class CheckmkNotificationService {
       print('[DEBUG] Background Check:');
       print('  - App in Background: $_isAppInBackground');
       print('  - Notifications Active: $shouldNotify');
+      print('  - Initial Check: $isInitialCheck');
+      print('  - Skip Notifications: $skipNotifications');
       print('  - Host Status: ${hostResponse != null ? 'Received' : 'Failed'}');
       print('  - Service Status: ${serviceResponse != null ? 'Received' : 'Failed'}');
 
       if (hostResponse != null && serviceResponse != null) {
-        _checkAndNotifyHostChanges(hostResponse['value']);
-        await _checkAndNotifyServiceChanges(serviceResponse['value']);
+        // If this is an initial check, update the status maps without sending notifications
+        if (isInitialCheck) {
+          await _updateHostStatusWithoutNotifications(hostResponse['value']);
+          await _updateServiceStatusWithoutNotifications(serviceResponse['value']);
+        } else {
+          await _checkAndNotifyHostChanges(hostResponse['value']);
+          await _checkAndNotifyServiceChanges(serviceResponse['value']);
+        }
       }
     } catch (e) {
       print('Background check error: $e');
@@ -208,7 +273,44 @@ class CheckmkNotificationService {
     }
   }
 
-  void _checkAndNotifyHostChanges(List<dynamic> currentStatus) {
+  // Update host status without sending notifications (for initial check)
+  Future<void> _updateHostStatusWithoutNotifications(List<dynamic> currentStatus) async {
+    // Convert list to map for easier processing
+    Map<String, dynamic> hostMap = {
+      for (var host in currentStatus)
+        host['extensions']['name']: {'status': host['extensions']['state']}
+    };
+    
+    _previousHostStatus = hostMap;
+    
+    // Save updated status to storage
+    await _savePreviousStatuses();
+    
+    print('[DEBUG] Updated host status without notifications: ${hostMap.length} hosts');
+  }
+  
+  // Update service status without sending notifications (for initial check)
+  Future<void> _updateServiceStatusWithoutNotifications(List<dynamic> currentStatus) async {
+    // Convert list to map for easier processing
+    Map<String, dynamic> serviceMap = {
+      for (var service in currentStatus)
+        service['extensions']['description']: {
+          'name': service['extensions']['host_name'],
+          'status': service['extensions']['state'],
+          'current_attempt': service['extensions']['current_attempt'] ?? 5,
+          'max_attempts': service['extensions']['max_check_attempts'] ?? 5
+        }
+    };
+    
+    _previousServiceStatus = serviceMap;
+    
+    // Save updated status to storage
+    await _savePreviousStatuses();
+    
+    print('[DEBUG] Updated service status without notifications: ${serviceMap.length} services');
+  }
+
+  Future<void> _checkAndNotifyHostChanges(List<dynamic> currentStatus) async {
     // Only send notifications if app is in background
     if (!_isAppInBackground) return;
     
@@ -247,6 +349,9 @@ class CheckmkNotificationService {
     });
 
     _previousHostStatus = hostMap;
+    
+    // Save updated status to storage
+    await _savePreviousStatuses();
   }
 
   Future<void> _checkAndNotifyServiceChanges(List<dynamic> currentStatus) async {
@@ -327,6 +432,9 @@ class CheckmkNotificationService {
     });
 
     _previousServiceStatus = serviceMap;
+    
+    // Save updated status to storage
+    await _savePreviousStatuses();
   }
 
   Future<void> _showStatusNotification({

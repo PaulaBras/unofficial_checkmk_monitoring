@@ -81,8 +81,8 @@ void main() async {
     // Set initial background state (app starts in foreground)
     notificationService!.setAppInBackground(false);
     
-    // Start the notification service
-    notificationService!.start();
+    // Start the notification service (now async)
+    await notificationService!.start();
 
     // handle notification selection
     selectNotificationStream.stream.listen((payload) async {
