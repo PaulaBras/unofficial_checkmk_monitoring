@@ -11,6 +11,7 @@ import '../screens/setup/AreNotificationsActive.dart';
 import '../services/apiRequest.dart';
 import '../services/secureStorage.dart';
 import '../services/battery_optimization_service.dart';
+import '../services/widget/dashboard_widget_service.dart';
 
 final StreamController<String?> selectNotificationStream = StreamController<String?>.broadcast();
 
@@ -445,6 +446,9 @@ class CheckmkNotificationService {
     
     // Save updated status to storage
     await _savePreviousStatuses();
+    
+    // Update the home screen widget
+    await _updateHomeScreenWidget();
   }
 
   Future<void> _checkAndNotifyServiceChanges(List<dynamic> currentStatus) async {
@@ -528,6 +532,20 @@ class CheckmkNotificationService {
     
     // Save updated status to storage
     await _savePreviousStatuses();
+    
+    // Update the home screen widget
+    await _updateHomeScreenWidget();
+  }
+  
+  // Update the home screen widget with the latest data
+  Future<void> _updateHomeScreenWidget() async {
+    try {
+      // Update the Android home screen widget with the latest data
+      final widgetService = DashboardWidgetService();
+      await widgetService.updateWidget();
+    } catch (e) {
+      print('Error updating home screen widget: $e');
+    }
   }
 
   Future<void> _showStatusNotification({

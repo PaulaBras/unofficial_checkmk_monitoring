@@ -71,6 +71,23 @@ class DashboardWidgetProvider : AppWidgetProvider() {
             val appWidgetIds = appWidgetManager.getAppWidgetIds(
                 ComponentName(context, DashboardWidgetProvider::class.java)
             )
+            
+            // Trigger a data refresh by calling the Flutter method channel
+            try {
+                // This will attempt to refresh data from the app if it's running
+                // If not, it will just update with existing data
+                val packageManager = context.packageManager
+                val launchIntent = packageManager.getLaunchIntentForPackage(context.packageName)
+                if (launchIntent != null) {
+                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    launchIntent.putExtra("refresh_widget", true)
+                    context.startActivity(launchIntent)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            
+            // Update the widget with current data
             onUpdate(context, appWidgetManager, appWidgetIds)
         }
     }
@@ -90,7 +107,7 @@ class DashboardWidgetProvider : AppWidgetProvider() {
         val views = RemoteViews(context.packageName, R.layout.dashboard_widget)
         
         // Set up click intent for the widget (open the app)
-        val pendingIntent = PendingIntent.getActivity(
+        val openAppIntent = PendingIntent.getActivity(
             context,
             0,
             context.packageManager.getLaunchIntentForPackage(context.packageName),
@@ -100,14 +117,16 @@ class DashboardWidgetProvider : AppWidgetProvider() {
                 PendingIntent.FLAG_UPDATE_CURRENT
             }
         )
-        views.setOnClickPendingIntent(R.id.header, pendingIntent)
+        
+        // Make the entire widget clickable to open the app
+        views.setOnClickPendingIntent(R.id.widget_root, openAppIntent)
         
         // Set up refresh button click intent
         val refreshIntent = Intent(context, DashboardWidgetProvider::class.java)
         refreshIntent.action = ACTION_UPDATE_WIDGET
         val refreshPendingIntent = PendingIntent.getBroadcast(
             context,
-            0,
+            1, // Use a different request code to avoid conflicts
             refreshIntent,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
