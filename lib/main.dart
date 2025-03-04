@@ -16,9 +16,11 @@ import 'package:timezone/timezone.dart' as tz;
 import 'colors.dart';
 import 'screens/help/help.dart';
 import 'screens/myHomePage.dart';
+import 'screens/setup/BatteryOptimizationScreen.dart';
 import 'screens/user/loginScreen.dart';
 import 'screens/user/user.dart';
 import 'screens/user/welcomeScreen.dart';
+import 'services/battery_optimization_service.dart';
 import 'services/notificationHandler.dart';
 import 'services/secureStorage.dart';
 import 'services/themeNotifier.dart';
@@ -34,6 +36,7 @@ const String registrationScreenId = 'registration_screen';
 const String homeScreenId = 'home_screen';
 const String helpScreenId = 'help_screen';
 const String userScreenId = 'user_screen';
+const String batteryOptimizationScreenId = 'battery_optimization_screen';
 
 String? selectedNotificationPayload;
 
@@ -196,6 +199,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         return MaterialPageRoute(builder: (_) => HelpScreen());
       case userScreenId:
         return MaterialPageRoute(builder: (_) => UserScreen());
+      case batteryOptimizationScreenId:
+        return MaterialPageRoute(builder: (_) => const BatteryOptimizationScreen());
       default:
         return null;
     }

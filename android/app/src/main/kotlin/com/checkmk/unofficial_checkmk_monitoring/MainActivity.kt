@@ -1,8 +1,14 @@
 package com.checkmk.unofficial_checkmk_monitoring
 
 import android.Manifest
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.BatteryManager
 import android.os.Build
+import android.os.PowerManager
+import android.provider.Settings
 import androidx.annotation.NonNull
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -14,6 +20,7 @@ import com.dexterous.flutterlocalnotifications.FlutterLocalNotificationsPlugin
 
 class MainActivity: FlutterActivity() {
     private val NOTIFICATION_PERMISSION_REQUEST_CODE = 1001
+    private val BATTERY_OPTIMIZATION_REQUEST_CODE = 1002
     private val NOTIFICATION_CHANNEL = "checkmk/ptp_4_monitoring_app"
     private lateinit var methodChannel: MethodChannel
 
@@ -36,6 +43,18 @@ class MainActivity: FlutterActivity() {
             when (call.method) {
                 "requestNotificationPermission" -> {
                     requestNotificationPermission(result)
+                }
+                "isBatteryOptimizationDisabled" -> {
+                    result.success(isBatteryOptimizationDisabled())
+                }
+                "requestDisableBatteryOptimization" -> {
+                    requestDisableBatteryOptimization(result)
+                }
+                "openBatteryOptimizationSettings" -> {
+                    openBatteryOptimizationSettings(result)
+                }
+                "getBatteryLevel" -> {
+                    result.success(getBatteryLevel())
                 }
                 else -> result.notImplemented()
             }
@@ -66,6 +85,59 @@ class MainActivity: FlutterActivity() {
         }
     }
 
+    private fun isBatteryOptimizationDisabled(): Boolean {
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        val packageName = packageName
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            powerManager.isIgnoringBatteryOptimizations(packageName)
+        } else {
+            true // Battery optimization settings only available on Android M and above
+        }
+    }
+    
+    private fun getBatteryLevel(): Int {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            val batteryManager = getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+            return batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        }
+        return -1
+    }
+
+    private fun requestDisableBatteryOptimization(result: MethodChannel.Result) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val intent = Intent().apply {
+                action = Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+                data = Uri.parse("package:$packageName")
+            }
+            
+            try {
+                startActivityForResult(intent, BATTERY_OPTIMIZATION_REQUEST_CODE)
+                result.success(true)
+            } catch (e: Exception) {
+                result.error("UNAVAILABLE", "Battery optimization request failed", e.message)
+            }
+        } else {
+            result.success(true) // Not applicable for older Android versions
+        }
+    }
+
+    private fun openBatteryOptimizationSettings(result: MethodChannel.Result) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val intent = Intent().apply {
+                action = Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS
+            }
+            
+            try {
+                startActivity(intent)
+                result.success(true)
+            } catch (e: Exception) {
+                result.error("UNAVAILABLE", "Cannot open battery optimization settings", e.message)
+            }
+        } else {
+            result.success(false) // Not applicable for older Android versions
+        }
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int, 
         permissions: Array<out String>, 
@@ -82,6 +154,21 @@ class MainActivity: FlutterActivity() {
             methodChannel.invokeMethod(
                 "notificationPermissionResult", 
                 permissionGranted
+            )
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        
+        if (requestCode == BATTERY_OPTIMIZATION_REQUEST_CODE) {
+            // Check the current battery optimization status
+            val isDisabled = isBatteryOptimizationDisabled()
+            
+            // Send result back through the method channel
+            methodChannel.invokeMethod(
+                "batteryOptimizationResult", 
+                isDisabled
             )
         }
     }

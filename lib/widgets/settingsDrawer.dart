@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../main.dart';
 import '../screens/user/user.dart';
 import '../screens/user/loginScreen.dart';
 import '../screens/help/help.dart';
@@ -52,6 +55,14 @@ class SettingsDrawer extends StatelessWidget {
               );
             },
           ),
+          if (Platform.isAndroid)
+            ListTile(
+              leading: Icon(Icons.battery_alert, color: lightColorScheme.primary),
+              title: Text('Battery Optimization'),
+              onTap: () {
+                Navigator.of(context).pushNamed(batteryOptimizationScreenId);
+              },
+            ),
           ListTile(
             leading: Icon(Icons.logout, color: lightColorScheme.primary),
             title: Text('Logout'),
