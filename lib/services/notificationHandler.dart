@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../screens/setup/AreNotificationsActive.dart';
 import '../services/apiRequest.dart';
 import '../services/secureStorage.dart';
+import '../services/battery_optimization_service.dart';
 
 final StreamController<String?> selectNotificationStream = StreamController<String?>.broadcast();
 
@@ -18,6 +19,7 @@ class CheckmkNotificationService {
   final ApiRequest _apiRequest = ApiRequest();
   final SecureStorage _secureStorage = SecureStorage();
   final AreNotificationsActive _notificationsActive = AreNotificationsActive();
+  final BatteryOptimizationService _batteryService = BatteryOptimizationService();
   
   Timer? _backgroundCheckTimer;
   Map<String, dynamic> _previousHostStatus = {};
@@ -27,7 +29,14 @@ class CheckmkNotificationService {
   Set<String> _notifiedHosts = {};
   Set<String> _notifiedServices = {};
   bool _isAppInBackground = false;
+  bool _isBatteryOptimizationDisabled = false;
   int _persistentNotificationId = 9999; // Unique ID for the persistent notification
+  
+  // Default polling intervals in seconds
+  static const int _defaultForegroundInterval = 60;
+  static const int _defaultBackgroundInterval = 300; // 5 minutes
+  static const int _optimizedBackgroundInterval = 120; // 2 minutes
+  static const int _lowPowerBackgroundInterval = 900; // 15 minutes
 
   // Map host states to their string representations
   final Map<int, String> _hostStateMap = {
@@ -43,6 +52,9 @@ class CheckmkNotificationService {
     2: 'critical',
     3: 'unknown'
   };
+  
+  // Current polling interval in seconds
+  int _currentPollingInterval = _defaultForegroundInterval;
 
   // Methods to match previous NotificationService implementation
   Future<Map<String, dynamic>> loadNotificationSettings() async {
@@ -65,13 +77,78 @@ class CheckmkNotificationService {
   }
   
   // Track app lifecycle state
-  void setAppInBackground(bool isInBackground) {
+  Future<void> setAppInBackground(bool isInBackground) async {
     _isAppInBackground = isInBackground;
+    
+    // Check battery optimization status
+    _isBatteryOptimizationDisabled = await _batteryService.isBatteryOptimizationDisabled();
     
     if (isInBackground) {
       _showPersistentNotification();
+      
+      // Adjust polling interval based on battery optimization status
+      await _adjustPollingInterval();
     } else {
       _removePersistentNotification();
+      
+      // Reset to foreground polling interval
+      _setPollingInterval(_defaultForegroundInterval);
+    }
+  }
+  
+  // Adjust polling interval based on app state and battery optimization
+  Future<void> _adjustPollingInterval() async {
+    if (!_isAppInBackground) {
+      // App is in foreground, use default interval
+      _setPollingInterval(_defaultForegroundInterval);
+      return;
+    }
+    
+    // Get battery level if possible
+    int batteryLevel = await _getBatteryLevel();
+    bool isLowBattery = batteryLevel > 0 && batteryLevel <= 15;
+    
+    if (isLowBattery) {
+      // Low battery mode - use longest interval
+      _setPollingInterval(_lowPowerBackgroundInterval);
+    } else if (_isBatteryOptimizationDisabled) {
+      // Battery optimization is disabled - use optimized interval
+      _setPollingInterval(_optimizedBackgroundInterval);
+    } else {
+      // Default background interval
+      _setPollingInterval(_defaultBackgroundInterval);
+    }
+    
+    print('[DEBUG] Adjusted polling interval: $_currentPollingInterval seconds');
+    print('  - App in background: $_isAppInBackground');
+    print('  - Battery optimization disabled: $_isBatteryOptimizationDisabled');
+    print('  - Battery level: $batteryLevel%');
+    print('  - Low battery mode: $isLowBattery');
+  }
+  
+  // Set polling interval and restart timer if needed
+  void _setPollingInterval(int seconds) {
+    if (_currentPollingInterval != seconds) {
+      _currentPollingInterval = seconds;
+      
+      // Restart timer with new interval if it's running
+      if (_backgroundCheckTimer != null && _backgroundCheckTimer!.isActive) {
+        _backgroundCheckTimer!.cancel();
+        _backgroundCheckTimer = Timer.periodic(Duration(seconds: _currentPollingInterval), (_) {
+          _performBackgroundCheck();
+        });
+      }
+    }
+  }
+  
+  // Get battery level (returns -1 if not available)
+  Future<int> _getBatteryLevel() async {
+    try {
+      final batteryLevel = await MethodChannel('checkmk/ptp_4_monitoring_app')
+          .invokeMethod<int>('getBatteryLevel');
+      return batteryLevel ?? -1;
+    } on PlatformException {
+      return -1;
     }
   }
 
@@ -130,7 +207,12 @@ class CheckmkNotificationService {
   Future<void> start() async {
     // Load previous statuses from storage
     await _loadPreviousStatuses();
-    _startPeriodicStatusCheck(initialCheck: true);
+    
+    // Check battery optimization status
+    _isBatteryOptimizationDisabled = await _batteryService.isBatteryOptimizationDisabled();
+    
+    // Start periodic status check
+    await _startPeriodicStatusCheck(initialCheck: true);
   }
   
   Future<void> _loadPreviousStatuses() async {
@@ -194,6 +276,8 @@ class CheckmkNotificationService {
     print('[DEBUG] Notification Settings:');
     print('  - Notifications Enabled: $isNotificationEnabled');
     print('  - Enable Notifications Value: $enableNotifications');
+    print('  - Battery Optimization Disabled: $_isBatteryOptimizationDisabled');
+    print('  - Current Polling Interval: $_currentPollingInterval seconds');
 
     if (isNotificationEnabled) {
       _backgroundCheckTimer?.cancel();
@@ -203,7 +287,10 @@ class CheckmkNotificationService {
         await _performBackgroundCheck(isInitialCheck: true);
       }
       
-      _backgroundCheckTimer = Timer.periodic(Duration(seconds: 60), (_) {
+      // Adjust polling interval based on app state and battery optimization
+      await _adjustPollingInterval();
+      
+      _backgroundCheckTimer = Timer.periodic(Duration(seconds: _currentPollingInterval), (_) {
         _performBackgroundCheck();
       });
     } else {
@@ -237,6 +324,7 @@ class CheckmkNotificationService {
       print('  - Skip Notifications: $skipNotifications');
       print('  - Host Status: ${hostResponse != null ? 'Received' : 'Failed'}');
       print('  - Service Status: ${serviceResponse != null ? 'Received' : 'Failed'}');
+      print('  - Current Polling Interval: $_currentPollingInterval seconds');
 
       if (hostResponse != null && serviceResponse != null) {
         // If this is an initial check, update the status maps without sending notifications
@@ -247,6 +335,11 @@ class CheckmkNotificationService {
           await _checkAndNotifyHostChanges(hostResponse['value']);
           await _checkAndNotifyServiceChanges(serviceResponse['value']);
         }
+      }
+      
+      // Periodically check and adjust polling interval based on battery status
+      if (!isInitialCheck && _isAppInBackground) {
+        await _adjustPollingInterval();
       }
     } catch (e) {
       print('Background check error: $e');

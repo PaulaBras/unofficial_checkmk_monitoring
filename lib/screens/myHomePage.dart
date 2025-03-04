@@ -1,11 +1,15 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '/main.dart';
 import '/screens/dashboard/dashboard.dart';
 import '/screens/main/HostScreen.dart';
 import '/screens/main/ServiceScreen.dart';
+import '/services/battery_optimization_service.dart';
 import '/widgets/appBarWidget.dart';
 import '/widgets/bottomNavigationWidget.dart';
 import '/widgets/settingsDrawer.dart';
@@ -24,6 +28,37 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     _pageController = PageController();
+    
+    // Check battery optimization status on Android
+    if (Platform.isAndroid) {
+      _checkBatteryOptimization();
+    }
+  }
+  
+  Future<void> _checkBatteryOptimization() async {
+    final BatteryOptimizationService batteryService = BatteryOptimizationService();
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    
+    // Check if we've already requested battery optimization
+    bool hasRequested = await batteryService.hasRequestedBatteryOptimization();
+    
+    // Check if user has chosen to skip this check
+    bool skipCheck = prefs.getBool('skip_battery_optimization') ?? false;
+    
+    if (!hasRequested && !skipCheck) {
+      // Check if battery optimization is disabled
+      bool isDisabled = await batteryService.isBatteryOptimizationDisabled();
+      
+      if (!isDisabled) {
+        // Wait for the widget to be fully built
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.pushNamed(context, batteryOptimizationScreenId);
+        });
+      } else {
+        // Mark as requested if it's already disabled
+        await batteryService.markBatteryOptimizationRequested();
+      }
+    }
   }
 
   @override
