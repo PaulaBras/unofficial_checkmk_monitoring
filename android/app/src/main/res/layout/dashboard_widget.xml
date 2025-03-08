@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="6dp"
+    android:background="@drawable/widget_background"
+    android:id="@+id/widget_root">
+
+    <LinearLayout
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_alignParentTop="true">
+
+        <ImageView
+            android:id="@+id/logo"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@mipmap/launcher_icon"
+            android:contentDescription="CheckMK Logo" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="CheckMK Dashboard"
+            android:textStyle="bold"
+            android:textSize="12sp"
+            android:layout_marginStart="6dp"
+            android:textColor="#FFFFFF" />
+
+        <ImageView
+            android:id="@+id/refresh_button"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@android:drawable/ic_popup_sync"
+            android:contentDescription="Refresh" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/status_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_below="@id/header"
+        android:layout_marginTop="4dp">
+
+        <!-- Hosts Column -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Hosts"
+                android:textStyle="bold"
+                android:textSize="11sp"
+                android:textColor="#FFFFFF" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="2dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="UP:"
+                    android:textSize="10sp"
+                    android:textColor="#4CAF50" />
+
+                <TextView
+                    android:id="@+id/hosts_up"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:textColor="#4CAF50"
+                    android:layout_marginStart="2dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="2dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="DOWN:"
+                    android:textSize="10sp"
+                    android:textColor="#CC0000" />
+
+                <TextView
+                    android:id="@+id/hosts_down"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:textColor="#CC0000"
+                    android:layout_marginStart="2dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="2dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="UNREACH:"
+                    android:textSize="10sp"
+                    android:textColor="#FF9800" />
+
+                <TextView
+                    android:id="@+id/hosts_unreach"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:textColor="#FF9800"
+                    android:layout_marginStart="2dp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Services Column -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="8dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Services"
+                android:textStyle="bold"
+                android:textSize="11sp"
+                android:textColor="#FFFFFF" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="2dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="OK:"
+                    android:textSize="10sp"
+                    android:textColor="#4CAF50" />
+
+                <TextView
+                    android:id="@+id/services_ok"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:textColor="#4CAF50"
+                    android:layout_marginStart="2dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="2dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="WARN:"
+                    android:textSize="10sp"
+                    android:textColor="#FFEB3B" />
+
+                <TextView
+                    android:id="@+id/services_warn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFEB3B"
+                    android:layout_marginStart="2dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="2dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="CRIT:"
+                    android:textSize="10sp"
+                    android:textColor="#F44336" />
+
+                <TextView
+                    android:id="@+id/services_crit"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:textColor="#F44336"
+                    android:layout_marginStart="2dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="2dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="UNKNOWN:"
+                    android:textSize="10sp"
+                    android:textColor="#9C27B0" />
+
+                <TextView
+                    android:id="@+id/services_unknown"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:textColor="#9C27B0"
+                    android:layout_marginStart="2dp" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/last_updated"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/status_container"
+        android:layout_marginTop="4dp"
+        android:text="Last updated: Never"
+        android:textSize="8sp"
+        android:gravity="end"
+        android:textColor="#CCCCCC" />
+</RelativeLayout>

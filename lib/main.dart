@@ -26,6 +26,7 @@ import 'services/secureStorage.dart';
 import 'services/themeNotifier.dart';
 import 'services/authService.dart';
 import 'services/apiRequest.dart';
+import 'services/widget/dashboard_widget_service.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -58,6 +59,9 @@ void main() async {
 
   final SecureStorage storage = SecureStorage();
   final AuthenticationService authService = AuthenticationService(storage, ApiRequest());
+
+  // Initialize the dashboard widget service
+  DashboardWidgetService();
 
   // Check if credentials are already saved
   final savedCredentials = await authService.loadCredentials();

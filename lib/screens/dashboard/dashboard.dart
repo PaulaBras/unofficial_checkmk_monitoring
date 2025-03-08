@@ -3,6 +3,7 @@ import '/services/apiRequest.dart';
 import 'dart:async';
 import '/screens/main/HostScreen.dart';
 import '/screens/main/ServiceScreen.dart';
+import '/services/widget/dashboard_widget_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   @override
@@ -183,12 +184,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       // Update last fetch time
       _lastFetchTime = DateTime.now();
+      
+      // Update the home screen widget
+      _updateHomeScreenWidget();
     }
 
     if (mounted) {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+  
+  Future<void> _updateHomeScreenWidget() async {
+    try {
+      // Update the Android home screen widget with the latest data
+      final widgetService = DashboardWidgetService();
+      await widgetService.updateWidget();
+    } catch (e) {
+      print('Error updating home screen widget: $e');
     }
   }
 
