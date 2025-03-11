@@ -4,6 +4,7 @@ import 'dart:async';
 import '/screens/main/HostScreen.dart';
 import '/screens/main/ServiceScreen.dart';
 import '/services/widget/dashboard_widget_service.dart';
+import '/widgets/bottomNavigationWidget.dart';
 
 class DashboardScreen extends StatefulWidget {
   @override
@@ -325,7 +326,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => HostScreen(initialStateFilter: stateFilter),
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            title: Text('Host Overview'),
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+          body: HostScreen(initialStateFilter: stateFilter),
+          bottomNavigationBar: BottomNavigationWidget(
+            currentIndex: 2, // Host tab
+            onItemTapped: (index) {
+              Navigator.of(context).pop();
+              // This will return to the dashboard where the bottom navigation can handle the tab change
+            },
+          ),
+        ),
       ),
     );
   }
@@ -335,7 +352,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ServiceScreen(initialStateFilter: stateFilter),
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            title: Text('Service Overview'),
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+          body: ServiceScreen(initialStateFilter: stateFilter),
+          bottomNavigationBar: BottomNavigationWidget(
+            currentIndex: 1, // Service tab
+            onItemTapped: (index) {
+              Navigator.of(context).pop();
+              // This will return to the dashboard where the bottom navigation can handle the tab change
+            },
+          ),
+        ),
       ),
     );
   }
