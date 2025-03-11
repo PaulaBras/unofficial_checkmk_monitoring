@@ -1,10 +1,13 @@
 import 'dart:io';
+
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class BatteryOptimizationService {
-  static const MethodChannel _channel = MethodChannel('checkmk/ptp_4_monitoring_app');
-  static const String _batteryOptimizationKey = 'battery_optimization_requested';
+  static const MethodChannel _channel =
+      MethodChannel('checkmk/ptp_4_monitoring_app');
+  static const String _batteryOptimizationKey =
+      'battery_optimization_requested';
 
   // Check if battery optimization is disabled for the app
   Future<bool> isBatteryOptimizationDisabled() async {
@@ -13,9 +16,10 @@ class BatteryOptimizationService {
     }
 
     try {
-      final bool result = await _channel.invokeMethod('isBatteryOptimizationDisabled');
+      final bool result =
+          await _channel.invokeMethod('isBatteryOptimizationDisabled');
       return result;
-    } on PlatformException catch (e) {
+    } on PlatformException {
       // Error checking battery optimization status
       return false;
     }
@@ -28,16 +32,17 @@ class BatteryOptimizationService {
     }
 
     try {
-      final bool result = await _channel.invokeMethod('requestDisableBatteryOptimization');
-      
+      final bool result =
+          await _channel.invokeMethod('requestDisableBatteryOptimization');
+
       // Mark that we've requested battery optimization
       if (result) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool(_batteryOptimizationKey, true);
       }
-      
+
       return result;
-    } on PlatformException catch (e) {
+    } on PlatformException {
       // Error requesting battery optimization
       return false;
     }
@@ -50,9 +55,10 @@ class BatteryOptimizationService {
     }
 
     try {
-      final bool result = await _channel.invokeMethod('openBatteryOptimizationSettings');
+      final bool result =
+          await _channel.invokeMethod('openBatteryOptimizationSettings');
       return result;
-    } on PlatformException catch (e) {
+    } on PlatformException {
       // Error opening battery optimization settings
       return false;
     }
