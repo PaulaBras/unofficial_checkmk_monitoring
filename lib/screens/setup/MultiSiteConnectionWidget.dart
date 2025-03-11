@@ -369,10 +369,15 @@ class _ConnectionEditorWidgetState extends State<ConnectionEditorWidget> {
             child: TextFormField(
               controller: _siteController,
               decoration: const InputDecoration(
-                labelText: 'Site',
+                labelText: 'Site Name',
                 border: OutlineInputBorder(),
-                hintText: 'Optional',
               ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter a site name';
+                }
+                return null;
+              },
             ),
           ),
           

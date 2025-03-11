@@ -131,9 +131,15 @@ class _ConnectionSettingsWidgetState extends State<ConnectionSettingsWidget> {
           TextFormField(
             controller: _siteController,
             decoration: InputDecoration(
-              labelText: 'Site',
+              labelText: 'Site Name',
               border: OutlineInputBorder(),
             ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter a site name';
+              }
+              return null;
+            },
           ),
           SizedBox(height: 10),
           TextFormField(

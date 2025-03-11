@@ -12,28 +12,42 @@ class SiteConnectionService {
   
   // Get all connections
   Future<List<SiteConnection>> getAllConnections() async {
-    final String? connectionsJson = await _secureStorage.readSecureData(_connectionsKey);
-    if (connectionsJson == null || connectionsJson.isEmpty) {
-      return [];
-    }
-    
     try {
-      final List<dynamic> connectionsList = jsonDecode(connectionsJson);
-      return connectionsList
-          .map((json) => SiteConnection.fromJson(json))
-          .toList();
+      final String? connectionsJson = await _secureStorage.readSecureData(_connectionsKey);
+      if (connectionsJson == null || connectionsJson.isEmpty) {
+        return [];
+      }
+      
+      try {
+        final List<dynamic> connectionsList = jsonDecode(connectionsJson);
+        return connectionsList
+            .map((json) => SiteConnection.fromJson(json))
+            .toList();
+      } catch (e) {
+        print('Error parsing connections JSON: $e');
+        // If there's an error parsing the JSON, return an empty list
+        // This prevents the app from crashing if the stored data is corrupted
+        return [];
+      }
     } catch (e) {
-      // Error loading connections
+      print('Error reading connections from secure storage: $e');
+      // If there's an error reading from secure storage, return an empty list
       return [];
     }
   }
   
   // Save all connections
   Future<void> saveAllConnections(List<SiteConnection> connections) async {
-    final String connectionsJson = jsonEncode(
-      connections.map((connection) => connection.toJson()).toList()
-    );
-    await _secureStorage.writeSecureData(_connectionsKey, connectionsJson);
+    try {
+      final String connectionsJson = jsonEncode(
+        connections.map((connection) => connection.toJson()).toList()
+      );
+      await _secureStorage.writeSecureData(_connectionsKey, connectionsJson);
+    } catch (e) {
+      print('Error saving connections to secure storage: $e');
+      // Re-throw the exception so the caller can handle it
+      throw Exception('Failed to save connections: $e');
+    }
   }
   
   // Add a new connection
@@ -104,14 +118,20 @@ class SiteConnectionService {
   
   // Get the active connection
   Future<SiteConnection?> getActiveConnection() async {
-    final activeId = await getActiveConnectionId();
-    if (activeId == null) {
-      return null;
-    }
-    
     try {
-      return await getConnection(activeId);
+      final activeId = await getActiveConnectionId();
+      if (activeId == null) {
+        return null;
+      }
+      
+      try {
+        return await getConnection(activeId);
+      } catch (e) {
+        print('Error getting active connection: $e');
+        return null;
+      }
     } catch (e) {
+      print('Error getting active connection ID: $e');
       return null;
     }
   }
@@ -126,48 +146,58 @@ class SiteConnectionService {
   
   // Migrate legacy connection to the new format
   Future<void> migrateLegacyConnection() async {
-    // Check if we already have connections
-    final connections = await getAllConnections();
-    if (connections.isNotEmpty) {
-      return; // Already migrated
-    }
-    
-    // Check if we have legacy connection data
-    final protocol = await _secureStorage.readSecureData('protocol');
-    final server = await _secureStorage.readSecureData('server');
-    final username = await _secureStorage.readSecureData('username');
-    final password = await _secureStorage.readSecureData('password');
-    
-    // If we have legacy data, migrate it
-    if (server != null && server.isNotEmpty && 
-        username != null && username.isNotEmpty) {
-      
-      final site = await _secureStorage.readSecureData('site') ?? '';
-      final ignoreCertificate = (await _secureStorage.readSecureData('ignoreCertificate'))?.toLowerCase() == 'true';
-      final enableNotifications = (await _secureStorage.readSecureData('enableNotifications'))?.toLowerCase() == 'true';
-      
-      // Create service state notification settings
-      final Map<String, bool> serviceStateNotifications = {};
-      for (var state in ['green', 'warning', 'critical', 'unknown']) {
-        String? savedSetting = await _secureStorage.readSecureData('notify_$state');
-        serviceStateNotifications[state] = savedSetting?.toLowerCase() != 'false';
+    try {
+      // Check if we already have connections
+      final connections = await getAllConnections();
+      if (connections.isNotEmpty) {
+        return; // Already migrated
       }
       
-      // Create and save the connection
-      final connection = SiteConnection(
-        id: _generateUuid(),
-        name: 'Default Connection',
-        protocol: protocol ?? 'https',
-        server: server,
-        site: site,
-        username: username,
-        password: password ?? '',
-        ignoreCertificate: ignoreCertificate,
-        enableNotifications: enableNotifications,
-        serviceStateNotifications: serviceStateNotifications,
-      );
-      
-      await addConnection(connection);
+      try {
+        // Check if we have legacy connection data
+        final protocol = await _secureStorage.readSecureData('protocol');
+        final server = await _secureStorage.readSecureData('server');
+        final username = await _secureStorage.readSecureData('username');
+        final password = await _secureStorage.readSecureData('password');
+        
+        // If we have legacy data, migrate it
+        if (server != null && server.isNotEmpty && 
+            username != null && username.isNotEmpty) {
+          
+          final site = await _secureStorage.readSecureData('site') ?? '';
+          final ignoreCertificate = (await _secureStorage.readSecureData('ignoreCertificate'))?.toLowerCase() == 'true';
+          final enableNotifications = (await _secureStorage.readSecureData('enableNotifications'))?.toLowerCase() == 'true';
+          
+          // Create service state notification settings
+          final Map<String, bool> serviceStateNotifications = {};
+          for (var state in ['green', 'warning', 'critical', 'unknown']) {
+            String? savedSetting = await _secureStorage.readSecureData('notify_$state');
+            serviceStateNotifications[state] = savedSetting?.toLowerCase() != 'false';
+          }
+          
+          // Create and save the connection
+          final connection = SiteConnection(
+            id: _generateUuid(),
+            name: 'Default Connection',
+            protocol: protocol ?? 'https',
+            server: server,
+            site: site,
+            username: username,
+            password: password ?? '',
+            ignoreCertificate: ignoreCertificate,
+            enableNotifications: enableNotifications,
+            serviceStateNotifications: serviceStateNotifications,
+          );
+          
+          await addConnection(connection);
+        }
+      } catch (e) {
+        print('Error reading legacy connection data: $e');
+        // If there's an error reading legacy data, just continue without migrating
+      }
+    } catch (e) {
+      print('Error during migration: $e');
+      // If there's an error during migration, just continue without migrating
     }
   }
 }

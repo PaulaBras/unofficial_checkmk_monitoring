@@ -14,10 +14,10 @@ class SiteConnection {
 
   SiteConnection({
     required this.id,
-    required this.name,
+    this.name = 'Default Connection',
     required this.protocol,
     required this.server,
-    required this.site,
+    this.site = '',
     required this.username,
     required this.password,
     this.ignoreCertificate = false,

@@ -36,28 +36,39 @@ class _MyHomePageState extends State<MyHomePage> {
   }
   
   Future<void> _checkBatteryOptimization() async {
-    final BatteryOptimizationService batteryService = BatteryOptimizationService();
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    
-    // Check if we've already requested battery optimization
-    bool hasRequested = await batteryService.hasRequestedBatteryOptimization();
-    
-    // Check if user has chosen to skip this check
-    bool skipCheck = prefs.getBool('skip_battery_optimization') ?? false;
-    
-    if (!hasRequested && !skipCheck) {
-      // Check if battery optimization is disabled
+    try {
+      final BatteryOptimizationService batteryService = BatteryOptimizationService();
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      
+      // Always check battery optimization status in release mode
       bool isDisabled = await batteryService.isBatteryOptimizationDisabled();
       
-      if (!isDisabled) {
+      // Check if we've already requested battery optimization
+      bool hasRequested = await batteryService.hasRequestedBatteryOptimization();
+      
+      // Check if user has chosen to skip this check
+      bool skipCheck = prefs.getBool('skip_battery_optimization') ?? false;
+      
+      print('Battery optimization check:');
+      print('- Is disabled: $isDisabled');
+      print('- Has requested: $hasRequested');
+      print('- Skip check: $skipCheck');
+      
+      // Force the battery optimization screen in release mode if not disabled
+      // and not explicitly skipped by the user
+      if (!isDisabled && !skipCheck) {
         // Wait for the widget to be fully built
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          Navigator.pushNamed(context, batteryOptimizationScreenId);
+          if (mounted) {
+            Navigator.pushNamed(context, batteryOptimizationScreenId);
+          }
         });
-      } else {
+      } else if (isDisabled) {
         // Mark as requested if it's already disabled
         await batteryService.markBatteryOptimizationRequested();
       }
+    } catch (e) {
+      print('Error checking battery optimization: $e');
     }
   }
 

@@ -21,13 +21,20 @@ class ApiRequest {
   Future<dynamic> Request(String apiRequestUri,
       {String method = 'GET',
       Map<String, String>? headers,
-      Map<String, dynamic>? body}) async {
+      Map<String, dynamic>? body,
+      int timeoutSeconds = 30}) async {
+    IOClient? ioClient;
+    
     try {
+      // Clear any previous error message
+      _errorMessage = null;
+      
       // Get the active connection
       final activeConnection = await _connectionService.getActiveConnection();
       
       if (activeConnection == null) {
-        throw Exception('No active connection found');
+        _errorMessage = 'No active connection found. Please set up a connection.';
+        return null;
       }
       
       // Use the connection details
@@ -44,68 +51,84 @@ class ApiRequest {
       
       // Encode the username and password in the format username:password
       String basicAuth =
-          'Basic ' + base64Encode(utf8.encode('$username:$password'));
+          'Basic ${base64Encode(utf8.encode('$username:$password'))}';
 
-      // Create an HttpClient
+      // Create an HttpClient with timeout
       final httpClient = HttpClient()
         ..badCertificateCallback =
             ((X509Certificate cert, String host, int port) =>
-                _ignoreCertificate);
+                _ignoreCertificate)
+        ..connectionTimeout = Duration(seconds: timeoutSeconds);
 
       // Create an IOClient with the modified HttpClient
-      final ioClient = IOClient(httpClient);
+      ioClient = IOClient(httpClient);
 
-      // Make the HTTP request
+      // Default headers
+      final defaultHeaders = <String, String>{
+        'authorization': basicAuth,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json; charset=UTF-8'
+      };
+      
+      // Use provided headers or default headers
+      final requestHeaders = headers ?? defaultHeaders;
+
+      // Make the HTTP request with timeout
       http.Response response;
-      if (method == 'GET') {
-        response = await ioClient.get(
-          url,
-          headers: headers ??
-              <String, String>{
-                'authorization': basicAuth,
-                'Accept': 'application/json',
-                'Content-Type': 'application/json; charset=UTF-8'
-              },
-        );
-      } else if (method == 'POST') {
-        response = await ioClient.post(
-          url,
-          headers: headers ??
-              <String, String>{
-                'authorization': basicAuth,
-                'Accept': 'application/json',
-                'Content-Type': 'application/json; charset=UTF-8'
-              },
-          body: jsonEncode(body),
-        );
-      } else {
-        throw Exception('HTTP method $method not supported');
+      
+      try {
+        if (method == 'GET') {
+          response = await ioClient.get(
+            url,
+            headers: requestHeaders,
+          ).timeout(Duration(seconds: timeoutSeconds));
+        } else if (method == 'POST') {
+          response = await ioClient.post(
+            url,
+            headers: requestHeaders,
+            body: jsonEncode(body),
+          ).timeout(Duration(seconds: timeoutSeconds));
+        } else {
+          throw Exception('HTTP method $method not supported');
+        }
+      } catch (e) {
+        if (e is TimeoutException) {
+          _errorMessage = 'Request timed out. Please check your connection and try again.';
+        } else if (e is SocketException) {
+          _errorMessage = 'Network error. Please check your connection and try again.';
+        } else {
+          _errorMessage = 'Request failed: ${e.toString()}';
+        }
+        return null;
       }
 
       // Check the status code of the response
       if (response.statusCode == 200) {
         // If the server returns a 200 OK response, then parse the JSON.
-        var responseData = jsonDecode(response.body);
-        
-        // Add the connection name to the response data for multi-site support
-        if (responseData is Map && responseData.containsKey('value') && responseData['value'] is List) {
-          for (var item in responseData['value']) {
-            if (item is Map && item.containsKey('extensions')) {
-              item['extensions']['connection_name'] = activeConnection.name;
-              item['extensions']['connection_id'] = activeConnection.id;
+        try {
+          var responseData = jsonDecode(response.body);
+          
+          // Add the connection name to the response data for multi-site support
+          if (responseData is Map && responseData.containsKey('value') && responseData['value'] is List) {
+            for (var item in responseData['value']) {
+              if (item is Map && item.containsKey('extensions')) {
+                item['extensions']['connection_name'] = activeConnection.name;
+                item['extensions']['connection_id'] = activeConnection.id;
+              }
             }
           }
+          
+          return responseData;
+        } catch (e) {
+          _errorMessage = 'Failed to parse response: ${e.toString()}';
+          return null;
         }
-        
-        return responseData;
       } else if (response.statusCode == 204) {
         return true;
       } else {
-        // If the server returns an error response, then throw an exception.
-        throw Exception('Failed to get api Request' +
-            response.body +
-            " Error Code: " +
-            response.statusCode.toString());
+        // If the server returns an error response, set the error message
+        _errorMessage = 'Server error: ${response.statusCode} - ${response.body}';
+        return null;
       }
     } catch (e) {
       if (e is SocketException) {
@@ -113,8 +136,10 @@ class ApiRequest {
       } else {
         _errorMessage = 'Failed to make network request: ${e.toString()}';
       }
-      // Error is stored in _errorMessage and can be retrieved with getErrorMessage()
-      //throw e;
+      return null;
+    } finally {
+      // Always close the client to prevent resource leaks
+      ioClient?.close();
     }
   }
 
@@ -129,8 +154,14 @@ class ApiRequest {
       String apiRequestUri,
       {String method = 'GET',
       Map<String, String>? headers,
-      Map<String, dynamic>? body}) async {
+      Map<String, dynamic>? body,
+      int timeoutSeconds = 30}) async {
+    IOClient? ioClient;
+    
     try {
+      // Clear any previous error message
+      _errorMessage = null;
+      
       _ignoreCertificate = ignoreCertificate;
 
       // Construct the URL
@@ -139,67 +170,83 @@ class ApiRequest {
       
       // Encode the username and password in the format username:password
       String basicAuth =
-          'Basic ' + base64Encode(utf8.encode('$username:$password'));
+          'Basic ${base64Encode(utf8.encode('$username:$password'))}';
 
-      // Create an HttpClient
+      // Create an HttpClient with timeout
       final httpClient = HttpClient()
         ..badCertificateCallback =
             ((X509Certificate cert, String host, int port) =>
-                _ignoreCertificate);
+                _ignoreCertificate)
+        ..connectionTimeout = Duration(seconds: timeoutSeconds);
 
       // Create an IOClient with the modified HttpClient
-      final ioClient = IOClient(httpClient);
+      ioClient = IOClient(httpClient);
 
-      // Make the HTTP request
+      // Default headers
+      final defaultHeaders = <String, String>{
+        'authorization': basicAuth,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json; charset=UTF-8'
+      };
+      
+      // Use provided headers or default headers
+      final requestHeaders = headers ?? defaultHeaders;
+
+      // Make the HTTP request with timeout
       http.Response response;
-      if (method == 'GET') {
-        response = await ioClient.get(
-          url,
-          headers: headers ??
-              <String, String>{
-                'authorization': basicAuth,
-                'Accept': 'application/json',
-                'Content-Type': 'application/json; charset=UTF-8'
-              },
-        );
-      } else if (method == 'POST') {
-        response = await ioClient.post(
-          url,
-          headers: headers ??
-              <String, String>{
-                'authorization': basicAuth,
-                'Accept': 'application/json',
-                'Content-Type': 'application/json; charset=UTF-8'
-              },
-          body: jsonEncode(body),
-        );
-      } else {
-        throw Exception('HTTP method $method not supported');
+      
+      try {
+        if (method == 'GET') {
+          response = await ioClient.get(
+            url,
+            headers: requestHeaders,
+          ).timeout(Duration(seconds: timeoutSeconds));
+        } else if (method == 'POST') {
+          response = await ioClient.post(
+            url,
+            headers: requestHeaders,
+            body: jsonEncode(body),
+          ).timeout(Duration(seconds: timeoutSeconds));
+        } else {
+          throw Exception('HTTP method $method not supported');
+        }
+      } catch (e) {
+        if (e is TimeoutException) {
+          _errorMessage = 'Request timed out. Please check your connection and try again.';
+        } else if (e is SocketException) {
+          _errorMessage = 'Network error. Please check your connection and try again.';
+        } else {
+          _errorMessage = 'Request failed: ${e.toString()}';
+        }
+        return null;
       }
 
       // Check the status code of the response
       if (response.statusCode == 200) {
         // If the server returns a 200 OK response, then parse the JSON.
-        var responseData = jsonDecode(response.body);
-        
-        // Add the connection info to the response data for multi-site support
-        if (responseData is Map && responseData.containsKey('value') && responseData['value'] is List) {
-          for (var item in responseData['value']) {
-            if (item is Map && item.containsKey('extensions')) {
-              item['extensions']['connection_name'] = site.isNotEmpty ? '$server/$site' : server;
+        try {
+          var responseData = jsonDecode(response.body);
+          
+          // Add the connection info to the response data for multi-site support
+          if (responseData is Map && responseData.containsKey('value') && responseData['value'] is List) {
+            for (var item in responseData['value']) {
+              if (item is Map && item.containsKey('extensions')) {
+                item['extensions']['connection_name'] = site.isNotEmpty ? '$server/$site' : server;
+              }
             }
           }
+          
+          return responseData;
+        } catch (e) {
+          _errorMessage = 'Failed to parse response: ${e.toString()}';
+          return null;
         }
-        
-        return responseData;
       } else if (response.statusCode == 204) {
         return true;
       } else {
-        // If the server returns an error response, then throw an exception.
-        throw Exception('Failed to get api Request' +
-            response.body +
-            " Error Code: " +
-            response.statusCode.toString());
+        // If the server returns an error response, set the error message
+        _errorMessage = 'Server error: ${response.statusCode} - ${response.body}';
+        return null;
       }
     } catch (e) {
       if (e is SocketException) {
@@ -207,8 +254,10 @@ class ApiRequest {
       } else {
         _errorMessage = 'Failed to make network request: ${e.toString()}';
       }
-      // Error is stored in _errorMessage and can be retrieved with getErrorMessage()
-      //throw e;
+      return null;
+    } finally {
+      // Always close the client to prevent resource leaks
+      ioClient?.close();
     }
   }
 

@@ -10,33 +10,63 @@ class SecureStorage {
   final _iv = encrypt.IV.fromLength(16);
 
   Future<void> init() async {
-    // Check if a key already exists
-    String? existingKey = await _storage.read(key: 'encryption_key');
-    if (existingKey == null) {
-      await generateAndStoreKey();
+    try {
+      // Check if a key already exists
+      String? existingKey = await _storage.read(key: 'encryption_key');
+      if (existingKey == null) {
+        await generateAndStoreKey();
+      }
+    } catch (e) {
+      print('Error initializing secure storage: $e');
+      // Re-throw to allow the caller to handle the error
+      throw Exception('Failed to initialize secure storage: $e');
     }
   }
 
   Future<void> clearAll() async {
-    // Clear all data from secure storage
-    await _storage.deleteAll();
+    try {
+      // Clear all data from secure storage
+      await _storage.deleteAll();
+    } catch (e) {
+      print('Error clearing secure storage: $e');
+      // Re-throw to allow the caller to handle the error
+      throw Exception('Failed to clear secure storage: $e');
+    }
   }
 
   Future<void> deleteSecureData(String key) async {
-    await _storage.delete(key: key);
+    try {
+      await _storage.delete(key: key);
+    } catch (e) {
+      print('Error deleting secure data for key $key: $e');
+      // Re-throw to allow the caller to handle the error
+      throw Exception('Failed to delete secure data: $e');
+    }
   }
 
   Future<void> writeSecureData(String key, String value) async {
-    var encryptedValue = await _encrypt(value);
-    await _storage.write(key: key, value: encryptedValue);
+    try {
+      var encryptedValue = await _encrypt(value);
+      await _storage.write(key: key, value: encryptedValue);
+    } catch (e) {
+      print('Error writing secure data for key $key: $e');
+      // Re-throw to allow the caller to handle the error
+      throw Exception('Failed to write secure data: $e');
+    }
   }
 
   Future<String?> readSecureData(String key) async {
-    var encryptedValue = await _storage.read(key: key);
-    if (encryptedValue != null) {
-      return _decrypt(encryptedValue);
+    try {
+      var encryptedValue = await _storage.read(key: key);
+      if (encryptedValue != null) {
+        return _decrypt(encryptedValue);
+      }
+      return null;
+    } catch (e) {
+      print('Error reading secure data for key $key: $e');
+      // Return null instead of throwing to make the API more resilient
+      return null;
     }
-    return null;
   }
 
   Future<encrypt.Key> _getKey() async {
@@ -74,10 +104,16 @@ class SecureStorage {
   }
 
   Future<void> generateAndStoreKey() async {
-    final random = Random.secure();
-    final values = List<int>.generate(32, (i) => random.nextInt(256));
-    final key = base64Url.encode(values);
+    try {
+      final random = Random.secure();
+      final values = List<int>.generate(32, (i) => random.nextInt(256));
+      final key = base64Url.encode(values);
 
-    await _storage.write(key: 'encryption_key', value: key);
+      await _storage.write(key: 'encryption_key', value: key);
+    } catch (e) {
+      print('Error generating and storing encryption key: $e');
+      // Re-throw to allow the caller to handle the error
+      throw Exception('Failed to generate encryption key: $e');
+    }
   }
 }

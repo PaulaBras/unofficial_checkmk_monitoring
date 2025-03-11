@@ -39,56 +39,99 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _checkExistingConnections() async {
-    // First, migrate any legacy connection
-    await connectionService.migrateLegacyConnection();
-    
-    // Check if we have any connections
-    final connections = await connectionService.getAllConnections();
-    final activeConnectionId = await connectionService.getActiveConnectionId();
-    
-    if (connections.isNotEmpty && activeConnectionId != null) {
-      // We have connections and an active connection, try to login
-      final loginSuccessful = await authService.loginWithActiveConnection();
-      if (loginSuccessful) {
-        Navigator.pushReplacementNamed(context, 'home_screen');
-        return;
+    try {
+      // First, migrate any legacy connection
+      await connectionService.migrateLegacyConnection();
+      
+      // Check if we have any connections
+      final connections = await connectionService.getAllConnections();
+      final activeConnectionId = await connectionService.getActiveConnectionId();
+      
+      if (connections.isNotEmpty && activeConnectionId != null) {
+        // We have connections and an active connection, try to login
+        try {
+          final loginSuccessful = await authService.loginWithActiveConnection();
+          if (loginSuccessful) {
+            if (mounted) {
+              Navigator.pushReplacementNamed(context, 'home_screen');
+            }
+            return;
+          }
+        } catch (e) {
+          print('Error during automatic login: $e');
+          // Continue to login form
+        }
       }
+    } catch (e) {
+      print('Error checking existing connections: $e');
+      // Continue to login form regardless of error
     }
     
-    // If we get here, either we have no connections or login failed
-    setState(() {
-      _showLoginForm = true;
-      _isLoading = false;
-    });
+    // If we get here, either we have no connections, login failed, or there was an error
+    if (mounted) {
+      setState(() {
+        _showLoginForm = true;
+        _isLoading = false;
+      });
+    }
   }
 
   void _login() async {
-    // Create a new connection
-    final connection = SiteConnection(
-      id: '',
-      name: _connectionName,
-      protocol: _protocol,
-      server: _server,
-      site: _site,
-      username: _username,
-      password: _password,
-      ignoreCertificate: _ignoreCertificate,
-    );
+    setState(() {
+      _isLoading = true;
+    });
     
-    // Add the connection
-    final newConnection = await connectionService.addConnection(connection);
-    
-    // Set it as active
-    await connectionService.setActiveConnection(newConnection.id);
-    
-    // Try to login
-    bool loginSuccessful = await authService.login(_username, _password);
-    if (loginSuccessful) {
-      Navigator.pushReplacementNamed(context, 'home_screen');
-    } else {
-      // Show an error message
+    try {
+      // Create a new connection
+      final connection = SiteConnection(
+        id: '',
+        name: _connectionName,
+        protocol: _protocol,
+        server: _server,
+        site: _site,
+        username: _username,
+        password: _password,
+        ignoreCertificate: _ignoreCertificate,
+      );
+      
+      // Add the connection
+      final newConnection = await connectionService.addConnection(connection);
+      
+      // Set it as active
+      await connectionService.setActiveConnection(newConnection.id);
+      
+      // Try to login with the site name
+      bool loginSuccessful = await authService.login(
+        _username, 
+        _password,
+        site: _site
+      );
+      
+      if (!mounted) return;
+      
+      if (loginSuccessful) {
+        Navigator.pushReplacementNamed(context, 'home_screen');
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+        // Show an error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login failed. Please check your credentials.')),
+        );
+      }
+    } catch (e) {
+      print('Error during login: $e');
+      
+      if (!mounted) return;
+      
+      setState(() {
+        _isLoading = false;
+      });
+      
+      // Show a more generic error message
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login failed. Please check your credentials.')),
+        SnackBar(content: Text('Login failed. Please check your connection details and try again.')),
       );
     }
   }
@@ -116,16 +159,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       key: _formKey,
                       child: Column(
                         children: [
-                          CustomTextField(
+                          TextFormField(
                             initialValue: _connectionName,
-                            labelText: 'Connection Name',
-                            validator: (value) {
-                              if (value!.isEmpty) {
-                                return 'Please enter a connection name';
-                              }
-                              return null;
-                            },
-                            onSaved: (value) => _connectionName = value!,
+                            decoration: const InputDecoration(
+                              labelText: 'Connection Name (Optional)',
+                              border: OutlineInputBorder(),
+                            ),
+                            validator: (value) => null, // Optional field, no validation needed
+                            onSaved: (value) => _connectionName = value?.isNotEmpty == true ? value! : 'Default Connection',
                           ),
                           const SizedBox(height: 16.0),
                           DropdownButtonFormField<String>(

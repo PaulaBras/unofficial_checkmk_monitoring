@@ -13,21 +13,31 @@ class AuthenticationService {
     _connectionService = SiteConnectionService(secureStorage);
   }
 
-  Future<bool> login(String username, String password) async {
+  Future<bool> login(String username, String password, {String site = ''}) async {
     try {
-      await apiRequest.Request(
-        '/objects/site_connection/prod/actions/login/invoke',
+      // Use the provided site name or empty string if not provided
+      final sitePath = site.isNotEmpty ? site : '';
+      
+      final response = await apiRequest.Request(
+        '/objects/site_connection/$sitePath/actions/login/invoke',
         method: 'POST',
         body: {
           'username': username,
           'password': password,
         },
+        timeoutSeconds: 15, // Shorter timeout for login
       );
 
-      // You can add additional checks here based on the response
+      // Check if the response is null, which indicates an error
+      if (response == null) {
+        print('Login failed: ${apiRequest.getErrorMessage() ?? "Unknown error"}');
+        return false;
+      }
+      
+      // Login successful
       return true;
     } catch (e) {
-      // Login failed
+      print('Login exception: $e');
       return false;
     }
   }
@@ -37,12 +47,24 @@ class AuthenticationService {
     try {
       final activeConnection = await _connectionService.getActiveConnection();
       if (activeConnection == null) {
+        print('No active connection found');
         return false;
       }
       
-      return await login(activeConnection.username, activeConnection.password);
+      // Try to login with the active connection, including the site name
+      final result = await login(
+        activeConnection.username, 
+        activeConnection.password,
+        site: activeConnection.site
+      );
+      
+      if (!result) {
+        print('Login with active connection failed');
+      }
+      
+      return result;
     } catch (e) {
-      // Login with active connection failed
+      print('Login with active connection exception: $e');
       return false;
     }
   }
@@ -71,6 +93,15 @@ class AuthenticationService {
     try {
       final activeConnection = await _connectionService.getActiveConnection();
       if (activeConnection == null) {
+        print('No active connection found when loading credentials');
+        return null;
+      }
+      
+      // Validate that we have the minimum required fields
+      if (activeConnection.protocol.isEmpty || 
+          activeConnection.server.isEmpty || 
+          activeConnection.username.isEmpty) {
+        print('Active connection is missing required fields');
         return null;
       }
       
@@ -83,7 +114,7 @@ class AuthenticationService {
         activeConnection.ignoreCertificate,
       );
     } catch (e) {
-      // Load credentials failed
+      print('Load credentials exception: $e');
       return null;
     }
   }
