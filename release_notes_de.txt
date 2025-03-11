@@ -1,0 +1,53 @@
+# Inoffizielle CheckMK Monitoring App - Release Notes
+
+## Version 1.0.13+13
+
+Wir freuen uns, bekannt zu geben, dass die inoffizielle CheckMK Monitoring App jetzt öffentlich verfügbar ist! Diese Version enthält mehrere neue Funktionen und Verbesserungen, um Ihr Monitoring-Erlebnis zu verbessern.
+
+### Neue Funktionen
+
+#### Dashboard-Widget
+- Hinzufügung eines Startbildschirm-Widgets für Android-Geräte, das den Monitoring-Status in Echtzeit anzeigt
+- Anzeige der Host- und Service-Anzahl direkt auf Ihrem Startbildschirm
+- Automatische Aktualisierung des Widgets mit den neuesten Monitoring-Daten
+
+#### Verbessertes Dashboard
+- Neu gestaltetes Dashboard mit sechseckigen Statusanzeigen
+- Verbesserte Visualisierung des Status von Hosts und Services
+- Schnelle Navigation zu gefilterten Ansichten durch Tippen auf Status-Hexagone
+
+#### Batterieoptimierung
+- Hinzufügung von Batterieoptimierungsfunktionen für Android-Geräte
+- Verbesserte Hintergrundüberwachungsfunktionen
+- Option zur Deaktivierung der Batterieoptimierung für zuverlässigere Benachrichtigungen
+- Intelligentes Batterieverbrauchsmanagement für bessere Leistung
+
+### Verbesserungen
+
+#### Benachrichtigungssystem
+- Verbessertes Benachrichtigungshandling für zuverlässigere Alarme
+- Verbesserte Hintergrundprüfungslogik
+- Hinzufügung von Service-Statusbenachrichtigungen mit detaillierten Informationen
+- Bessere Verwaltung der Benachrichtigungseinstellungen
+
+#### Benutzeroberfläche
+- Verfeinertes Farbschema für besseren Kontrast und Lesbarkeit
+- Verbesserte Kartendesigns für bessere Sichtbarkeit
+- Verbesserte Navigation zwischen Bildschirmen
+- Hinzufügung von Statusfilterunterstützung für Host- und Service-Bildschirme
+
+#### Leistung
+- Umstrukturierter Codebase für bessere Leistung und Wartbarkeit
+- Aktualisierung der Abhängigkeiten auf die neuesten Versionen
+- Verbesserte Hintergrundausführung für zuverlässigeres Monitoring
+- Verbessertes Daten-Caching für schnellere Ladezeiten
+
+### Technische Updates
+- Aktualisierung der Flutter-Abhängigkeiten auf die neuesten Versionen
+- Unterstützung für Flutter 3.3.4 hinzugefügt
+- Verbesserte Fehlerbehandlung und Stabilität
+- Erweiterte Sicherheitsfunktionen
+
+---
+
+Vielen Dank, dass Sie sich für die inoffizielle CheckMK Monitoring App entschieden haben. Wir hoffen, dass diese Verbesserungen Ihr Monitoring-Erlebnis verbessern!

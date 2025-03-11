@@ -1,0 +1,53 @@
+# Unofficial CheckMK Monitoring App - Release Notes
+
+## Version 1.0.13+13
+
+We're excited to announce that the Unofficial CheckMK Monitoring App is now publicly available! This release includes several new features and improvements to enhance your monitoring experience.
+
+### New Features
+
+#### Dashboard Widget
+- Added a home screen widget for Android devices that displays real-time monitoring status
+- View host and service counts directly from your home screen
+- Widget automatically updates with the latest monitoring data
+
+#### Enhanced Dashboard
+- Redesigned dashboard with hexagon-shaped status indicators
+- Improved visualization of hosts and services status
+- Quick navigation to filtered views by tapping on status hexagons
+
+#### Battery Optimization
+- Added battery optimization features for Android devices
+- Improved background monitoring capabilities
+- Option to disable battery optimization for more reliable notifications
+- Intelligent battery usage management for better performance
+
+### Improvements
+
+#### Notification System
+- Enhanced notification handling for more reliable alerts
+- Improved background check logic
+- Added service state notifications with detailed information
+- Better management of notification settings
+
+#### User Interface
+- Refined color scheme for better contrast and readability
+- Enhanced card designs for better visibility
+- Improved navigation between screens
+- Added state filtering support to Host and Service screens
+
+#### Performance
+- Restructured codebase for better performance and maintainability
+- Updated dependencies to latest versions
+- Improved background execution for more reliable monitoring
+- Enhanced data caching for faster loading times
+
+### Technical Updates
+- Updated Flutter dependencies to latest versions
+- Added support for Flutter 3.3.4
+- Improved error handling and stability
+- Enhanced security features
+
+---
+
+Thank you for choosing the Unofficial CheckMK Monitoring App. We hope these improvements enhance your monitoring experience!
