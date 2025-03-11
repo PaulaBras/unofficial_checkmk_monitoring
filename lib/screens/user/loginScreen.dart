@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '/widgets/customTextField.dart';
 import '../../models/site_connection.dart';
 import '../../services/apiRequest.dart';
 import '../../services/authService.dart';
 import '../../services/secureStorage.dart';
 import '../../services/site_connection_service.dart';
-import '/widgets/customTextField.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -42,11 +42,12 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       // First, migrate any legacy connection
       await connectionService.migrateLegacyConnection();
-      
+
       // Check if we have any connections
       final connections = await connectionService.getAllConnections();
-      final activeConnectionId = await connectionService.getActiveConnectionId();
-      
+      final activeConnectionId =
+          await connectionService.getActiveConnectionId();
+
       if (connections.isNotEmpty && activeConnectionId != null) {
         // We have connections and an active connection, try to login
         try {
@@ -66,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
       print('Error checking existing connections: $e');
       // Continue to login form regardless of error
     }
-    
+
     // If we get here, either we have no connections, login failed, or there was an error
     if (mounted) {
       setState(() {
@@ -80,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
       // Create a new connection
       final connection = SiteConnection(
@@ -93,22 +94,19 @@ class _LoginScreenState extends State<LoginScreen> {
         password: _password,
         ignoreCertificate: _ignoreCertificate,
       );
-      
+
       // Add the connection
       final newConnection = await connectionService.addConnection(connection);
-      
+
       // Set it as active
       await connectionService.setActiveConnection(newConnection.id);
-      
+
       // Try to login with the site name
-      bool loginSuccessful = await authService.login(
-        _username, 
-        _password,
-        site: _site
-      );
-      
+      bool loginSuccessful =
+          await authService.login(_username, _password, site: _site);
+
       if (!mounted) return;
-      
+
       if (loginSuccessful) {
         Navigator.pushReplacementNamed(context, 'home_screen');
       } else {
@@ -117,21 +115,24 @@ class _LoginScreenState extends State<LoginScreen> {
         });
         // Show an error message
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login failed. Please check your credentials.')),
+          SnackBar(
+              content: Text('Login failed. Please check your credentials.')),
         );
       }
     } catch (e) {
       print('Error during login: $e');
-      
+
       if (!mounted) return;
-      
+
       setState(() {
         _isLoading = false;
       });
-      
+
       // Show a more generic error message
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login failed. Please check your connection details and try again.')),
+        SnackBar(
+            content: Text(
+                'Login failed. Please check your connection details and try again.')),
       );
     }
   }
@@ -165,8 +166,12 @@ class _LoginScreenState extends State<LoginScreen> {
                               labelText: 'Connection Name (Optional)',
                               border: OutlineInputBorder(),
                             ),
-                            validator: (value) => null, // Optional field, no validation needed
-                            onSaved: (value) => _connectionName = value?.isNotEmpty == true ? value! : 'Default Connection',
+                            validator: (value) =>
+                                null, // Optional field, no validation needed
+                            onSaved: (value) => _connectionName =
+                                value?.isNotEmpty == true
+                                    ? value!
+                                    : 'Default Connection',
                           ),
                           const SizedBox(height: 16.0),
                           DropdownButtonFormField<String>(
@@ -201,14 +206,16 @@ class _LoginScreenState extends State<LoginScreen> {
                             onSaved: (value) => _server = value!,
                           ),
                           const SizedBox(height: 16.0),
-                          TextFormField(
+                          CustomTextField(
                             initialValue: _site,
-                            decoration: const InputDecoration(
-                              labelText: 'Site Name (Optional)',
-                              border: OutlineInputBorder(),
-                            ),
-                            validator: (value) => null, // Optional field, no validation needed
-                            onSaved: (value) => _site = value ?? '',
+                            labelText: 'Site Name',
+                            validator: (value) {
+                              if (value!.isEmpty) {
+                                return 'Please enter a site name';
+                              }
+                              return null;
+                            },
+                            onSaved: (value) => _site = value!,
                           ),
                           const SizedBox(height: 16.0),
                           CustomTextField(
