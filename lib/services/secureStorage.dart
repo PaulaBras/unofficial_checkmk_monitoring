@@ -19,7 +19,11 @@ class SecureStorage {
 
   Future<void> clearAll() async {
     // Clear all data from secure storage
-    // The implementation depends on the secure storage package you're using
+    await _storage.deleteAll();
+  }
+
+  Future<void> deleteSecureData(String key) async {
+    await _storage.delete(key: key);
   }
 
   Future<void> writeSecureData(String key, String value) async {

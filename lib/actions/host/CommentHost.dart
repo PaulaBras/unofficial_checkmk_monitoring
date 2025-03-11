@@ -46,7 +46,7 @@ class _CommentHostWidgetState extends State<CommentHostWidget> {
       );
       Navigator.of(context).pop();
     } else {
-      print("Failed to comment service");
+      // Failed to comment service
     }
   }
 

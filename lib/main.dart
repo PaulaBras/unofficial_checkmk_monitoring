@@ -95,7 +95,7 @@ void main() async {
     selectNotificationStream.stream.listen((payload) async {
       // Handle the user's response to the notification here
       // ignore: avoid_print
-      print('Notification selected with payload: $payload');
+      // Notification selected with payload
     });
 
     // Enable the background execution

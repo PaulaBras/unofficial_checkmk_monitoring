@@ -143,7 +143,8 @@ class _HostActionScreenState extends State<HostActionScreen> {
                       'Last Time Up: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(host['extensions']['last_time_up'] * 1000))}\n'
                       'State: ${host['extensions']['state']}\n'
                       'Total Services: ${host['extensions']['total_services']}\n'
-                      'Acknowledged: ${host['extensions']['acknowledged'] == 1 ? 'Yes' : 'No'}'),
+                      'Acknowledged: ${host['extensions']['acknowledged'] == 1 ? 'Yes' : 'No'}\n'
+                      '${host['extensions'].containsKey('connection_name') ? 'Site: ${host['extensions']['connection_name']}' : ''}'),
                 ),
                 SizedBox(height: 20),
                 Row(

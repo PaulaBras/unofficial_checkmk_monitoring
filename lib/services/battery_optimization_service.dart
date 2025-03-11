@@ -16,7 +16,7 @@ class BatteryOptimizationService {
       final bool result = await _channel.invokeMethod('isBatteryOptimizationDisabled');
       return result;
     } on PlatformException catch (e) {
-      print('Error checking battery optimization status: ${e.message}');
+      // Error checking battery optimization status
       return false;
     }
   }
@@ -38,7 +38,7 @@ class BatteryOptimizationService {
       
       return result;
     } on PlatformException catch (e) {
-      print('Error requesting battery optimization: ${e.message}');
+      // Error requesting battery optimization
       return false;
     }
   }
@@ -53,7 +53,7 @@ class BatteryOptimizationService {
       final bool result = await _channel.invokeMethod('openBatteryOptimizationSettings');
       return result;
     } on PlatformException catch (e) {
-      print('Error opening battery optimization settings: ${e.message}');
+      // Error opening battery optimization settings
       return false;
     }
   }

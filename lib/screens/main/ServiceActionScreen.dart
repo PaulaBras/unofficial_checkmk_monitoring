@@ -86,7 +86,7 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
         });
       }
     } catch (e) {
-      print('Error fetching service details: $e');
+      // Error fetching service details
       // Optionally show an error dialog or snackbar
     }
   }
@@ -174,6 +174,8 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
                       // Display is_flapping
                       if (isFlapping == 1) Icon(Icons.waves),
                       // Display wave icon if is_flapping is 1
+                      if (service['extensions'].containsKey('connection_name'))
+                        Text('Site: ${service['extensions']['connection_name']}'),
                     ],
                   ),
                 ),

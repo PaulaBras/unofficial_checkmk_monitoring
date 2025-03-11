@@ -29,6 +29,7 @@ dependencies:
   url_launcher: ^6.3.1
   encrypt: ^5.0.1
   permission_handler: ^11.3.1
+  uuid: ^4.3.3
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.1

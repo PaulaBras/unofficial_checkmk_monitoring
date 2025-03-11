@@ -26,7 +26,7 @@ class AreNotificationsActive {
     final endMinute = int.parse(
         await secureStorage.readSecureData('workingHoursEndMinute') ?? '0');
     _workingHoursEnd = TimeOfDay(hour: endHour, minute: endMinute);
-    print(_workingHoursEnd);
+    // Working hours end time
 
     _notifyDuringWorkingHours =
         (await secureStorage.readSecureData('notifyDuringWorkingHours') ?? 'true')

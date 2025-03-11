@@ -474,6 +474,24 @@ class _ServiceScreenState extends State<ServiceScreen> {
                                           ],
                                         ),
                                       ),
+                                      if (service['extensions'].containsKey('connection_name'))
+                                        RichText(
+                                          text: TextSpan(
+                                            text: 'Site: ',
+                                            style: DefaultTextStyle.of(context)
+                                                .style
+                                                .copyWith(
+                                                    fontWeight: FontWeight.bold),
+                                            children: <TextSpan>[
+                                              TextSpan(
+                                                  text:
+                                                      '${service['extensions']['connection_name']}',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.normal)),
+                                            ],
+                                          ),
+                                        ),
                                     ],
                                   ),
                                   trailing: Column(

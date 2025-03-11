@@ -440,6 +440,22 @@ class _HostScreenState extends State<HostScreen> {
                                     ],
                                   ),
                                 ),
+                                if (host['extensions'].containsKey('connection_name'))
+                                  RichText(
+                                    text: TextSpan(
+                                      text: 'Site: ',
+                                      style: DefaultTextStyle.of(context)
+                                          .style
+                                          .copyWith(fontWeight: FontWeight.bold),
+                                      children: <TextSpan>[
+                                        TextSpan(
+                                            text:
+                                                '${host['extensions']['connection_name']}',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.normal)),
+                                      ],
+                                    ),
+                                  ),
                               ],
                             ),
                             trailing: Row(
