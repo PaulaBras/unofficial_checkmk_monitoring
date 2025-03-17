@@ -11,6 +11,7 @@ class SiteConnection {
   bool ignoreCertificate;
   bool enableNotifications;
   Map<String, bool> serviceStateNotifications;
+  String authType; // 'basic' or 'saml'
 
   SiteConnection({
     required this.id,
@@ -22,6 +23,7 @@ class SiteConnection {
     required this.password,
     this.ignoreCertificate = false,
     this.enableNotifications = false,
+    this.authType = 'basic',
     Map<String, bool>? serviceStateNotifications,
   }) : serviceStateNotifications = serviceStateNotifications ?? {
           'green': true,
@@ -53,6 +55,7 @@ class SiteConnection {
       password: password ?? this.password,
       ignoreCertificate: ignoreCertificate ?? this.ignoreCertificate,
       enableNotifications: enableNotifications ?? this.enableNotifications,
+      authType: authType ?? this.authType,
       serviceStateNotifications: serviceStateNotifications ?? Map.from(this.serviceStateNotifications),
     );
   }
@@ -69,6 +72,7 @@ class SiteConnection {
       'password': password,
       'ignoreCertificate': ignoreCertificate,
       'enableNotifications': enableNotifications,
+      'authType': authType,
       'serviceStateNotifications': serviceStateNotifications,
     };
   }
@@ -85,6 +89,7 @@ class SiteConnection {
       password: json['password'],
       ignoreCertificate: json['ignoreCertificate'] ?? false,
       enableNotifications: json['enableNotifications'] ?? false,
+      authType: json['authType'] ?? 'basic',
       serviceStateNotifications: Map<String, bool>.from(json['serviceStateNotifications'] ?? {
         'green': true,
         'warning': true,
