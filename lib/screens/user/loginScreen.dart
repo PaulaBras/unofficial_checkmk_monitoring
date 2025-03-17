@@ -101,22 +101,35 @@ class _LoginScreenState extends State<LoginScreen> {
       // Set it as active
       await connectionService.setActiveConnection(newConnection.id);
 
-      // Try to login with the site name
-      bool loginSuccessful =
-          await authService.login(_username, _password, site: _site);
+      // Use RequestWithCredentials for initial login since connection isn't active yet in ApiRequest
+      final response = await apiRequest.RequestWithCredentials(
+        _protocol,
+        _server,
+        _username,
+        _password,
+        _site,
+        _ignoreCertificate,
+        '/objects/site_connection/${_site}/actions/login/invoke',
+        method: 'POST',
+        body: {
+          'username': _username,
+          'password': _password,
+        },
+        timeoutSeconds: 15,
+      );
 
       if (!mounted) return;
 
-      if (loginSuccessful) {
+      if (response != null) {
         Navigator.pushReplacementNamed(context, 'home_screen');
       } else {
         setState(() {
           _isLoading = false;
         });
-        // Show an error message
+        // Show an error message with the actual error from the API
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Login failed. Please check your credentials.')),
+              content: Text(apiRequest.getErrorMessage() ?? 'Login failed. Please check your credentials.')),
         );
       }
     } catch (e) {
@@ -172,6 +185,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                 value?.isNotEmpty == true
                                     ? value!
                                     : 'Default Connection',
+                            onChanged: (value) {
+                              setState(() {
+                                _connectionName = value.isNotEmpty ? value : 'Default Connection';
+                              });
+                            },
                           ),
                           const SizedBox(height: 16.0),
                           DropdownButtonFormField<String>(
@@ -204,6 +222,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               return null;
                             },
                             onSaved: (value) => _server = value!,
+                            onChanged: (value) {
+                              setState(() {
+                                _server = value;
+                              });
+                            },
                           ),
                           const SizedBox(height: 16.0),
                           CustomTextField(
@@ -216,6 +239,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               return null;
                             },
                             onSaved: (value) => _site = value!,
+                            onChanged: (value) {
+                              setState(() {
+                                _site = value;
+                              });
+                            },
                           ),
                           const SizedBox(height: 16.0),
                           CustomTextField(
@@ -228,6 +256,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               return null;
                             },
                             onSaved: (value) => _username = value!,
+                            onChanged: (value) {
+                              setState(() {
+                                _username = value;
+                              });
+                            },
                           ),
                           const SizedBox(height: 16.0),
                           CustomTextField(
@@ -241,6 +274,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               return null;
                             },
                             onSaved: (value) => _password = value!,
+                            onChanged: (value) {
+                              setState(() {
+                                _password = value;
+                              });
+                            },
                           ),
                           const SizedBox(height: 16.0),
                           SwitchListTile(
