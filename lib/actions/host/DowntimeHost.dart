@@ -40,9 +40,9 @@ class Downtime {
     );
 
     if (data == true) {
-      print("Downtime created successfully");
+      // Downtime created successfully
     } else {
-      print("Failed to create downtime");
+      // Failed to create downtime
     }
   }
 }

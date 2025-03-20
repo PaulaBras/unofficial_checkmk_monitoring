@@ -120,11 +120,11 @@ class CheckmkNotificationService {
       _setPollingInterval(_defaultBackgroundInterval);
     }
     
-    print('[DEBUG] Adjusted polling interval: $_currentPollingInterval seconds');
-    print('  - App in background: $_isAppInBackground');
-    print('  - Battery optimization disabled: $_isBatteryOptimizationDisabled');
-    print('  - Battery level: $batteryLevel%');
-    print('  - Low battery mode: $isLowBattery');
+    // print('[DEBUG] Adjusted polling interval: $_currentPollingInterval seconds');
+    // print('  - App in background: $_isAppInBackground');
+    // print('  - Battery optimization disabled: $_isBatteryOptimizationDisabled');
+    // print('  - Battery level: $batteryLevel%');
+    // print('  - Low battery mode: $isLowBattery');
   }
   
   // Set polling interval and restart timer if needed
@@ -229,9 +229,9 @@ class CheckmkNotificationService {
           ).map((key, value) => MapEntry(key, value as dynamic))
         );
         _previousHostStatus = decoded;
-        print('[DEBUG] Loaded previous host status from storage: ${_previousHostStatus.length} hosts');
+        // print('[DEBUG] Loaded previous host status from storage: ${_previousHostStatus.length} hosts');
       } catch (e) {
-        print('Error loading previous host status: $e');
+        // print('Error loading previous host status: $e');
         _previousHostStatus = {};
       }
     }
@@ -244,9 +244,9 @@ class CheckmkNotificationService {
           ).map((key, value) => MapEntry(key, value as dynamic))
         );
         _previousServiceStatus = decoded;
-        print('[DEBUG] Loaded previous service status from storage: ${_previousServiceStatus.length} services');
+        // print('[DEBUG] Loaded previous service status from storage: ${_previousServiceStatus.length} services');
       } catch (e) {
-        print('Error loading previous service status: $e');
+        // print('Error loading previous service status: $e');
         _previousServiceStatus = {};
       }
     }
@@ -257,9 +257,9 @@ class CheckmkNotificationService {
     try {
       await prefs.setString(_previousHostStatusKey, jsonEncode(_previousHostStatus));
       await prefs.setString(_previousServiceStatusKey, jsonEncode(_previousServiceStatus));
-      print('[DEBUG] Saved statuses to storage: ${_previousHostStatus.length} hosts, ${_previousServiceStatus.length} services');
+      // print('[DEBUG] Saved statuses to storage: ${_previousHostStatus.length} hosts, ${_previousServiceStatus.length} services');
     } catch (e) {
-      print('Error saving previous statuses: $e');
+      // print('Error saving previous statuses: $e');
     }
   }
 
@@ -274,11 +274,11 @@ class CheckmkNotificationService {
 
     bool isNotificationEnabled = enableNotifications.toLowerCase() == 'true';
 
-    print('[DEBUG] Notification Settings:');
-    print('  - Notifications Enabled: $isNotificationEnabled');
-    print('  - Enable Notifications Value: $enableNotifications');
-    print('  - Battery Optimization Disabled: $_isBatteryOptimizationDisabled');
-    print('  - Current Polling Interval: $_currentPollingInterval seconds');
+    // print('[DEBUG] Notification Settings:');
+    // print('  - Notifications Enabled: $isNotificationEnabled');
+    // print('  - Enable Notifications Value: $enableNotifications');
+    // print('  - Battery Optimization Disabled: $_isBatteryOptimizationDisabled');
+    // print('  - Current Polling Interval: $_currentPollingInterval seconds');
 
     if (isNotificationEnabled) {
       _backgroundCheckTimer?.cancel();
@@ -318,14 +318,14 @@ class CheckmkNotificationService {
       var hostResponse = await _fetchHostStatus();
       var serviceResponse = await _fetchServiceStatus();
 
-      print('[DEBUG] Background Check:');
-      print('  - App in Background: $_isAppInBackground');
-      print('  - Notifications Active: $shouldNotify');
-      print('  - Initial Check: $isInitialCheck');
-      print('  - Skip Notifications: $skipNotifications');
-      print('  - Host Status: ${hostResponse != null ? 'Received' : 'Failed'}');
-      print('  - Service Status: ${serviceResponse != null ? 'Received' : 'Failed'}');
-      print('  - Current Polling Interval: $_currentPollingInterval seconds');
+      // print('[DEBUG] Background Check:');
+      // print('  - App in Background: $_isAppInBackground');
+      // print('  - Notifications Active: $shouldNotify');
+      // print('  - Initial Check: $isInitialCheck');
+      // print('  - Skip Notifications: $skipNotifications');
+      // print('  - Host Status: ${hostResponse != null ? 'Received' : 'Failed'}');
+      // print('  - Service Status: ${serviceResponse != null ? 'Received' : 'Failed'}');
+      // print('  - Current Polling Interval: $_currentPollingInterval seconds');
 
       if (hostResponse != null && serviceResponse != null) {
         // If this is an initial check, update the status maps without sending notifications
@@ -343,7 +343,7 @@ class CheckmkNotificationService {
         await _adjustPollingInterval();
       }
     } catch (e) {
-      print('Background check error: $e');
+      // print('Background check error: $e');
     }
   }
 
@@ -352,7 +352,7 @@ class CheckmkNotificationService {
       var response = await _apiRequest.Request('domain-types/host/collections/all?columns=state');
       return response;
     } catch (e) {
-      print('Error fetching host status: $e');
+      // print('Error fetching host status: $e');
       return null;
     }
   }
@@ -362,7 +362,7 @@ class CheckmkNotificationService {
       var response = await _apiRequest.Request('domain-types/service/collections/all?columns=state');
       return response;
     } catch (e) {
-      print('Error fetching service status: $e');
+      // print('Error fetching service status: $e');
       return null;
     }
   }
@@ -380,7 +380,7 @@ class CheckmkNotificationService {
     // Save updated status to storage
     await _savePreviousStatuses();
     
-    print('[DEBUG] Updated host status without notifications: ${hostMap.length} hosts');
+    // print('[DEBUG] Updated host status without notifications: ${hostMap.length} hosts');
   }
   
   // Update service status without sending notifications (for initial check)
@@ -401,7 +401,7 @@ class CheckmkNotificationService {
     // Save updated status to storage
     await _savePreviousStatuses();
     
-    print('[DEBUG] Updated service status without notifications: ${serviceMap.length} services');
+    // print('[DEBUG] Updated service status without notifications: ${serviceMap.length} services');
   }
 
   Future<void> _checkAndNotifyHostChanges(List<dynamic> currentStatus) async {
@@ -425,11 +425,11 @@ class CheckmkNotificationService {
       
       if (currentState != 0 || 
           (previousHostDetails != null && previousHostDetails['status'] != 0)) {
-        print('[DEBUG] Host Status Check:');
-        print('  - Host: $hostName');
-        print('  - Current State: ${_hostStateMap[currentState] ?? 'Unknown'}');
-        print('  - Previous State: ${previousHostDetails != null ? _hostStateMap[previousHostDetails['status']] : 'None'}');
-        print('  - Should Notify: $shouldNotify');
+        // print('[DEBUG] Host Status Check:');
+        // print('  - Host: $hostName');
+        // print('  - Current State: ${_hostStateMap[currentState] ?? 'Unknown'}');
+        // print('  - Previous State: ${previousHostDetails != null ? _hostStateMap[previousHostDetails['status']] : 'None'}');
+        // print('  - Should Notify: $shouldNotify');
       }
 
       if (shouldNotify) {
@@ -467,7 +467,7 @@ class CheckmkNotificationService {
     await Future.wait(serviceStateSettings.keys.map((state) async {
       String? savedSetting = await _secureStorage.readSecureData('notify_$state');
       serviceStateSettings[state] = savedSetting?.toLowerCase() != 'false';
-      print('[DEBUG] Notification Setting for $state: ${serviceStateSettings[state]}');
+      // print('[DEBUG] Notification Setting for $state: ${serviceStateSettings[state]}');
     }));
 
     // Convert list to map for easier processing
@@ -508,14 +508,14 @@ class CheckmkNotificationService {
       if (currentStateString != 'green' || 
           (previousServiceDetails != null && 
            _serviceStateMap[previousServiceDetails['status']] != 'green')) {
-        print('[DEBUG] Service Status Check:');
-        print('  - Service: $serviceName');
-        print('  - Host: ${serviceDetails['name']}');
-        print('  - Current State: $currentStateString');
-        print('  - Current Attempts: $currentAttempts');
-        print('  - Max Attempts: $maxAttempts');
-        print('  - Previous State: ${previousServiceDetails != null ? _serviceStateMap[previousServiceDetails['status']] : 'None'}');
-        print('  - Should Notify: $shouldNotify');
+        // print('[DEBUG] Service Status Check:');
+        // print('  - Service: $serviceName');
+        // print('  - Host: ${serviceDetails['name']}');
+        // print('  - Current State: $currentStateString');
+        // print('  - Current Attempts: $currentAttempts');
+        // print('  - Max Attempts: $maxAttempts');
+        // print('  - Previous State: ${previousServiceDetails != null ? _serviceStateMap[previousServiceDetails['status']] : 'None'}');
+        // print('  - Should Notify: $shouldNotify');
       }
 
       if (shouldNotify) {
@@ -544,7 +544,7 @@ class CheckmkNotificationService {
       final widgetService = DashboardWidgetService();
       await widgetService.updateWidget();
     } catch (e) {
-      print('Error updating home screen widget: $e');
+      // print('Error updating home screen widget: $e');
     }
   }
 
@@ -572,10 +572,10 @@ class CheckmkNotificationService {
       iOS: iosDetails,
     );
 
-    print('[DEBUG] Showing Status Notification:');
-    print('  - Title: $title');
-    print('  - Body: $body');
-    print('  - Payload: $payload');
+    // print('[DEBUG] Showing Status Notification:');
+    // print('  - Title: $title');
+    // print('  - Body: $body');
+    // print('  - Payload: $payload');
 
     await flutterLocalNotificationsPlugin.show(
       DateTime.now().millisecondsSinceEpoch.remainder(100000),
@@ -616,7 +616,7 @@ class CheckmkNotificationService {
       iOS: iosDetails,
     );
 
-    print('[DEBUG] Showing Persistent Notification');
+    // print('[DEBUG] Showing Persistent Notification');
 
     await flutterLocalNotificationsPlugin.show(
       _persistentNotificationId,

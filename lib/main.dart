@@ -44,74 +44,54 @@ String? selectedNotificationPayload;
 CheckmkNotificationService? notificationService;
 
 void main() async {
+  // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
 
-  Future<void> configureLocalTimeZone() async {
-    if (kIsWeb || Platform.isLinux) {
-      return;
+  // Default to welcome screen in case of any initialization errors
+  String initialRoute = welcomeScreenId;
+
+  try {
+    await _configureLocalTimeZone();
+    
+    final SecureStorage storage = SecureStorage();
+    final AuthenticationService authService = AuthenticationService(storage, ApiRequest());
+
+    // Initialize the dashboard widget service
+    DashboardWidgetService();
+
+    try {
+      // Check if credentials are already saved
+      final savedCredentials = await authService.loadCredentials();
+      if (savedCredentials != null) {
+        initialRoute = homeScreenId;
+      }
+    } catch (e) {
+      // If loading credentials fails, default to welcome screen
+      print('Error loading credentials: $e');
+      initialRoute = welcomeScreenId;
     }
-    tz.initializeTimeZones();
-    final timeZoneName = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(timeZoneName));
-  }
 
-  await configureLocalTimeZone();
+    // Initialize background services - now we wait for it to complete
+    await _initializeBackgroundServices();
 
-  final SecureStorage storage = SecureStorage();
-  final AuthenticationService authService = AuthenticationService(storage, ApiRequest());
-
-  // Initialize the dashboard widget service
-  DashboardWidgetService();
-
-  // Check if credentials are already saved
-  final savedCredentials = await authService.loadCredentials();
-  final initialRoute = savedCredentials != null ? homeScreenId : welcomeScreenId;
-
-  // Initialize the FlutterBackground plugin with minimal notification
-  // We'll use our own persistent notification instead
-  final success = await FlutterBackground.initialize(
-      androidConfig: FlutterBackgroundAndroidConfig(
-    notificationTitle: "CheckMK Monitoring",
-    notificationText: "Background service running",
-    notificationIcon:
-        AndroidResource(name: 'launcher_icon', defType: 'drawable'),
-    // We'll use our own notification, so we don't need to set importance here
-  ));
-
-  if (success) {
-    // Initialize the global notificationService variable
-    notificationService = CheckmkNotificationService();
-
-    // Request notification permissions
-    await notificationService!.requestNotificationsPermission();
-    
-    // Set initial background state (app starts in foreground)
-    notificationService!.setAppInBackground(false);
-    
-    // Start the notification service (now async)
-    await notificationService!.start();
-
-    // handle notification selection
-    selectNotificationStream.stream.listen((payload) async {
-      // Handle the user's response to the notification here
-      // ignore: avoid_print
-      print('Notification selected with payload: $payload');
-    });
-
-    // Enable the background execution
-    await FlutterBackground.enableBackgroundExecution();
-  }
-
-  final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-  if (prefs.getBool('firstRun') ?? true) {
-    await storage.init();
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString('dateFormat', 'dd.MM.yyyy, HH:mm');
-    prefs.setString('locale', 'de_DE');
-    prefs.setBool('firstRun', false);
+
+    if (prefs.getBool('firstRun') ?? true) {
+      try {
+        await storage.init();
+        prefs.setString('dateFormat', 'dd.MM.yyyy, HH:mm');
+        prefs.setString('locale', 'de_DE');
+        prefs.setBool('firstRun', false);
+      } catch (e) {
+        print('Error during first run setup: $e');
+      }
+    }
+  } catch (e) {
+    print('Error during app initialization: $e');
+    // Continue with welcome screen if there's any error
   }
 
+  // Start the app regardless of initialization errors
   initializeDateFormatting().then((_) {
     Intl.defaultLocale = 'de_DE';
     runApp(
@@ -121,6 +101,65 @@ void main() async {
       ),
     );
   });
+}
+
+Future<void> _configureLocalTimeZone() async {
+  if (kIsWeb || Platform.isLinux) {
+    return;
+  }
+  try {
+    tz.initializeTimeZones();
+    final timeZoneName = await FlutterTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(timeZoneName));
+  } catch (e) {
+    print('Error configuring timezone: $e');
+  }
+}
+
+// Initialize background services - now returns a Future that can be awaited
+Future<void> _initializeBackgroundServices() async {
+  try {
+    // Initialize the FlutterBackground plugin with minimal notification
+    final success = await FlutterBackground.initialize(
+        androidConfig: FlutterBackgroundAndroidConfig(
+      notificationTitle: "CheckMK Monitoring",
+      notificationText: "Background service running",
+      notificationIcon:
+          AndroidResource(name: 'launcher_icon', defType: 'drawable'),
+    ));
+
+    if (success) {
+      try {
+        // Initialize the global notificationService variable
+        notificationService = CheckmkNotificationService();
+
+        // Request notification permissions
+        await notificationService!.requestNotificationsPermission();
+        
+        // Set initial background state (app starts in foreground)
+        notificationService!.setAppInBackground(false);
+        
+        // Start the notification service (now async)
+        await notificationService!.start();
+
+        // handle notification selection
+        selectNotificationStream.stream.listen((payload) async {
+          // Handle the user's response to the notification here
+        });
+
+        // Enable the background execution
+        await FlutterBackground.enableBackgroundExecution();
+        
+        print('Background services initialized successfully');
+      } catch (e) {
+        print('Error initializing notification service: $e');
+      }
+    } else {
+      print('Failed to initialize FlutterBackground plugin');
+    }
+  } catch (e) {
+    print('Error initializing background services: $e');
+  }
 }
 
 class MyApp extends StatefulWidget {

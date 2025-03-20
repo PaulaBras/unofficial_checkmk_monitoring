@@ -22,7 +22,7 @@ class _AcknowledgeHostFormState extends State<AcknowledgeHostForm> {
   @override
   void initState() {
     super.initState();
-    print(widget.service);
+    // Initialize with service data
     _commentController.text = 'ack';
     _hostNameController.text = widget.service['extensions']['name'];
   }
@@ -51,7 +51,7 @@ class _AcknowledgeHostFormState extends State<AcknowledgeHostForm> {
       );
       Navigator.of(context).pop();
     } else {
-      print("Failed to acknowledge service");
+      // Failed to acknowledge service
     }
   }
 

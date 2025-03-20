@@ -9,7 +9,7 @@ import '../../services/secureStorage.dart';
 import '../../services/notificationHandler.dart';
 import '../../services/themeNotifier.dart';
 import '../myHomePage.dart';
-import '../setup/ConnectionSettingsWidget.dart';
+import '../setup/MultiSiteConnectionWidget.dart';
 import '../setup/AreNotificationsActive.dart';
 import '../setup/SetupNotificationSchedule.dart';
 import '../user/loginScreen.dart';
@@ -35,6 +35,7 @@ class _UserScreenState extends State<UserScreen> {
   String _dateFormat = 'dd.MM.yyyy, HH:mm';
   String _locale = 'de_DE';
   bool _isConnectionSettingsExpanded = false;
+  bool _isUserProfileExpanded = false;
 
   // Service state notification settings
   final Map<String, bool> _serviceStateNotifications = {
@@ -196,6 +197,150 @@ class _UserScreenState extends State<UserScreen> {
             ),
           ),
 
+          // Connection Settings Section
+          Card(
+            margin: const EdgeInsets.all(8),
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.secondary,
+                width: 1.5,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.settings_ethernet, color: colorScheme.primary),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Connection',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _isConnectionSettingsExpanded = !_isConnectionSettingsExpanded;
+                      });
+                    },
+                    child: const Text('Manage Connections'),
+                  ),
+                ),
+                if (_isConnectionSettingsExpanded) 
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16.0),
+                    child: MultiSiteConnectionWidget(
+                      onClose: (bool saved) {
+                        setState(() {
+                          _isConnectionSettingsExpanded = false;
+                        });
+                      },
+                    ),
+                  ),
+                
+                // User Profile Section (merged with Connection)
+                ExpansionTile(
+                  title: const Text('User Profile'),
+                  initiallyExpanded: _isUserProfileExpanded,
+                  onExpansionChanged: (expanded) {
+                    setState(() {
+                      _isUserProfileExpanded = expanded;
+                    });
+                  },
+                  leading: Image.asset(
+                    'images/icon_topic_profile.png',
+                    width: 24,
+                    height: 24,
+                  ),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          await _authService.logout(() {});
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                                builder: (context) => LoginScreen()),
+                          );
+                        },
+                        child: const Text('Logout'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Localization Section
+          Card(
+            margin: const EdgeInsets.all(8),
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.secondary,
+                width: 1.5,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.language, color: colorScheme.primary),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Localization',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: DropdownButtonFormField<String>(
+                    decoration: const InputDecoration(
+                      labelText: 'Language',
+                      border: OutlineInputBorder(),
+                    ),
+                    value: _locale,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        if (newValue != null) {
+                          _dateFormat = newValue == 'de_DE'
+                              ? 'dd.MM.yyyy, HH:mm'
+                              : 'MM/dd/yyyy, hh:mm a';
+                          _locale = newValue;
+                          _saveSettings();
+                        }
+                      });
+                    },
+                    items: <String>['de_DE', 'en_US']
+                        .map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value == 'de_DE' ? 'German' : 'English'),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+
           // Notifications Section
           Card(
             margin: const EdgeInsets.all(8),
@@ -289,168 +434,6 @@ class _UserScreenState extends State<UserScreen> {
                       );
                     },
                     child: const Text('Setup Notification Schedule'),
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ],
-            ),
-          ),
-
-          // Connection Settings Section
-          Card(
-            margin: const EdgeInsets.all(8),
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-              side: BorderSide(
-                color: Theme.of(context).colorScheme.secondary,
-                width: 1.5,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      Icon(Icons.settings_ethernet, color: colorScheme.primary),
-                      const SizedBox(width: 10),
-                      const Text(
-                        'Connection',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        _isConnectionSettingsExpanded = !_isConnectionSettingsExpanded;
-                      });
-                    },
-                    child: const Text('Manage Connection'),
-                  ),
-                ),
-                if (_isConnectionSettingsExpanded) 
-                  Padding(
-                    padding: const EdgeInsets.only(top: 16.0),
-                    child: ConnectionSettingsWidget(
-                      onClose: (bool saved) {
-                        setState(() {
-                          _isConnectionSettingsExpanded = false;
-                        });
-                      },
-                    ),
-                  ),
-              ],
-            ),
-          ),
-
-          // Localization Section
-          Card(
-            margin: const EdgeInsets.all(8),
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-              side: BorderSide(
-                color: Theme.of(context).colorScheme.secondary,
-                width: 1.5,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      Icon(Icons.language, color: colorScheme.primary),
-                      const SizedBox(width: 10),
-                      const Text(
-                        'Localization',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(
-                      labelText: 'Language',
-                      border: OutlineInputBorder(),
-                    ),
-                    value: _locale,
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        if (newValue != null) {
-                          _dateFormat = newValue == 'de_DE'
-                              ? 'dd.MM.yyyy, HH:mm'
-                              : 'MM/dd/yyyy, hh:mm a';
-                          _locale = newValue;
-                          _saveSettings();
-                        }
-                      });
-                    },
-                    items: <String>['de_DE', 'en_US']
-                        .map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value == 'de_DE' ? 'German' : 'English'),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ],
-            ),
-          ),
-
-          // User Profile Section
-          Card(
-            margin: const EdgeInsets.all(8),
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-              side: BorderSide(
-                color: Theme.of(context).colorScheme.secondary,
-                width: 1.5,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      Image.asset(
-                        'images/icon_topic_profile.png',
-                        width: 30,
-                        height: 30,
-                      ),
-                      const SizedBox(width: 10),
-                      const Text(
-                        'User profile',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      await _authService.logout(() {});
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(
-                            builder: (context) => LoginScreen()),
-                      );
-                    },
-                    child: const Text('Logout'),
                   ),
                 ),
                 const SizedBox(height: 8),

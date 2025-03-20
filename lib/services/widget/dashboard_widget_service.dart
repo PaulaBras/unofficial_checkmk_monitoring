@@ -55,7 +55,7 @@ class DashboardWidgetService {
       
       return false;
     } catch (e) {
-      print('Error updating dashboard widget: $e');
+      // Error updating dashboard widget
       return false;
     }
   }
@@ -84,7 +84,7 @@ class DashboardWidgetService {
       
       return null;
     } catch (e) {
-      print('Error fetching hosts data: $e');
+      // Error fetching hosts data
       return null;
     }
   }
@@ -115,7 +115,7 @@ class DashboardWidgetService {
       
       return null;
     } catch (e) {
-      print('Error fetching services data: $e');
+      // Error fetching services data
       return null;
     }
   }

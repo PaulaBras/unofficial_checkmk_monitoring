@@ -31,9 +31,7 @@ class _AcknowledgeServiceFormState extends State<AcknowledgeServiceForm> {
 
   Future<void> acknowledgeService() async {
     var api = ApiRequest();
-    print(_commentController.text +
-        _hostNameController.text +
-        _serviceDescriptionController.text);
+    // Prepare to acknowledge service
     var data = await api.Request(
       'domain-types/acknowledge/collections/service',
       method: 'POST',
@@ -57,7 +55,7 @@ class _AcknowledgeServiceFormState extends State<AcknowledgeServiceForm> {
       );
       Navigator.of(context).pop();
     } else {
-      print("Failed to acknowledge service");
+      // Failed to acknowledge service
     }
   }
 

@@ -1,68 +1,128 @@
 import '../models/credentials.dart';
+import '../models/site_connection.dart';
 import '/services/secureStorage.dart';
 import 'apiRequest.dart';
+import 'site_connection_service.dart';
 
 class AuthenticationService {
   final SecureStorage secureStorage;
   final ApiRequest apiRequest;
+  late SiteConnectionService _connectionService;
 
-  AuthenticationService(this.secureStorage, this.apiRequest);
+  AuthenticationService(this.secureStorage, this.apiRequest) {
+    _connectionService = SiteConnectionService(secureStorage);
+  }
 
   Future<bool> login(String username, String password) async {
     try {
-      await apiRequest.Request(
-        '/objects/site_connection/prod/actions/login/invoke',
-        method: 'POST',
-        body: {
-          'username': username,
-          'password': password,
-        },
+      // Instead of using a dedicated login endpoint with POST,
+      // we'll use a simple GET request to verify credentials.
+      // We'll use a lightweight endpoint that should be available in all CheckMK installations.
+      final response = await apiRequest.Request(
+        'domain-types/host_config/collections/all',
+        method: 'GET',
+        // No body needed as authentication is handled via Basic Auth headers
       );
 
-      // You can add additional checks here based on the response
+      // Check if the response is null, which indicates an error
+      if (response == null) {
+        print('Login failed: ${apiRequest.getErrorMessage() ?? "Unknown error"}');
+        return false;
+      }
+      
+      // If we got a response, the credentials are valid
       return true;
     } catch (e) {
-      print('Login failed: $e');
+      print('Login exception: $e');
       return false;
     }
   }
 
-  Future<void> saveCredentials(String protocol, String server, String username,
-      String password, String site, bool ignoreCertificate) async {
-    await secureStorage.writeSecureData('protocol', protocol);
-    await secureStorage.writeSecureData('server', server);
-    await secureStorage.writeSecureData('username', username);
-    await secureStorage.writeSecureData('password', password);
-    await secureStorage.writeSecureData('site', site);
-    await secureStorage.writeSecureData(
-        'ignoreCertificate', ignoreCertificate.toString());
+  // Login with active connection
+  Future<bool> loginWithActiveConnection() async {
+    try {
+      final activeConnection = await _connectionService.getActiveConnection();
+      if (activeConnection == null) {
+        print('No active connection found');
+        return false;
+      }
+      
+      // Try to login with the active connection, including the site name
+      final result = await login(
+        activeConnection.username, 
+        activeConnection.password,
+      );
+      
+      if (!result) {
+        print('Login with active connection failed');
+      }
+      
+      return result;
+    } catch (e) {
+      print('Login with active connection exception: $e');
+      return false;
+    }
   }
 
-  Future<Credentials?> loadCredentials() async {
-    String protocol = await secureStorage.readSecureData('protocol') ?? '';
-    String server = await secureStorage.readSecureData('server') ?? '';
-    String username = await secureStorage.readSecureData('username') ?? '';
-    String password = await secureStorage.readSecureData('password') ?? '';
-    String site = await secureStorage.readSecureData('site') ?? '';
-    bool ignoreCertificate =
-        (await secureStorage.readSecureData('ignoreCertificate'))
-                ?.toLowerCase() ==
-            'true';
+  // This method is kept for backward compatibility
+  Future<void> saveCredentials(String protocol, String server, String username,
+      String password, String site, bool ignoreCertificate) async {
+    // Create a new connection
+    final connection = SiteConnection(
+      id: '',
+      name: 'Default Connection',
+      protocol: protocol,
+      server: server,
+      site: site,
+      username: username,
+      password: password,
+      ignoreCertificate: ignoreCertificate,
+    );
+    
+    // Add the connection
+    await _connectionService.addConnection(connection);
+  }
 
-    if (protocol.isNotEmpty &&
-        server.isNotEmpty &&
-        username.isNotEmpty &&
-        password.isNotEmpty &&
-        site.isNotEmpty) {
+  // This method is kept for backward compatibility
+  Future<Credentials?> loadCredentials() async {
+    try {
+      final activeConnection = await _connectionService.getActiveConnection();
+      if (activeConnection == null) {
+        print('No active connection found when loading credentials');
+        return null;
+      }
+      
+      // Validate that we have the minimum required fields
+      if (activeConnection.protocol.isEmpty || 
+          activeConnection.server.isEmpty || 
+          activeConnection.username.isEmpty) {
+        print('Active connection is missing required fields');
+        return null;
+      }
+      
       return Credentials(
-          protocol, server, username, password, site, ignoreCertificate);
-    } else {
+        activeConnection.protocol,
+        activeConnection.server,
+        activeConnection.username,
+        activeConnection.password,
+        activeConnection.site,
+        activeConnection.ignoreCertificate,
+      );
+    } catch (e) {
+      print('Load credentials exception: $e');
       return null;
     }
   }
 
   Future<void> logout(Function navigateToHomeScreen) async {
-    await secureStorage.clearAll(); // Clear all data from secure storage
+    // We don't clear all data anymore, just log out the current user
+    // This allows us to keep the connection settings
+    navigateToHomeScreen();
+  }
+  
+  // Clear all data and connections
+  Future<void> clearAllData(Function navigateToHomeScreen) async {
+    await secureStorage.clearAll();
     navigateToHomeScreen();
   }
 }

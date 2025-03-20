@@ -42,11 +42,11 @@ class Downtime {
       },
     );
 
-    if (data == true) {
-      debugPrint("Downtime created successfully");
-    } else {
-      debugPrint("Failed to create downtime");
-    }
+    // if (data == true) {
+    //   debugPrint("Downtime created successfully");
+    // } else {
+    //   debugPrint("Failed to create downtime");
+    // }
   }
 }
 

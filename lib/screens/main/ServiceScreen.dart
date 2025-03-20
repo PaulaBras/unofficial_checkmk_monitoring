@@ -310,8 +310,9 @@ class _ServiceScreenState extends State<ServiceScreen> {
             ? Center(child: Text(_error!))
             : noRelevantServices
                 ? Center(
-                    child: Text(
-                        'No services in Warning, Critical, or Unknown state'),
+                    child: _allServices.isEmpty
+                    ? CircularProgressIndicator()
+                    : Text('No services in Warning, Critical, or Unknown state'),
                   )
                 : _allServices.isEmpty && _error == null
                     ? Center(child: CircularProgressIndicator())
@@ -474,6 +475,24 @@ class _ServiceScreenState extends State<ServiceScreen> {
                                           ],
                                         ),
                                       ),
+                                      if (service['extensions'].containsKey('connection_name'))
+                                        RichText(
+                                          text: TextSpan(
+                                            text: 'Site: ',
+                                            style: DefaultTextStyle.of(context)
+                                                .style
+                                                .copyWith(
+                                                    fontWeight: FontWeight.bold),
+                                            children: <TextSpan>[
+                                              TextSpan(
+                                                  text:
+                                                      '${service['extensions']['connection_name']}',
+                                                  style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.normal)),
+                                            ],
+                                          ),
+                                        ),
                                     ],
                                   ),
                                   trailing: Column(

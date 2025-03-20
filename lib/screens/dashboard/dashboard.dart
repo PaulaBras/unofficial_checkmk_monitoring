@@ -203,7 +203,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final widgetService = DashboardWidgetService();
       await widgetService.updateWidget();
     } catch (e) {
-      print('Error updating home screen widget: $e');
+      // Error updating home screen widget
     }
   }
 
