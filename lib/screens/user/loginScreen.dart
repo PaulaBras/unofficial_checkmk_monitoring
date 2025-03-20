@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 import '/widgets/customTextField.dart';
 import '../../models/site_connection.dart';
@@ -18,7 +17,6 @@ class _LoginScreenState extends State<LoginScreen> {
   var apiRequest = ApiRequest();
   late AuthenticationService authService;
   late SiteConnectionService connectionService;
-  WebViewController? _webViewController;
 
   // Define the instance variables
   String _connectionName = 'Default Connection';
@@ -27,12 +25,10 @@ class _LoginScreenState extends State<LoginScreen> {
   String _password = '';
   String _site = '';
   String _protocol = 'https';
-  String _authType = 'basic';
   bool _ignoreCertificate = false;
   final _formKey = GlobalKey<FormState>();
   bool _showLoginForm = false;
   bool _isLoading = true;
-  bool _showWebView = false;
 
   @override
   void initState() {
@@ -97,7 +93,6 @@ class _LoginScreenState extends State<LoginScreen> {
         username: _username,
         password: _password,
         ignoreCertificate: _ignoreCertificate,
-        authType: _authType,
       );
 
       // Add the connection
@@ -106,16 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
       // Set it as active
       await connectionService.setActiveConnection(newConnection.id);
 
-      if (_authType == 'saml') {
-        // For SAML, show WebView with the SAML login page
-        setState(() {
-          _showWebView = true;
-          _isLoading = false;
-        });
-        return;
-      }
-
-      // For basic auth, use RequestWithCredentials
+      // Use RequestWithCredentials for initial login since connection isn't active yet in ApiRequest
       final response = await apiRequest.RequestWithCredentials(
         _protocol,
         _server,
@@ -173,39 +159,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_showWebView) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('SAML Login'),
-          leading: IconButton(
-            icon: Icon(Icons.close),
-            onPressed: () {
-              setState(() {
-                _showWebView = false;
-              });
-            },
-          ),
-        ),
-        body: WebViewWidget(
-          controller: WebViewController()
-            ..setJavaScriptMode(JavaScriptMode.unrestricted)
-            ..loadRequest(Uri.parse('$_protocol://$_server${_site.isNotEmpty ? '/$_site' : ''}/check_mk/saml.py'))
-            ..setNavigationDelegate(
-              NavigationDelegate(
-                onNavigationRequest: (NavigationRequest request) {
-                  // Check if the URL indicates successful SAML login
-                  if (request.url.contains('check_mk/dashboard.py')) {
-                    Navigator.pushReplacementNamed(context, 'home_screen');
-                    return NavigationDecision.prevent;
-                  }
-                  return NavigationDecision.navigate;
-                },
-              ),
-            ),
-        ),
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Login'),
@@ -239,57 +192,24 @@ class _LoginScreenState extends State<LoginScreen> {
                             },
                           ),
                           const SizedBox(height: 16.0),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: DropdownButtonFormField<String>(
-                                  value: _protocol,
-                                  decoration: InputDecoration(
-                                    labelText: 'Protocol',
-                                    border: OutlineInputBorder(),
-                                  ),
-                                  items: <String>['http', 'https']
-                                      .map<DropdownMenuItem<String>>((String value) {
-                                    return DropdownMenuItem<String>(
-                                      value: value,
-                                      child: Text(value),
-                                    );
-                                  }).toList(),
-                                  onChanged: (String? newValue) {
-                                    setState(() {
-                                      _protocol = newValue!;
-                                    });
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 16.0),
-                              Expanded(
-                                child: DropdownButtonFormField<String>(
-                                  value: _authType,
-                                  decoration: InputDecoration(
-                                    labelText: 'Authentication',
-                                    border: OutlineInputBorder(),
-                                  ),
-                                  items: <String>['basic', 'saml']
-                                      .map<DropdownMenuItem<String>>((String value) {
-                                    return DropdownMenuItem<String>(
-                                      value: value,
-                                      child: Text(value.toUpperCase()),
-                                    );
-                                  }).toList(),
-                                  onChanged: (String? newValue) {
-                                    setState(() {
-                                      _authType = newValue!;
-                                      // Clear username/password when switching to SAML
-                                      if (newValue == 'saml') {
-                                        _username = '';
-                                        _password = '';
-                                      }
-                                    });
-                                  },
-                                ),
-                              ),
-                            ],
+                          DropdownButtonFormField<String>(
+                            value: _protocol,
+                            decoration: InputDecoration(
+                              labelText: 'Protocol',
+                              border: OutlineInputBorder(),
+                            ),
+                            items: <String>['http', 'https']
+                                .map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                _protocol = newValue!;
+                              });
+                            },
                           ),
                           const SizedBox(height: 16.0),
                           CustomTextField(
@@ -325,43 +245,41 @@ class _LoginScreenState extends State<LoginScreen> {
                               });
                             },
                           ),
-                          if (_authType == 'basic') ...[
-                            const SizedBox(height: 16.0),
-                            CustomTextField(
-                              initialValue: _username,
-                              labelText: 'Username',
-                              validator: (value) {
-                                if (_authType == 'basic' && value!.isEmpty) {
-                                  return 'Please enter a username';
-                                }
-                                return null;
-                              },
-                              onSaved: (value) => _username = value!,
-                              onChanged: (value) {
-                                setState(() {
-                                  _username = value;
-                                });
-                              },
-                            ),
-                            const SizedBox(height: 16.0),
-                            CustomTextField(
-                              initialValue: _password,
-                              labelText: 'Password',
-                              obscureText: true,
-                              validator: (value) {
-                                if (_authType == 'basic' && value!.isEmpty) {
-                                  return 'Please enter a password';
-                                }
-                                return null;
-                              },
-                              onSaved: (value) => _password = value!,
-                              onChanged: (value) {
-                                setState(() {
-                                  _password = value;
-                                });
-                              },
-                            ),
-                          ],
+                          const SizedBox(height: 16.0),
+                          CustomTextField(
+                            initialValue: _username,
+                            labelText: 'Username',
+                            validator: (value) {
+                              if (value!.isEmpty) {
+                                return 'Please enter a username';
+                              }
+                              return null;
+                            },
+                            onSaved: (value) => _username = value!,
+                            onChanged: (value) {
+                              setState(() {
+                                _username = value;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 16.0),
+                          CustomTextField(
+                            initialValue: _password,
+                            labelText: 'Password',
+                            obscureText: true,
+                            validator: (value) {
+                              if (value!.isEmpty) {
+                                return 'Please enter a password';
+                              }
+                              return null;
+                            },
+                            onSaved: (value) => _password = value!,
+                            onChanged: (value) {
+                              setState(() {
+                                _password = value;
+                              });
+                            },
+                          ),
                           const SizedBox(height: 16.0),
                           SwitchListTile(
                             title: Text('Ignore Certificate Warnings'),
@@ -377,7 +295,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 24.0),
                           ElevatedButton(
                             onPressed: _saveCredentials,
-                            child: Text(_authType == 'saml' ? 'Continue to SAML Login' : 'Login'),
+                            child: const Text('Login'),
                           ),
                         ],
                       ),
