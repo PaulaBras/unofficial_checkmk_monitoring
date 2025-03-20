@@ -102,25 +102,11 @@ class _LoginScreenState extends State<LoginScreen> {
       await connectionService.setActiveConnection(newConnection.id);
 
       // Use RequestWithCredentials for initial login since connection isn't active yet in ApiRequest
-      final response = await apiRequest.RequestWithCredentials(
-        _protocol,
-        _server,
-        _username,
-        _password,
-        _site,
-        _ignoreCertificate,
-        '/objects/site_connection/${_site}/actions/login/invoke',
-        method: 'POST',
-        body: {
-          'username': _username,
-          'password': _password,
-        },
-        timeoutSeconds: 15,
-      );
+      bool response = await authService.login(_username, _password);
 
       if (!mounted) return;
 
-      if (response != null) {
+      if (response) {
         Navigator.pushReplacementNamed(context, 'home_screen');
       } else {
         setState(() {

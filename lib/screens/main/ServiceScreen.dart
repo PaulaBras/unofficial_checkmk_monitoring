@@ -310,8 +310,9 @@ class _ServiceScreenState extends State<ServiceScreen> {
             ? Center(child: Text(_error!))
             : noRelevantServices
                 ? Center(
-                    child: Text(
-                        'No services in Warning, Critical, or Unknown state'),
+                    child: _allServices.isEmpty
+                    ? CircularProgressIndicator()
+                    : Text('No services in Warning, Critical, or Unknown state'),
                   )
                 : _allServices.isEmpty && _error == null
                     ? Center(child: CircularProgressIndicator())

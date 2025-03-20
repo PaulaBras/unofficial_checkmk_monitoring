@@ -13,19 +13,15 @@ class AuthenticationService {
     _connectionService = SiteConnectionService(secureStorage);
   }
 
-  Future<bool> login(String username, String password, {String site = ''}) async {
+  Future<bool> login(String username, String password) async {
     try {
-      // Use the provided site name or empty string if not provided
-      final sitePath = site.isNotEmpty ? site : '';
-      
+      // Instead of using a dedicated login endpoint with POST,
+      // we'll use a simple GET request to verify credentials.
+      // We'll use a lightweight endpoint that should be available in all CheckMK installations.
       final response = await apiRequest.Request(
-        '/objects/site_connection/$sitePath/actions/login/invoke',
-        method: 'POST',
-        body: {
-          'username': username,
-          'password': password,
-        },
-        timeoutSeconds: 15, // Shorter timeout for login
+        'domain-types/host_config/collections/all',
+        method: 'GET',
+        // No body needed as authentication is handled via Basic Auth headers
       );
 
       // Check if the response is null, which indicates an error
@@ -34,7 +30,7 @@ class AuthenticationService {
         return false;
       }
       
-      // Login successful
+      // If we got a response, the credentials are valid
       return true;
     } catch (e) {
       print('Login exception: $e');
@@ -55,7 +51,6 @@ class AuthenticationService {
       final result = await login(
         activeConnection.username, 
         activeConnection.password,
-        site: activeConnection.site
       );
       
       if (!result) {
