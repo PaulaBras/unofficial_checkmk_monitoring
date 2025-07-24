@@ -1,61 +1,56 @@
 import 'package:flutter/material.dart';
 
-import '/services/apiRequest.dart';
+import '../../models/acknowledge.dart';
+import '../../services/acknowledge_service.dart';
+import '../../widgets/acknowledge_form.dart';
+import '../../widgets/common_dialogs.dart';
+import '../../utils/acknowledge_constants.dart';
 
+/// Widget for acknowledging services
 class AcknowledgeServiceForm extends StatefulWidget {
   final dynamic service;
 
-  AcknowledgeServiceForm({required this.service});
+  const AcknowledgeServiceForm({
+    Key? key,
+    required this.service,
+  }) : super(key: key);
 
   @override
-  _AcknowledgeServiceFormState createState() => _AcknowledgeServiceFormState();
+  State<AcknowledgeServiceForm> createState() => _AcknowledgeServiceFormState();
 }
 
 class _AcknowledgeServiceFormState extends State<AcknowledgeServiceForm> {
-  final _formKey = GlobalKey<FormState>();
-  final _commentController = TextEditingController();
-  final _hostNameController = TextEditingController();
-  final _serviceDescriptionController = TextEditingController();
-  bool _sticky = true;
-  bool _persistent = false;
-  bool _notify = true;
+  late final AcknowledgeService _acknowledgeService;
+  late final String _hostName;
+  late final String _serviceDescription;
 
   @override
   void initState() {
     super.initState();
-    _commentController.text = 'ack';
-    _hostNameController.text = widget.service['extensions']['host_name'];
-    _serviceDescriptionController.text =
-        widget.service['extensions']['description'];
+    _acknowledgeService = AcknowledgeService();
+    _hostName = widget.service['extensions']['host_name'] ?? '';
+    _serviceDescription = widget.service['extensions']['description'] ?? '';
   }
 
-  Future<void> acknowledgeService() async {
-    var api = ApiRequest();
-    // Prepare to acknowledge service
-    var data = await api.Request(
-      'domain-types/acknowledge/collections/service',
-      method: 'POST',
-      body: {
-        "acknowledge_type": "service",
-        "sticky": _sticky,
-        "persistent": _persistent,
-        "notify": _notify,
-        "comment": _commentController.text,
-        "host_name": _hostNameController.text,
-        "service_description": _serviceDescriptionController.text
-      },
-    );
+  Future<void> _handleAcknowledgeSubmission(AcknowledgeRequest request) async {
+    LoadingDialog.show(context,
+        message: AcknowledgeConstants.submitLoadingMessage);
 
-    if (data == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Service acknowledged successfully'),
-          duration: Duration(seconds: 3),
-        ),
-      );
-      Navigator.of(context).pop();
-    } else {
-      // Failed to acknowledge service
+    try {
+      final success = await _acknowledgeService.acknowledge(request);
+
+      LoadingDialog.hide(context);
+
+      if (success) {
+        SnackBarHelper.showSuccess(
+            context, AcknowledgeConstants.serviceSuccessMessage);
+        Navigator.of(context).pop(true);
+      } else {
+        SnackBarHelper.showError(context, AcknowledgeConstants.failureMessage);
+      }
+    } catch (e) {
+      LoadingDialog.hide(context);
+      SnackBarHelper.showError(context, 'Error: ${e.toString()}');
     }
   }
 
@@ -63,73 +58,15 @@ class _AcknowledgeServiceFormState extends State<AcknowledgeServiceForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Acknowledge Service'),
+        title: const Text('Acknowledge Service'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: <Widget>[
-              TextFormField(
-                controller: _commentController,
-                decoration: InputDecoration(labelText: 'Comment'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a comment';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _serviceDescriptionController,
-                decoration: InputDecoration(labelText: 'Service Description'),
-                enabled: false,
-              ),
-              CheckboxListTile(
-                title: Text('Sticky'),
-                value: _sticky,
-                onChanged: (bool? value) {
-                  setState(() {
-                    _sticky = value ?? true;
-                  });
-                },
-              ),
-              CheckboxListTile(
-                title: Text('Persistent'),
-                value: _persistent,
-                onChanged: (bool? value) {
-                  setState(() {
-                    _persistent = value ?? false;
-                  });
-                },
-              ),
-              CheckboxListTile(
-                title: Text('Notify'),
-                value: _notify,
-                onChanged: (bool? value) {
-                  setState(() {
-                    _notify = value ?? true;
-                  });
-                },
-              ),
-            ],
-          ),
+        padding: const EdgeInsets.all(AcknowledgeConstants.defaultPadding),
+        child: AcknowledgeForm(
+          hostName: _hostName,
+          serviceDescription: _serviceDescription,
+          onSubmit: _handleAcknowledgeSubmission,
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          if (_formKey.currentState != null &&
-              _formKey.currentState!.validate()) {
-            acknowledgeService();
-          }
-        },
-        tooltip: 'Submit',
-        child: const Icon(
-          Icons.check,
-          color: Colors.white,
-        ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
     );
   }

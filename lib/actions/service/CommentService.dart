@@ -1,122 +1,52 @@
 import 'package:flutter/material.dart';
 
-import '/services/apiRequest.dart';
+import '../../models/comment.dart';
+import '../../services/comment_service.dart';
+import '../../widgets/comment_form.dart';
+import '../../widgets/common_dialogs.dart';
+import '../../utils/comment_constants.dart';
 
+/// Widget for adding comments to hosts or services
 class CommentServiceWidget extends StatefulWidget {
   final String hostName;
-  final String? serviceDescription; // Add optional service description
+  final String? serviceDescription;
 
-  CommentServiceWidget({required this.hostName, this.serviceDescription});
+  const CommentServiceWidget({
+    Key? key,
+    required this.hostName,
+    this.serviceDescription,
+  }) : super(key: key);
 
   @override
-  _CommentServiceWidgetState createState() => _CommentServiceWidgetState();
+  State<CommentServiceWidget> createState() => _CommentServiceWidgetState();
 }
 
 class _CommentServiceWidgetState extends State<CommentServiceWidget> {
-  final _formKey = GlobalKey<FormState>();
-  final _commentController = TextEditingController();
-  final _hostNameController = TextEditingController();
-  final _serviceDescriptionController = TextEditingController();
-  bool _persistent = false;
-  String _commentType = 'host';
-  bool _isServiceComment = false;
+  late final CommentService _commentService;
 
   @override
   void initState() {
     super.initState();
-    _hostNameController.text = widget.hostName;
-
-    // Check if this is a service comment
-    if (widget.serviceDescription != null) {
-      _isServiceComment = true;
-      _commentType = 'service';
-      _serviceDescriptionController.text = widget.serviceDescription!;
-    }
+    _commentService = CommentService();
   }
 
-  Future<void> _addComment() async {
-    // Show loading indicator
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          content: Row(
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 20),
-              Text("Submitting comment..."),
-            ],
-          ),
-        );
-      },
-    );
+  Future<void> _handleCommentSubmission(CommentRequest request) async {
+    LoadingDialog.show(context, message: CommentConstants.submitLoadingMessage);
 
     try {
-      var api = ApiRequest();
+      final success = await _commentService.addComment(request);
 
-      // Determine the endpoint and body based on comment type
-      String endpoint;
-      Map<String, dynamic> body;
+      LoadingDialog.hide(context);
 
-      if (_isServiceComment) {
-        endpoint = 'domain-types/comment/collections/service';
-        body = {
-          "comment": _commentController.text,
-          "persistent": _persistent,
-          "comment_type": _commentType,
-          "host_name": _hostNameController.text,
-          "service_description": _serviceDescriptionController.text,
-        };
+      if (success) {
+        SnackBarHelper.showSuccess(context, CommentConstants.successMessage);
+        Navigator.of(context).pop(true);
       } else {
-        endpoint = 'domain-types/comment/collections/host';
-        body = {
-          "comment": _commentController.text,
-          "persistent": _persistent,
-          "comment_type": _commentType,
-          "host_name": _hostNameController.text,
-        };
-      }
-
-      var data = await api.Request(
-        endpoint,
-        method: 'POST',
-        body: body,
-      );
-
-      // Close loading dialog
-      Navigator.of(context).pop();
-
-      if (data == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Comment added successfully'),
-            duration: Duration(seconds: 3),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.of(context).pop(true); // Return true to indicate success
-      } else {
-        // Failed to comment service
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to add comment. Please try again.'),
-            duration: Duration(seconds: 3),
-            backgroundColor: Colors.red,
-          ),
-        );
+        SnackBarHelper.showError(context, CommentConstants.failureMessage);
       }
     } catch (e) {
-      // Close loading dialog
-      Navigator.of(context).pop();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          duration: Duration(seconds: 3),
-          backgroundColor: Colors.red,
-        ),
-      );
+      LoadingDialog.hide(context);
+      SnackBarHelper.showError(context, 'Error: ${e.toString()}');
     }
   }
 
@@ -124,61 +54,17 @@ class _CommentServiceWidgetState extends State<CommentServiceWidget> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Comment'),
+        title: Text(widget.serviceDescription != null
+            ? 'Add Service Comment'
+            : 'Add Host Comment'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: <Widget>[
-              TextFormField(
-                controller: _commentController,
-                decoration: InputDecoration(labelText: 'Comment'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a comment';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _hostNameController,
-                decoration: InputDecoration(labelText: 'Host Name'),
-                enabled: false,
-              ),
-              if (_isServiceComment)
-                TextFormField(
-                  controller: _serviceDescriptionController,
-                  decoration: InputDecoration(labelText: 'Service Description'),
-                  enabled: false,
-                ),
-              CheckboxListTile(
-                title: Text('Persistent'),
-                value: _persistent,
-                onChanged: (bool? value) {
-                  setState(() {
-                    _persistent = value ?? false;
-                  });
-                },
-              ),
-            ],
-          ),
+        padding: const EdgeInsets.all(CommentConstants.defaultPadding),
+        child: CommentForm(
+          hostName: widget.hostName,
+          serviceDescription: widget.serviceDescription,
+          onSubmit: _handleCommentSubmission,
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          if (_formKey.currentState != null &&
-              _formKey.currentState!.validate()) {
-            _addComment();
-          }
-        },
-        tooltip: 'Submit',
-        child: const Icon(
-          Icons.check,
-          color: Colors.white,
-        ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
     );
   }

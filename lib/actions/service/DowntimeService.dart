@@ -1,264 +1,85 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import '/services/apiRequest.dart';
+import '../../models/downtime.dart';
+import '../../services/downtime_service.dart';
+import '../../widgets/downtime_form.dart';
+import '../../widgets/common_dialogs.dart';
+import '../../utils/downtime_constants.dart';
 
-class Downtime {
-  String startTime;
-  String endTime;
-  String recur;
-  int duration;
-  String comment;
-  String downtimeType;
-  String serviceDescription;
-  String hostName;
-
-  Downtime({
-    required this.startTime,
-    required this.endTime,
-    this.recur = "fixed",
-    this.duration = 0,
-    required this.comment,
-    required this.downtimeType,
-    required this.serviceDescription,
-    required this.hostName,
-  });
-
-  Future<void> createDowntime() async {
-    var api = ApiRequest();
-    var data = await api.Request(
-      'domain-types/downtime/collections/service',
-      method: 'POST',
-      body: {
-        "start_time": startTime,
-        "end_time": endTime,
-        "recur": recur,
-        "duration": duration,
-        "comment": comment,
-        "downtime_type": downtimeType,
-        "service_descriptions": [serviceDescription],
-        "host_name": hostName,
-      },
-    );
-
-    // if (data == true) {
-    //   debugPrint("Downtime created successfully");
-    // } else {
-    //   debugPrint("Failed to create downtime");
-    // }
-  }
-}
-
+/// Widget for scheduling service downtime
 class DowntimeServiceWidget extends StatefulWidget {
   final String hostName;
   final String serviceDescription;
 
   const DowntimeServiceWidget({
-    super.key, 
-    required this.hostName, 
-    required this.serviceDescription
-  });
+    Key? key,
+    required this.hostName,
+    required this.serviceDescription,
+  }) : super(key: key);
 
   @override
-  _DowntimeServiceWidgetState createState() => _DowntimeServiceWidgetState();
+  State<DowntimeServiceWidget> createState() => _DowntimeServiceWidgetState();
 }
 
 class _DowntimeServiceWidgetState extends State<DowntimeServiceWidget> {
-  final _formKey = GlobalKey<FormState>();
-  final _hostNameController = TextEditingController();
-  final _serviceDescriptionController = TextEditingController();
-  final _durationController = TextEditingController(text: '0');
-  Downtime? _downtime;
-  DateTime _startTime = DateTime.now();
-  DateTime _endTime = DateTime.now();
-  String _recur = 'fixed';
-  String _dateFormat = 'dd.MM.yyyy, HH:mm';
-  String _locale = 'de_DE';
+  late final DowntimeService _downtimeService;
 
   @override
   void initState() {
     super.initState();
-    _hostNameController.text = widget.hostName;
-    _serviceDescriptionController.text = widget.serviceDescription;
-    _loadDateFormatAndLocale();
-    _downtime = Downtime(
-      startTime: DateFormat(_dateFormat, _locale).format(_startTime),
-      endTime: DateFormat(_dateFormat, _locale).format(_endTime),
-      comment: '',
-      downtimeType: 'service',
-      serviceDescription: _serviceDescriptionController.text,
-      hostName: _hostNameController.text,
-    );
+    _downtimeService = DowntimeService();
   }
 
-  void _loadDateFormatAndLocale() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _dateFormat = prefs.getString('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
-      _locale = prefs.getString('locale') ?? 'de_DE';
-    });
+  Future<void> _handleDowntimeSubmission(DowntimeRequest request) async {
+    LoadingDialog.show(context,
+        message: DowntimeConstants.submitLoadingMessage);
+
+    try {
+      final success = await _downtimeService.createDowntime(request);
+
+      LoadingDialog.hide(context);
+
+      if (success) {
+        SnackBarHelper.showSuccess(
+          context,
+          DowntimeConstants.serviceSuccessMessage,
+        );
+        Navigator.of(context).pop(true);
+      } else {
+        SnackBarHelper.showError(
+          context,
+          DowntimeConstants.failureMessage,
+        );
+      }
+    } catch (e) {
+      LoadingDialog.hide(context);
+
+      String errorMessage;
+      if (e.toString().contains('connection')) {
+        errorMessage =
+            'Connection error. Please check your network and try again.';
+      } else if (e.toString().contains('authentication')) {
+        errorMessage = 'Authentication failed. Please log in again.';
+      } else if (e.toString().contains('permission')) {
+        errorMessage = 'Insufficient permissions to schedule downtime.';
+      } else {
+        errorMessage = 'Failed to schedule downtime: ${e.toString()}';
+      }
+
+      SnackBarHelper.showError(context, errorMessage);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Downtime Form'),
+        title: const Text('Schedule Service Downtime'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: <Widget>[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Start Time: ${DateFormat(_dateFormat, _locale).format(_startTime)}'),
-                  ElevatedButton(
-                    onPressed: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime(2100),
-                        locale: const Locale('en', 'GB'),
-                      );
-                      if (date != null) {
-                        final time = await showTimePicker(
-                          context: context,
-                          initialTime: TimeOfDay.now(),
-                          builder: (BuildContext context, Widget? child) {
-                            return MediaQuery(
-                              data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-                              child: child!,
-                            );
-                          },
-                        );
-                        if (time != null) {
-                          setState(() {
-                            _startTime = DateTime(
-                              date.year,
-                              date.month,
-                              date.day,
-                              time.hour,
-                              time.minute,
-                            );
-                          });
-                        }
-                      }
-                    },
-                    child: const Text('Select'),
-                  ),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('End Time: ${DateFormat(_dateFormat, _locale).format(_endTime)}'),
-                  ElevatedButton(
-                    onPressed: () async {
-                      final date = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime(2100),
-                        locale: const Locale('en', 'GB'),
-                      );
-                      if (date != null) {
-                        final time = await showTimePicker(
-                          context: context,
-                          initialTime: TimeOfDay.now(),
-                          builder: (BuildContext context, Widget? child) {
-                            return MediaQuery(
-                              data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-                              child: child!,
-                            );
-                          },
-                        );
-                        if (time != null) {
-                          setState(() {
-                            _endTime = DateTime(
-                              date.year,
-                              date.month,
-                              date.day,
-                              time.hour,
-                              time.minute,
-                            );
-                          });
-                        }
-                      }
-                    },
-                    child: const Text('Select'),
-                  ),
-                ],
-              ),
-              DropdownButtonFormField<String>(
-                value: _recur,
-                decoration: const InputDecoration(labelText: 'Recur'),
-                items: ['fixed', 'hour', 'day', 'week', 'second_week', 'fourth_week', 'weekday_start', 'weekday_end', 'day_of_month'].map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (newValue) {
-                  setState(() {
-                    _recur = newValue ?? 'fixed';
-                  });
-                },
-                onSaved: (newValue) {
-                  if (_downtime != null) {
-                    _downtime!.recur = newValue ?? 'fixed';
-                  }
-                },
-              ),
-              TextFormField(
-                controller: _durationController,
-                decoration: const InputDecoration(labelText: 'Duration (minutes)'),
-                keyboardType: TextInputType.number,
-                onSaved: (value) {
-                  if (_downtime != null) {
-                    _downtime!.duration = int.tryParse(value ?? '0') ?? 0;
-                  }
-                },
-              ),
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Comment'),
-                onSaved: (value) {
-                  if (_downtime != null) {
-                    _downtime!.comment = value ?? '';
-                  }
-                },
-              ),
-              TextFormField(
-                controller: _serviceDescriptionController,
-                decoration: const InputDecoration(labelText: 'Service Description'),
-                enabled: false,
-              ),
-              TextFormField(
-                controller: _hostNameController,
-                decoration: const InputDecoration(labelText: 'Host Name'),
-                enabled: false,
-              ),
-            ],
-          ),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          if (_formKey.currentState!.validate()) {
-            _formKey.currentState!.save();
-            _downtime?.createDowntime();
-          }
-        },
-        tooltip: 'Submit',
-        child: const Icon(
-          Icons.check,
-          color: Colors.white,
-        ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
+      body: DowntimeForm(
+        hostName: widget.hostName,
+        serviceDescription: widget.serviceDescription,
+        onSubmit: _handleDowntimeSubmission,
       ),
     );
   }

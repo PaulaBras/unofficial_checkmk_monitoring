@@ -1,52 +1,50 @@
 import 'package:flutter/material.dart';
 
-import '/services/apiRequest.dart';
+import '../../models/comment.dart';
+import '../../services/comment_service.dart';
+import '../../widgets/comment_form.dart';
+import '../../widgets/common_dialogs.dart';
+import '../../utils/comment_constants.dart';
 
+/// Widget for adding comments to hosts
 class CommentHostWidget extends StatefulWidget {
   final String hostName;
 
-  CommentHostWidget({required this.hostName});
+  const CommentHostWidget({
+    Key? key,
+    required this.hostName,
+  }) : super(key: key);
 
   @override
-  _CommentHostWidgetState createState() => _CommentHostWidgetState();
+  State<CommentHostWidget> createState() => _CommentHostWidgetState();
 }
 
 class _CommentHostWidgetState extends State<CommentHostWidget> {
-  final _formKey = GlobalKey<FormState>();
-  final _commentController = TextEditingController();
-  final _hostNameController = TextEditingController();
-  bool _persistent = false;
-  String _commentType = 'host';
+  late final CommentService _commentService;
 
   @override
   void initState() {
     super.initState();
-    _hostNameController.text = widget.hostName;
+    _commentService = CommentService();
   }
 
-  Future<void> _addComment() async {
-    var api = ApiRequest();
-    var data = await api.Request(
-      'domain-types/comment/collections/host',
-      method: 'POST',
-      body: {
-        "comment": _commentController.text,
-        "persistent": _persistent,
-        "comment_type": _commentType,
-        "host_name": _hostNameController.text,
-      },
-    );
+  Future<void> _handleCommentSubmission(CommentRequest request) async {
+    LoadingDialog.show(context, message: CommentConstants.submitLoadingMessage);
 
-    if (data == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Service commented successfully'),
-          duration: Duration(seconds: 3),
-        ),
-      );
-      Navigator.of(context).pop();
-    } else {
-      // Failed to comment service
+    try {
+      final success = await _commentService.addComment(request);
+
+      LoadingDialog.hide(context);
+
+      if (success) {
+        SnackBarHelper.showSuccess(context, CommentConstants.successMessage);
+        Navigator.of(context).pop(true);
+      } else {
+        SnackBarHelper.showError(context, CommentConstants.failureMessage);
+      }
+    } catch (e) {
+      LoadingDialog.hide(context);
+      SnackBarHelper.showError(context, 'Error: ${e.toString()}');
     }
   }
 
@@ -54,47 +52,14 @@ class _CommentHostWidgetState extends State<CommentHostWidget> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Comment'),
+        title: const Text('Add Host Comment'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        key: _formKey,
-        child: Column(
-          children: <Widget>[
-            TextFormField(
-              controller: _commentController,
-              decoration: InputDecoration(labelText: 'Comment'),
-            ),
-            TextFormField(
-              controller: _hostNameController,
-              decoration: InputDecoration(labelText: 'Host Name'),
-              enabled: false,
-            ),
-            CheckboxListTile(
-              title: Text('Persistent'),
-              value: _persistent,
-              onChanged: (bool? value) {
-                setState(() {
-                  _persistent = value ?? false;
-                });
-              },
-            ),
-          ],
+        padding: const EdgeInsets.all(CommentConstants.defaultPadding),
+        child: CommentForm(
+          hostName: widget.hostName,
+          onSubmit: _handleCommentSubmission,
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          if (_formKey.currentState != null &&
-              _formKey.currentState!.validate()) {
-            _addComment();
-          }
-        },
-        tooltip: 'Submit',
-        child: const Icon(
-          Icons.check,
-          color: Colors.white,
-        ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
     );
   }

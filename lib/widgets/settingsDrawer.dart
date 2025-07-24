@@ -6,6 +6,7 @@ import '../main.dart';
 import '../screens/user/user.dart';
 import '../screens/user/loginScreen.dart';
 import '../screens/help/help.dart';
+import '../screens/settings/notification_settings_screen.dart';
 import '../services/authService.dart';
 import '../services/secureStorage.dart';
 import '../services/apiRequest.dart';
@@ -51,6 +52,18 @@ class SettingsDrawer extends StatelessWidget {
               Navigator.of(context).push(
                 MaterialPageRoute(
                     builder: (context) => HelpScreen(fromDrawer: true)),
+              );
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.notifications_active,
+                color: lightColorScheme.primary),
+            title: Text('Enhanced Notifications'),
+            subtitle: Text('Attempt-based monitoring'),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                    builder: (context) => NotificationSettingsScreen()),
               );
             },
           ),

@@ -1,57 +1,54 @@
 import 'package:flutter/material.dart';
 
-import '/services/apiRequest.dart';
+import '../../models/acknowledge.dart';
+import '../../services/acknowledge_service.dart';
+import '../../widgets/acknowledge_form.dart';
+import '../../widgets/common_dialogs.dart';
+import '../../utils/acknowledge_constants.dart';
 
+/// Widget for acknowledging hosts
 class AcknowledgeHostForm extends StatefulWidget {
   final dynamic service;
 
-  AcknowledgeHostForm({required this.service});
+  const AcknowledgeHostForm({
+    Key? key,
+    required this.service,
+  }) : super(key: key);
 
   @override
-  _AcknowledgeHostFormState createState() => _AcknowledgeHostFormState();
+  State<AcknowledgeHostForm> createState() => _AcknowledgeHostFormState();
 }
 
 class _AcknowledgeHostFormState extends State<AcknowledgeHostForm> {
-  final _formKey = GlobalKey<FormState>();
-  final _commentController = TextEditingController();
-  final _hostNameController = TextEditingController();
-  bool _sticky = true;
-  bool _persistent = false;
-  bool _notify = true;
+  late final AcknowledgeService _acknowledgeService;
+  late final String _hostName;
 
   @override
   void initState() {
     super.initState();
-    // Initialize with service data
-    _commentController.text = 'ack';
-    _hostNameController.text = widget.service['extensions']['name'];
+    _acknowledgeService = AcknowledgeService();
+    _hostName = widget.service['extensions']['name'] ?? '';
   }
 
-  Future<void> acknowledgeHost() async {
-    var api = ApiRequest();
-    var data = await api.Request(
-      'domain-types/acknowledge/collections/host',
-      method: 'POST',
-      body: {
-        "acknowledge_type": "host",
-        "sticky": _sticky,
-        "persistent": _persistent,
-        "notify": _notify,
-        "comment": _commentController.text,
-        "host_name": _hostNameController.text
-      },
-    );
+  Future<void> _handleAcknowledgeSubmission(AcknowledgeRequest request) async {
+    LoadingDialog.show(context,
+        message: AcknowledgeConstants.submitLoadingMessage);
 
-    if (data == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Host acknowledged successfully'),
-          duration: Duration(seconds: 3),
-        ),
-      );
-      Navigator.of(context).pop();
-    } else {
-      // Failed to acknowledge service
+    try {
+      final success = await _acknowledgeService.acknowledge(request);
+
+      LoadingDialog.hide(context);
+
+      if (success) {
+        SnackBarHelper.showSuccess(
+            context, AcknowledgeConstants.hostSuccessMessage);
+        Navigator.of(context).pop(true);
+      } else {
+        SnackBarHelper.showError(context, AcknowledgeConstants.failureMessage);
+      }
+    } catch (e) {
+      LoadingDialog.hide(context);
+      SnackBarHelper.showError(context, 'Error: ${e.toString()}');
     }
   }
 
@@ -59,68 +56,14 @@ class _AcknowledgeHostFormState extends State<AcknowledgeHostForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Acknowledge Host'),
+        title: const Text('Acknowledge Host'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: <Widget>[
-              TextFormField(
-                controller: _commentController,
-                decoration: InputDecoration(labelText: 'Comment'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a comment';
-                  }
-                  return null;
-                },
-              ),
-              CheckboxListTile(
-                title: Text('Sticky'),
-                value: _sticky,
-                onChanged: (bool? value) {
-                  setState(() {
-                    _sticky = value ?? true;
-                  });
-                },
-              ),
-              CheckboxListTile(
-                title: Text('Persistent'),
-                value: _persistent,
-                onChanged: (bool? value) {
-                  setState(() {
-                    _persistent = value ?? false;
-                  });
-                },
-              ),
-              CheckboxListTile(
-                title: Text('Notify'),
-                value: _notify,
-                onChanged: (bool? value) {
-                  setState(() {
-                    _notify = value ?? true;
-                  });
-                },
-              ),
-            ],
-          ),
+        padding: const EdgeInsets.all(AcknowledgeConstants.defaultPadding),
+        child: AcknowledgeForm(
+          hostName: _hostName,
+          onSubmit: _handleAcknowledgeSubmission,
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          if (_formKey.currentState != null &&
-              _formKey.currentState!.validate()) {
-            acknowledgeHost();
-          }
-        },
-        tooltip: 'Submit',
-        child: const Icon(
-          Icons.check,
-          color: Colors.white,
-        ),
-        backgroundColor: Theme.of(context).colorScheme.primary,
       ),
     );
   }
