@@ -47,14 +47,15 @@ void main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Default to welcome screen in case of any initialization errors
-  String initialRoute = welcomeScreenId;
+  // Default to login screen in case of any initialization errors
+  String initialRoute = loginScreenId;
 
   try {
     await _configureLocalTimeZone();
-    
+
     final SecureStorage storage = SecureStorage();
-    final AuthenticationService authService = AuthenticationService(storage, ApiRequest());
+    final AuthenticationService authService =
+        AuthenticationService(storage, ApiRequest());
 
     // Initialize the dashboard widget service
     DashboardWidgetService();
@@ -64,11 +65,14 @@ void main() async {
       final savedCredentials = await authService.loadCredentials();
       if (savedCredentials != null) {
         initialRoute = homeScreenId;
+      } else {
+        // No saved credentials, go directly to login screen
+        initialRoute = loginScreenId;
       }
     } catch (e) {
-      // If loading credentials fails, default to welcome screen
+      // If loading credentials fails, default to login screen
       print('Error loading credentials: $e');
-      initialRoute = welcomeScreenId;
+      initialRoute = loginScreenId;
     }
 
     // Initialize background services - now we wait for it to complete
@@ -88,7 +92,7 @@ void main() async {
     }
   } catch (e) {
     print('Error during app initialization: $e');
-    // Continue with welcome screen if there's any error
+    // Continue with login screen if there's any error
   }
 
   // Start the app regardless of initialization errors
@@ -135,10 +139,10 @@ Future<void> _initializeBackgroundServices() async {
 
         // Request notification permissions
         await notificationService!.requestNotificationsPermission();
-        
+
         // Set initial background state (app starts in foreground)
         notificationService!.setAppInBackground(false);
-        
+
         // Start the notification service (now async)
         await notificationService!.start();
 
@@ -149,7 +153,7 @@ Future<void> _initializeBackgroundServices() async {
 
         // Enable the background execution
         await FlutterBackground.enableBackgroundExecution();
-        
+
         print('Background services initialized successfully');
       } catch (e) {
         print('Error initializing notification service: $e');
@@ -187,7 +191,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    
+
     // Update the notification service with the app's background state
     if (notificationService != null) {
       switch (state) {
@@ -243,7 +247,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       case userScreenId:
         return MaterialPageRoute(builder: (_) => UserScreen());
       case batteryOptimizationScreenId:
-        return MaterialPageRoute(builder: (_) => const BatteryOptimizationScreen());
+        return MaterialPageRoute(
+            builder: (_) => const BatteryOptimizationScreen());
       default:
         return null;
     }

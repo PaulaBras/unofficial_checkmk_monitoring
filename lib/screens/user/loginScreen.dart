@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 
 import '/widgets/customTextField.dart';
 import '../../models/site_connection.dart';
@@ -29,6 +30,11 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _showLoginForm = false;
   bool _isLoading = true;
+
+  // DNS resolution state
+  String? _resolvedIP;
+  String? _dnsError;
+  bool _isDnsResolving = false;
 
   @override
   void initState() {
@@ -77,6 +83,57 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _resolveDNS(String hostname) async {
+    if (hostname.isEmpty) {
+      setState(() {
+        _resolvedIP = null;
+        _dnsError = null;
+        _isDnsResolving = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isDnsResolving = true;
+      _resolvedIP = null;
+      _dnsError = null;
+    });
+
+    try {
+      // Check if it's already an IP address
+      if (RegExp(r'^(\d{1,3}\.){3}\d{1,3}$').hasMatch(hostname)) {
+        setState(() {
+          _resolvedIP = hostname;
+          _dnsError = null;
+          _isDnsResolving = false;
+        });
+        return;
+      }
+
+      // Resolve DNS
+      final addresses = await InternetAddress.lookup(hostname);
+      if (addresses.isNotEmpty) {
+        setState(() {
+          _resolvedIP = addresses.first.address;
+          _dnsError = null;
+          _isDnsResolving = false;
+        });
+      } else {
+        setState(() {
+          _resolvedIP = null;
+          _dnsError = 'No IP addresses found for hostname';
+          _isDnsResolving = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _resolvedIP = null;
+        _dnsError = 'DNS resolution failed: $e';
+        _isDnsResolving = false;
+      });
+    }
+  }
+
   void _login() async {
     setState(() {
       _isLoading = true;
@@ -115,7 +172,8 @@ class _LoginScreenState extends State<LoginScreen> {
         // Show an error message with the actual error from the API
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(apiRequest.getErrorMessage() ?? 'Login failed. Please check your credentials.')),
+              content: Text(apiRequest.getErrorMessage() ??
+                  'Login failed. Please check your credentials.')),
         );
       }
     } catch (e) {
@@ -173,7 +231,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                     : 'Default Connection',
                             onChanged: (value) {
                               setState(() {
-                                _connectionName = value.isNotEmpty ? value : 'Default Connection';
+                                _connectionName = value.isNotEmpty
+                                    ? value
+                                    : 'Default Connection';
                               });
                             },
                           ),
@@ -212,8 +272,87 @@ class _LoginScreenState extends State<LoginScreen> {
                               setState(() {
                                 _server = value;
                               });
+                              // Trigger DNS resolution with a delay to avoid too many requests
+                              if (value.isNotEmpty) {
+                                Future.delayed(Duration(milliseconds: 500), () {
+                                  if (_server == value) {
+                                    _resolveDNS(value);
+                                  }
+                                });
+                              } else {
+                                _resolveDNS('');
+                              }
                             },
                           ),
+                          // DNS Resolution Result Widget
+                          if (_server.isNotEmpty) ...[
+                            const SizedBox(height: 8.0),
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all(12.0),
+                              decoration: BoxDecoration(
+                                color: _dnsError != null
+                                    ? Colors.red.withOpacity(0.1)
+                                    : _resolvedIP != null
+                                        ? Colors.green.withOpacity(0.1)
+                                        : Colors.blue.withOpacity(0.1),
+                                border: Border.all(
+                                  color: _dnsError != null
+                                      ? Colors.red
+                                      : _resolvedIP != null
+                                          ? Colors.green
+                                          : Colors.blue,
+                                  width: 1.0,
+                                ),
+                                borderRadius: BorderRadius.circular(4.0),
+                              ),
+                              child: Row(
+                                children: [
+                                  if (_isDnsResolving)
+                                    SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
+                                    )
+                                  else
+                                    Icon(
+                                      _dnsError != null
+                                          ? Icons.error
+                                          : _resolvedIP != null
+                                              ? Icons.check_circle
+                                              : Icons.info,
+                                      color: _dnsError != null
+                                          ? Colors.red
+                                          : _resolvedIP != null
+                                              ? Colors.green
+                                              : Colors.blue,
+                                      size: 16,
+                                    ),
+                                  SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _isDnsResolving
+                                          ? 'Resolving DNS...'
+                                          : _dnsError != null
+                                              ? _dnsError!
+                                              : _resolvedIP != null
+                                                  ? 'Resolved to: $_resolvedIP'
+                                                  : 'Enter a server name to resolve DNS',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: _dnsError != null
+                                            ? Colors.red.shade700
+                                            : _resolvedIP != null
+                                                ? Colors.green.shade700
+                                                : Colors.blue.shade700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           const SizedBox(height: 16.0),
                           CustomTextField(
                             initialValue: _site,
