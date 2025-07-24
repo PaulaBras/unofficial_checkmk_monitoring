@@ -128,8 +128,7 @@ Future<void> _initializeBackgroundServices() async {
         androidConfig: FlutterBackgroundAndroidConfig(
       notificationTitle: "CheckMK Monitoring",
       notificationText: "Background service running",
-      notificationIcon:
-          AndroidResource(name: 'app_icon', defType: 'drawable'),
+      notificationIcon: AndroidResource(name: 'app_icon', defType: 'drawable'),
     ));
 
     if (success) {

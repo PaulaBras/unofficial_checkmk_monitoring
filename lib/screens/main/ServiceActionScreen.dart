@@ -20,6 +20,8 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
   dynamic _service;
   String _dateFormat = 'dd.MM.yyyy, HH:mm';
   String _locale = 'de_DE';
+  Future<List<dynamic>>? _commentsFuture;
+  bool _isRefreshing = false;
 
   // Add a ScrollController
   final ScrollController _scrollController = ScrollController();
@@ -30,6 +32,19 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
 
     _loadDateFormatAndLocale();
     _getService();
+    _refreshComments();
+  }
+
+  void _refreshComments() {
+    setState(() {
+      _commentsFuture = _getComments();
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   void _loadDateFormatAndLocale() async {
@@ -62,13 +77,19 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
     );
   }
 
-  void commentService(BuildContext context) {
-    Navigator.push(
+  void commentService(BuildContext context) async {
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
           builder: (context) => CommentServiceWidget(
-              hostName: widget.service['extensions']['host_name'])),
+              hostName: widget.service['extensions']['host_name'],
+              serviceDescription: widget.service['extensions']['description'])),
     );
+
+    // Refresh the comments if a comment was added
+    if (result == true) {
+      _refreshComments();
+    }
   }
 
   Future<void> _getService() async {
@@ -78,7 +99,7 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
           'domain-types/service/collections/all?host_name=${widget.service['extensions']['host_name']}&service_description=${widget.service['extensions']['description']}&columns=state&columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged&columns=plugin_output&columns=is_flapping');
 
       var services = data['value'];
-      
+
       // Check if the widget is still mounted before calling setState
       if (mounted) {
         setState(() {
@@ -134,7 +155,10 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
         title: Text('Service Actions'),
       ),
       body: RefreshIndicator(
-        onRefresh: _getService,
+        onRefresh: () async {
+          await _getService();
+          _refreshComments();
+        },
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -161,21 +185,20 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Service: $description'),
-                      Text(
-                          'Output: ${service['extensions']['plugin_output']}'),
+                      Text('Output: ${service['extensions']['plugin_output']}'),
                       Text(
                           'Current Attempt: ${service['extensions']['current_attempt']}/${service['extensions']['max_check_attempts']}'),
                       Text(
                           'Last Check: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_check'] * 1000))}'),
                       Text(
                           'Last Time OK: ${DateFormat(_dateFormat, _locale).format(DateTime.fromMillisecondsSinceEpoch(service['extensions']['last_time_ok'] * 1000))}'),
-                      Text(
-                          'Is Flapping: ${isFlapping == 1 ? 'Yes' : 'No'}'),
+                      Text('Is Flapping: ${isFlapping == 1 ? 'Yes' : 'No'}'),
                       // Display is_flapping
                       if (isFlapping == 1) Icon(Icons.waves),
                       // Display wave icon if is_flapping is 1
                       if (service['extensions'].containsKey('connection_name'))
-                        Text('Site: ${service['extensions']['connection_name']}'),
+                        Text(
+                            'Site: ${service['extensions']['connection_name']}'),
                     ],
                   ),
                 ),
@@ -219,10 +242,9 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
               ),
               Expanded(
                 child: FutureBuilder<List<dynamic>>(
-                  future: _getComments(),
+                  future: _commentsFuture,
                   builder: (context, snapshot) {
-                    if (snapshot.connectionState ==
-                        ConnectionState.waiting) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
                       return Center(child: CircularProgressIndicator());
                     } else if (snapshot.hasError) {
                       return Text('Error: ${snapshot.error}');
@@ -238,8 +260,7 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
                               title: Text(
                                   'Author: ${comment['extensions']['author']}'),
                               subtitle: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                       'Comment: ${comment['extensions']['comment']}'),
@@ -247,8 +268,7 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
                                       'Persistent: ${comment['extensions']['persistent'] ? 'Yes' : 'No'}'),
                                   Text(
                                       'Entry Time: ${comment['extensions']['entry_time']}'),
-                                  if (comment['extensions']
-                                          ['expire_time'] !=
+                                  if (comment['extensions']['expire_time'] !=
                                       null)
                                     Text(
                                         'Expire Time: ${comment['extensions']['expire_time']}'),
@@ -268,9 +288,30 @@ class _ServiceActionScreen extends State<ServiceActionScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'reloadServiceActions',
-        onPressed: _getService,
+        onPressed: () async {
+          setState(() {
+            _isRefreshing = true;
+          });
+
+          // Refresh both service data and comments
+          await _getService();
+          _refreshComments();
+
+          setState(() {
+            _isRefreshing = false;
+          });
+        },
         tooltip: 'Refresh',
-        child: Icon(Icons.refresh),
+        child: _isRefreshing
+            ? SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : Icon(Icons.refresh),
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
     );

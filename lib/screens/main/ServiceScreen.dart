@@ -162,7 +162,8 @@ class ServiceScreen extends StatefulWidget {
   _ServiceScreenState createState() => _ServiceScreenState();
 }
 
-class _ServiceScreenState extends State<ServiceScreen> {
+class _ServiceScreenState extends State<ServiceScreen>
+    with TickerProviderStateMixin {
   dynamic _allServices = []; // Add this line to store all services
   dynamic _filteredServices = [];
   Set<ServiceState> _filterStates = {...ServiceState.values};
@@ -177,11 +178,21 @@ class _ServiceScreenState extends State<ServiceScreen> {
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
       GlobalKey<RefreshIndicatorState>();
 
+  // Add animation controller for refresh button
+  late AnimationController _refreshAnimationController;
+
   @override
   void initState() {
     super.initState();
+
+    // Initialize animation controller
+    _refreshAnimationController = AnimationController(
+      duration: Duration(milliseconds: 1000),
+      vsync: this,
+    );
+
     _loadDateFormatAndLocale();
-    
+
     // Apply initial filter if provided
     if (widget.initialStateFilter != null) {
       if (widget.initialStateFilter == 0) {
@@ -192,7 +203,7 @@ class _ServiceScreenState extends State<ServiceScreen> {
         _filterStates = {ServiceState.values[widget.initialStateFilter! - 1]};
       }
     }
-    
+
     _getService();
     _timer = Timer.periodic(Duration(minutes: 1), (Timer t) => _getService());
   }
@@ -206,10 +217,16 @@ class _ServiceScreenState extends State<ServiceScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _refreshAnimationController.dispose();
     super.dispose();
   }
 
   Future<void> _getService() async {
+    // Start animation if refresh was triggered manually
+    if (!_refreshAnimationController.isAnimating) {
+      _refreshAnimationController.repeat();
+    }
+
     var api = ApiRequest();
     var data = await api.Request(
         'domain-types/service/collections/all?query=%7B%22op%22%3A%20%22!%3D%22%2C%20%22left%22%3A%20%22state%22%2C%20%22right%22%3A%20%220%22%7D&columns=state&columns=description&columns=acknowledged&columns=current_attempt&columns=last_check&columns=last_time_ok&columns=max_check_attempts&columns=acknowledged&columns=plugin_output');
@@ -235,6 +252,11 @@ class _ServiceScreenState extends State<ServiceScreen> {
         }
       });
     }
+
+    // Stop animation
+    _refreshAnimationController.stop();
+    _refreshAnimationController.reset();
+
     NotificationService().checkTimer();
   }
 
@@ -311,8 +333,9 @@ class _ServiceScreenState extends State<ServiceScreen> {
             : noRelevantServices
                 ? Center(
                     child: _allServices.isEmpty
-                    ? CircularProgressIndicator()
-                    : Text('No services in Warning, Critical, or Unknown state'),
+                        ? CircularProgressIndicator()
+                        : Text(
+                            'No services in Warning, Critical, or Unknown state'),
                   )
                 : _allServices.isEmpty && _error == null
                     ? Center(child: CircularProgressIndicator())
@@ -351,7 +374,9 @@ class _ServiceScreenState extends State<ServiceScreen> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(10.0),
                                 border: Border.all(
-                                  color: Theme.of(context).colorScheme.secondary, // Use secondary color for better visibility
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .secondary, // Use secondary color for better visibility
                                   width: 2.0,
                                 ),
                               ),
@@ -475,14 +500,16 @@ class _ServiceScreenState extends State<ServiceScreen> {
                                           ],
                                         ),
                                       ),
-                                      if (service['extensions'].containsKey('connection_name'))
+                                      if (service['extensions']
+                                          .containsKey('connection_name'))
                                         RichText(
                                           text: TextSpan(
                                             text: 'Site: ',
                                             style: DefaultTextStyle.of(context)
                                                 .style
                                                 .copyWith(
-                                                    fontWeight: FontWeight.bold),
+                                                    fontWeight:
+                                                        FontWeight.bold),
                                             children: <TextSpan>[
                                               TextSpan(
                                                   text:
@@ -534,12 +561,21 @@ class _ServiceScreenState extends State<ServiceScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'reloadCriticalServices',
-        onPressed: () {
-          _getService;
+        onPressed: () async {
+          // Start refresh animation and trigger refresh
+          await _getService();
           _refreshIndicatorKey.currentState?.show();
         },
         tooltip: 'Refresh',
-        child: Icon(Icons.refresh),
+        child: AnimatedBuilder(
+          animation: _refreshAnimationController,
+          builder: (context, child) {
+            return Transform.rotate(
+              angle: _refreshAnimationController.value * 2.0 * 3.14159,
+              child: Icon(Icons.refresh),
+            );
+          },
+        ),
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
     );

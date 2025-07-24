@@ -121,7 +121,8 @@ class _UserScreenState extends State<UserScreen> {
       if (!_notification) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Please enable notifications first in the settings above.'),
+            content: Text(
+                'Please enable notifications first in the settings above.'),
             backgroundColor: Colors.orange,
           ),
         );
@@ -130,21 +131,22 @@ class _UserScreenState extends State<UserScreen> {
 
       // Check if we have notification permissions
       bool hasPermissions = await _checkNotificationPermissions();
-      
+
       if (!hasPermissions) {
         // Request permissions with dialog
         bool shouldRequest = await _showPermissionRequestDialog();
-        
+
         if (shouldRequest) {
           await _notificationService.requestNotificationsPermission();
-          
+
           // Check again after requesting
           hasPermissions = await _checkNotificationPermissions();
-          
+
           if (!hasPermissions) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Notification permissions are required to send test notifications. Please enable them in your device settings.'),
+                content: Text(
+                    'Notification permissions are required to send test notifications. Please enable them in your device settings.'),
                 backgroundColor: Colors.red,
               ),
             );
@@ -153,7 +155,8 @@ class _UserScreenState extends State<UserScreen> {
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Notification permissions are required to send test notifications.'),
+              content: Text(
+                  'Notification permissions are required to send test notifications.'),
               backgroundColor: Colors.orange,
             ),
           );
@@ -162,10 +165,9 @@ class _UserScreenState extends State<UserScreen> {
       }
 
       // Send test notification
-      _notificationService.sendNotification(
-          'CheckMK Test Notification',
+      _notificationService.sendNotification('CheckMK Test Notification',
           'Notifications are working correctly! 🎉');
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Test notification sent successfully!'),
@@ -173,7 +175,6 @@ class _UserScreenState extends State<UserScreen> {
           duration: Duration(seconds: 2),
         ),
       );
-      
     } catch (e) {
       print('Error sending test notification: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -199,33 +200,34 @@ class _UserScreenState extends State<UserScreen> {
 
   Future<bool> _showPermissionRequestDialog() async {
     return await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Row(
-            children: [
-              Icon(Icons.notifications, color: Colors.blue),
-              SizedBox(width: 8),
-              Text('Notification Permission Required'),
-            ],
-          ),
-          content: Text(
-            'To send test notifications, CheckMK Monitoring needs notification permissions.\n\nWould you like to grant permission now?',
-          ),
-          actions: [
-            TextButton(
-              child: Text('Cancel'),
-              onPressed: () => Navigator.of(context).pop(false),
-            ),
-            TextButton(
-              child: Text('Grant Permission'),
-              onPressed: () => Navigator.of(context).pop(true),
-            ),
-          ],
-        );
-      },
-    ) ?? false;
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.notifications, color: Colors.blue),
+                  SizedBox(width: 8),
+                  Text('Notification Permission Required'),
+                ],
+              ),
+              content: Text(
+                'To send test notifications, CheckMK Monitoring needs notification permissions.\n\nWould you like to grant permission now?',
+              ),
+              actions: [
+                TextButton(
+                  child: Text('Cancel'),
+                  onPressed: () => Navigator.of(context).pop(false),
+                ),
+                TextButton(
+                  child: Text('Grant Permission'),
+                  onPressed: () => Navigator.of(context).pop(true),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
   }
 
   @override

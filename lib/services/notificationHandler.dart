@@ -13,15 +13,18 @@ import '../services/secureStorage.dart';
 import '../services/battery_optimization_service.dart';
 import '../services/widget/dashboard_widget_service.dart';
 
-final StreamController<String?> selectNotificationStream = StreamController<String?>.broadcast();
+final StreamController<String?> selectNotificationStream =
+    StreamController<String?>.broadcast();
 
 class CheckmkNotificationService {
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
   final ApiRequest _apiRequest = ApiRequest();
   final SecureStorage _secureStorage = SecureStorage();
   final AreNotificationsActive _notificationsActive = AreNotificationsActive();
-  final BatteryOptimizationService _batteryService = BatteryOptimizationService();
-  
+  final BatteryOptimizationService _batteryService =
+      BatteryOptimizationService();
+
   Timer? _backgroundCheckTimer;
   Map<String, dynamic> _previousHostStatus = {};
   Map<String, dynamic> _previousServiceStatus = {};
@@ -31,8 +34,9 @@ class CheckmkNotificationService {
   Set<String> _notifiedServices = {};
   bool _isAppInBackground = false;
   bool _isBatteryOptimizationDisabled = false;
-  int _persistentNotificationId = 9999; // Unique ID for the persistent notification
-  
+  int _persistentNotificationId =
+      9999; // Unique ID for the persistent notification
+
   // Default polling intervals in seconds
   static const int _defaultForegroundInterval = 60;
   static const int _defaultBackgroundInterval = 300; // 5 minutes
@@ -40,11 +44,7 @@ class CheckmkNotificationService {
   static const int _lowPowerBackgroundInterval = 900; // 15 minutes
 
   // Map host states to their string representations
-  final Map<int, String> _hostStateMap = {
-    0: 'Up',
-    1: 'Down',
-    2: 'Unreachable'
-  };
+  final Map<int, String> _hostStateMap = {0: 'Up', 1: 'Down', 2: 'Unreachable'};
 
   // Map service states to their string representations
   final Map<int, String> _serviceStateMap = {
@@ -53,7 +53,7 @@ class CheckmkNotificationService {
     2: 'critical',
     3: 'unknown'
   };
-  
+
   // Current polling interval in seconds
   int _currentPollingInterval = _defaultForegroundInterval;
 
@@ -66,37 +66,36 @@ class CheckmkNotificationService {
     };
   }
 
-  Future<void> saveNotificationSettings({
-    required bool enabled, 
-    String? schedule
-  }) async {
+  Future<void> saveNotificationSettings(
+      {required bool enabled, String? schedule}) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('notifications_enabled', enabled);
     if (schedule != null) {
       await prefs.setString('notifications_schedule', schedule);
     }
   }
-  
+
   // Track app lifecycle state
   Future<void> setAppInBackground(bool isInBackground) async {
     _isAppInBackground = isInBackground;
-    
+
     // Check battery optimization status
-    _isBatteryOptimizationDisabled = await _batteryService.isBatteryOptimizationDisabled();
-    
+    _isBatteryOptimizationDisabled =
+        await _batteryService.isBatteryOptimizationDisabled();
+
     if (isInBackground) {
       _showPersistentNotification();
-      
+
       // Adjust polling interval based on battery optimization status
       await _adjustPollingInterval();
     } else {
       _removePersistentNotification();
-      
+
       // Reset to foreground polling interval
       _setPollingInterval(_defaultForegroundInterval);
     }
   }
-  
+
   // Adjust polling interval based on app state and battery optimization
   Future<void> _adjustPollingInterval() async {
     if (!_isAppInBackground) {
@@ -104,11 +103,11 @@ class CheckmkNotificationService {
       _setPollingInterval(_defaultForegroundInterval);
       return;
     }
-    
+
     // Get battery level if possible
     int batteryLevel = await _getBatteryLevel();
     bool isLowBattery = batteryLevel > 0 && batteryLevel <= 15;
-    
+
     if (isLowBattery) {
       // Low battery mode - use longest interval
       _setPollingInterval(_lowPowerBackgroundInterval);
@@ -119,29 +118,30 @@ class CheckmkNotificationService {
       // Default background interval
       _setPollingInterval(_defaultBackgroundInterval);
     }
-    
+
     // print('[DEBUG] Adjusted polling interval: $_currentPollingInterval seconds');
     // print('  - App in background: $_isAppInBackground');
     // print('  - Battery optimization disabled: $_isBatteryOptimizationDisabled');
     // print('  - Battery level: $batteryLevel%');
     // print('  - Low battery mode: $isLowBattery');
   }
-  
+
   // Set polling interval and restart timer if needed
   void _setPollingInterval(int seconds) {
     if (_currentPollingInterval != seconds) {
       _currentPollingInterval = seconds;
-      
+
       // Restart timer with new interval if it's running
       if (_backgroundCheckTimer != null && _backgroundCheckTimer!.isActive) {
         _backgroundCheckTimer!.cancel();
-        _backgroundCheckTimer = Timer.periodic(Duration(seconds: _currentPollingInterval), (_) {
+        _backgroundCheckTimer =
+            Timer.periodic(Duration(seconds: _currentPollingInterval), (_) {
           _performBackgroundCheck();
         });
       }
     }
   }
-  
+
   // Get battery level (returns -1 if not available)
   Future<int> _getBatteryLevel() async {
     try {
@@ -156,51 +156,57 @@ class CheckmkNotificationService {
   Future<void> requestNotificationsPermission() async {
     if (Platform.isAndroid) {
       final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-          flutterLocalNotificationsPlugin
-              .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-      
+          flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+
       if (androidImplementation != null) {
         await androidImplementation.requestNotificationsPermission();
       }
     } else if (Platform.isIOS) {
       await flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
+          .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>()
           ?.requestPermissions(
             alert: true,
             badge: true,
             sound: true,
           );
     }
-    
+
     // Initialize notification channels
     await _initializeNotificationChannels();
   }
 
   Future<void> _initializeNotificationChannels() async {
     if (Platform.isAndroid) {
-      const AndroidNotificationChannel statusChannel = AndroidNotificationChannel(
+      const AndroidNotificationChannel statusChannel =
+          AndroidNotificationChannel(
         'checkmk_status_channel',
         'Status Changes',
         description: 'Notifications for CheckMK status changes',
         importance: Importance.high,
       );
-      
-      const AndroidNotificationChannel persistentChannel = AndroidNotificationChannel(
+
+      const AndroidNotificationChannel persistentChannel =
+          AndroidNotificationChannel(
         'checkmk_persistent_channel',
         'Background Service',
-        description: 'Notification indicating the app is running in the background',
+        description:
+            'Notification indicating the app is running in the background',
         importance: Importance.low,
       );
-      
+
       final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
           FlutterLocalNotificationsPlugin();
-      
+
       await flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
           ?.createNotificationChannel(statusChannel);
-          
+
       await flutterLocalNotificationsPlugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
           ?.createNotificationChannel(persistentChannel);
     }
   }
@@ -208,26 +214,25 @@ class CheckmkNotificationService {
   Future<void> start() async {
     // Load previous statuses from storage
     await _loadPreviousStatuses();
-    
+
     // Check battery optimization status
-    _isBatteryOptimizationDisabled = await _batteryService.isBatteryOptimizationDisabled();
-    
+    _isBatteryOptimizationDisabled =
+        await _batteryService.isBatteryOptimizationDisabled();
+
     // Start periodic status check
     await _startPeriodicStatusCheck(initialCheck: true);
   }
-  
+
   Future<void> _loadPreviousStatuses() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? savedHostStatus = prefs.getString(_previousHostStatusKey);
     String? savedServiceStatus = prefs.getString(_previousServiceStatusKey);
-    
+
     if (savedHostStatus != null) {
       try {
         Map<String, dynamic> decoded = Map<String, dynamic>.from(
-          Map<String, dynamic>.from(
-            jsonDecode(savedHostStatus) as Map
-          ).map((key, value) => MapEntry(key, value as dynamic))
-        );
+            Map<String, dynamic>.from(jsonDecode(savedHostStatus) as Map)
+                .map((key, value) => MapEntry(key, value as dynamic)));
         _previousHostStatus = decoded;
         // print('[DEBUG] Loaded previous host status from storage: ${_previousHostStatus.length} hosts');
       } catch (e) {
@@ -235,14 +240,12 @@ class CheckmkNotificationService {
         _previousHostStatus = {};
       }
     }
-    
+
     if (savedServiceStatus != null) {
       try {
         Map<String, dynamic> decoded = Map<String, dynamic>.from(
-          Map<String, dynamic>.from(
-            jsonDecode(savedServiceStatus) as Map
-          ).map((key, value) => MapEntry(key, value as dynamic))
-        );
+            Map<String, dynamic>.from(jsonDecode(savedServiceStatus) as Map)
+                .map((key, value) => MapEntry(key, value as dynamic)));
         _previousServiceStatus = decoded;
         // print('[DEBUG] Loaded previous service status from storage: ${_previousServiceStatus.length} services');
       } catch (e) {
@@ -251,12 +254,14 @@ class CheckmkNotificationService {
       }
     }
   }
-  
+
   Future<void> _savePreviousStatuses() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     try {
-      await prefs.setString(_previousHostStatusKey, jsonEncode(_previousHostStatus));
-      await prefs.setString(_previousServiceStatusKey, jsonEncode(_previousServiceStatus));
+      await prefs.setString(
+          _previousHostStatusKey, jsonEncode(_previousHostStatus));
+      await prefs.setString(
+          _previousServiceStatusKey, jsonEncode(_previousServiceStatus));
       // print('[DEBUG] Saved statuses to storage: ${_previousHostStatus.length} hosts, ${_previousServiceStatus.length} services');
     } catch (e) {
       // print('Error saving previous statuses: $e');
@@ -270,7 +275,8 @@ class CheckmkNotificationService {
 
   Future<void> _startPeriodicStatusCheck({bool initialCheck = false}) async {
     // Attempt to read notifications setting, default to true if not set
-    String? enableNotifications = await _secureStorage.readSecureData('enableNotifications') ?? 'true';
+    String? enableNotifications =
+        await _secureStorage.readSecureData('enableNotifications') ?? 'true';
 
     bool isNotificationEnabled = enableNotifications.toLowerCase() == 'true';
 
@@ -282,16 +288,17 @@ class CheckmkNotificationService {
 
     if (isNotificationEnabled) {
       _backgroundCheckTimer?.cancel();
-      
+
       // Perform initial check if specified
       if (initialCheck) {
         await _performBackgroundCheck(isInitialCheck: true);
       }
-      
+
       // Adjust polling interval based on app state and battery optimization
       await _adjustPollingInterval();
-      
-      _backgroundCheckTimer = Timer.periodic(Duration(seconds: _currentPollingInterval), (_) {
+
+      _backgroundCheckTimer =
+          Timer.periodic(Duration(seconds: _currentPollingInterval), (_) {
         _performBackgroundCheck();
       });
     } else {
@@ -304,17 +311,18 @@ class CheckmkNotificationService {
     try {
       // Check if notifications should be active based on schedule
       bool shouldNotify = await _notificationsActive.areNotificationsActive();
-      
+
       // If this is an initial check after app restart, we don't want to send notifications
       // We just want to update the status maps
-      bool skipNotifications = isInitialCheck || !_isAppInBackground || !shouldNotify;
-      
+      bool skipNotifications =
+          isInitialCheck || !_isAppInBackground || !shouldNotify;
+
       if (skipNotifications && !isInitialCheck) {
         // Skip notification checks if notifications are not active or app is in foreground
         // But continue if it's an initial check to update the status maps
         return;
       }
-      
+
       var hostResponse = await _fetchHostStatus();
       var serviceResponse = await _fetchServiceStatus();
 
@@ -331,13 +339,14 @@ class CheckmkNotificationService {
         // If this is an initial check, update the status maps without sending notifications
         if (isInitialCheck) {
           await _updateHostStatusWithoutNotifications(hostResponse['value']);
-          await _updateServiceStatusWithoutNotifications(serviceResponse['value']);
+          await _updateServiceStatusWithoutNotifications(
+              serviceResponse['value']);
         } else {
           await _checkAndNotifyHostChanges(hostResponse['value']);
           await _checkAndNotifyServiceChanges(serviceResponse['value']);
         }
       }
-      
+
       // Periodically check and adjust polling interval based on battery status
       if (!isInitialCheck && _isAppInBackground) {
         await _adjustPollingInterval();
@@ -349,7 +358,8 @@ class CheckmkNotificationService {
 
   Future<Map<String, dynamic>?> _fetchHostStatus() async {
     try {
-      var response = await _apiRequest.Request('domain-types/host/collections/all?columns=state');
+      var response = await _apiRequest.Request(
+          'domain-types/host/collections/all?columns=state');
       return response;
     } catch (e) {
       // print('Error fetching host status: $e');
@@ -359,7 +369,8 @@ class CheckmkNotificationService {
 
   Future<Map<String, dynamic>?> _fetchServiceStatus() async {
     try {
-      var response = await _apiRequest.Request('domain-types/service/collections/all?columns=state');
+      var response = await _apiRequest.Request(
+          'domain-types/service/collections/all?columns=state');
       return response;
     } catch (e) {
       // print('Error fetching service status: $e');
@@ -368,23 +379,25 @@ class CheckmkNotificationService {
   }
 
   // Update host status without sending notifications (for initial check)
-  Future<void> _updateHostStatusWithoutNotifications(List<dynamic> currentStatus) async {
+  Future<void> _updateHostStatusWithoutNotifications(
+      List<dynamic> currentStatus) async {
     // Convert list to map for easier processing
     Map<String, dynamic> hostMap = {
       for (var host in currentStatus)
         host['extensions']['name']: {'status': host['extensions']['state']}
     };
-    
+
     _previousHostStatus = hostMap;
-    
+
     // Save updated status to storage
     await _savePreviousStatuses();
-    
+
     // print('[DEBUG] Updated host status without notifications: ${hostMap.length} hosts');
   }
-  
+
   // Update service status without sending notifications (for initial check)
-  Future<void> _updateServiceStatusWithoutNotifications(List<dynamic> currentStatus) async {
+  Future<void> _updateServiceStatusWithoutNotifications(
+      List<dynamic> currentStatus) async {
     // Convert list to map for easier processing
     Map<String, dynamic> serviceMap = {
       for (var service in currentStatus)
@@ -395,19 +408,19 @@ class CheckmkNotificationService {
           'max_attempts': service['extensions']['max_check_attempts'] ?? 5
         }
     };
-    
+
     _previousServiceStatus = serviceMap;
-    
+
     // Save updated status to storage
     await _savePreviousStatuses();
-    
+
     // print('[DEBUG] Updated service status without notifications: ${serviceMap.length} services');
   }
 
   Future<void> _checkAndNotifyHostChanges(List<dynamic> currentStatus) async {
     // Only send notifications if app is in background
     if (!_isAppInBackground) return;
-    
+
     // Convert list to map for easier processing
     Map<String, dynamic> hostMap = {
       for (var host in currentStatus)
@@ -417,13 +430,12 @@ class CheckmkNotificationService {
     hostMap.forEach((hostName, hostDetails) {
       var previousHostDetails = _previousHostStatus[hostName];
       var currentState = hostDetails['status'];
-      
+
       // Notify for hosts that have a status change
-      bool shouldNotify = 
-          (previousHostDetails == null || 
-           previousHostDetails['status'] != currentState);
-      
-      if (currentState != 0 || 
+      bool shouldNotify = (previousHostDetails == null ||
+          previousHostDetails['status'] != currentState);
+
+      if (currentState != 0 ||
           (previousHostDetails != null && previousHostDetails['status'] != 0)) {
         // print('[DEBUG] Host Status Check:');
         // print('  - Host: $hostName');
@@ -434,27 +446,27 @@ class CheckmkNotificationService {
 
       if (shouldNotify) {
         _showStatusNotification(
-          title: 'Host Status: $hostName',
-          body: 'Status: ${_hostStateMap[currentState] ?? 'Unknown'}',
-          payload: 'host_status_change'
-        );
+            title: 'Host Status: $hostName',
+            body: 'Status: ${_hostStateMap[currentState] ?? 'Unknown'}',
+            payload: 'host_status_change');
         _notifiedHosts.add(hostName);
       }
     });
 
     _previousHostStatus = hostMap;
-    
+
     // Save updated status to storage
     await _savePreviousStatuses();
-    
+
     // Update the home screen widget
     await _updateHomeScreenWidget();
   }
 
-  Future<void> _checkAndNotifyServiceChanges(List<dynamic> currentStatus) async {
+  Future<void> _checkAndNotifyServiceChanges(
+      List<dynamic> currentStatus) async {
     // Only send notifications if app is in background
     if (!_isAppInBackground) return;
-    
+
     // Load service state notification settings
     Map<String, bool> serviceStateSettings = {
       'green': true,
@@ -465,7 +477,8 @@ class CheckmkNotificationService {
 
     // Asynchronously load notification settings for each state
     await Future.wait(serviceStateSettings.keys.map((state) async {
-      String? savedSetting = await _secureStorage.readSecureData('notify_$state');
+      String? savedSetting =
+          await _secureStorage.readSecureData('notify_$state');
       serviceStateSettings[state] = savedSetting?.toLowerCase() != 'false';
       // print('[DEBUG] Notification Setting for $state: ${serviceStateSettings[state]}');
     }));
@@ -485,29 +498,29 @@ class CheckmkNotificationService {
       var previousServiceDetails = _previousServiceStatus[serviceName];
       var currentState = serviceDetails['status'];
       var currentStateString = _serviceStateMap[currentState] ?? 'unknown';
-      
+
       // Check if current attempts equal max attempts
       int currentAttempts = serviceDetails['current_attempt'] ?? 0;
       int maxAttempts = serviceDetails['max_attempts'] ?? 1;
-      
+
       // Send notification if:
       // 1. Status changed
       // 2. Not just a transition to green
-      bool shouldNotify = 
-          (previousServiceDetails == null || 
-           previousServiceDetails['status'] != currentState) &&
-          (currentStateString != 'green' || 
-           (previousServiceDetails != null && 
-            _serviceStateMap[previousServiceDetails['status']] != 'green'));
-      
+      bool shouldNotify = (previousServiceDetails == null ||
+              previousServiceDetails['status'] != currentState) &&
+          (currentStateString != 'green' ||
+              (previousServiceDetails != null &&
+                  _serviceStateMap[previousServiceDetails['status']] !=
+                      'green'));
+
       // Only notify if the state setting is enabled
       if (serviceStateSettings[currentStateString] != true) {
         shouldNotify = false;
       }
-      
-      if (currentStateString != 'green' || 
-          (previousServiceDetails != null && 
-           _serviceStateMap[previousServiceDetails['status']] != 'green')) {
+
+      if (currentStateString != 'green' ||
+          (previousServiceDetails != null &&
+              _serviceStateMap[previousServiceDetails['status']] != 'green')) {
         // print('[DEBUG] Service Status Check:');
         // print('  - Service: $serviceName');
         // print('  - Host: ${serviceDetails['name']}');
@@ -520,23 +533,23 @@ class CheckmkNotificationService {
 
       if (shouldNotify) {
         _showStatusNotification(
-          title: 'Service Status Change: $serviceName',
-          body: 'Host: ${serviceDetails['name']}, Status: $currentStateString, Attempts: $currentAttempts/$maxAttempts',
-          payload: 'service_status_change'
-        );
+            title: 'Service Status Change: $serviceName',
+            body:
+                'Host: ${serviceDetails['name']}, Status: $currentStateString, Attempts: $currentAttempts/$maxAttempts',
+            payload: 'service_status_change');
         _notifiedServices.add(serviceName);
       }
     });
 
     _previousServiceStatus = serviceMap;
-    
+
     // Save updated status to storage
     await _savePreviousStatuses();
-    
+
     // Update the home screen widget
     await _updateHomeScreenWidget();
   }
-  
+
   // Update the home screen widget with the latest data
   Future<void> _updateHomeScreenWidget() async {
     try {
@@ -548,12 +561,10 @@ class CheckmkNotificationService {
     }
   }
 
-  Future<void> _showStatusNotification({
-    required String title, 
-    required String body, 
-    String? payload
-  }) async {
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+  Future<void> _showStatusNotification(
+      {required String title, required String body, String? payload}) async {
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
       'checkmk_status_channel',
       'Status Changes',
       channelDescription: 'Notifications for CheckMK status changes',
@@ -586,19 +597,22 @@ class CheckmkNotificationService {
       payload: payload,
     );
   }
-  
+
   Future<void> _showPersistentNotification() async {
     // Check if notifications are enabled
-    String? enableNotifications = await _secureStorage.readSecureData('enableNotifications') ?? 'true';
+    String? enableNotifications =
+        await _secureStorage.readSecureData('enableNotifications') ?? 'true';
     bool isNotificationEnabled = enableNotifications.toLowerCase() == 'true';
-    
+
     if (!isNotificationEnabled) return;
-    
+
     // Create a persistent notification to show the app is running in background
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
       'checkmk_persistent_channel',
       'Background Service',
-      channelDescription: 'Notification indicating the app is running in the background',
+      channelDescription:
+          'Notification indicating the app is running in the background',
       importance: Importance.low,
       priority: Priority.low,
       ongoing: true,
@@ -627,17 +641,14 @@ class CheckmkNotificationService {
       platformDetails,
     );
   }
-  
+
   Future<void> _removePersistentNotification() async {
     await flutterLocalNotificationsPlugin.cancel(_persistentNotificationId);
   }
 
   // Public method to match the previous implementation's signature
-  Future<void> sendNotification(String title, String body, {String? payload}) async {
-    await _showStatusNotification(
-      title: title, 
-      body: body, 
-      payload: payload
-    );
+  Future<void> sendNotification(String title, String body,
+      {String? payload}) async {
+    await _showStatusNotification(title: title, body: body, payload: payload);
   }
 }

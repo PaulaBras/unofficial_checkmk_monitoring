@@ -81,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
     // If we get here, either we have no connections, login failed, or there was an error
     // Check if this is first run and request permissions
     await _checkAndRequestPermissions();
-    
+
     if (mounted) {
       setState(() {
         _showLoginForm = true;
@@ -94,15 +94,15 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       final bool isFirstRun = prefs.getBool('firstRun') ?? true;
-      
+
       print('Checking permissions. First run: $isFirstRun');
-      
+
       if (isFirstRun) {
         print('First run detected, requesting background permissions...');
-        
+
         // Only request background execution permissions during initial setup
         await _requestBackgroundPermissionExplicitly();
-        
+
         // NOTE: Don't set firstRun to false here - do it after login and notification permissions
         print('Initial background permissions requested');
       }
@@ -152,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
           print('Global notification service is null, creating new instance');
           localNotificationService = CheckmkNotificationService();
         }
-        
+
         await localNotificationService.requestNotificationsPermission();
       } catch (e) {
         print('Error requesting notification permissions: $e');
@@ -197,12 +197,12 @@ class _LoginScreenState extends State<LoginScreen> {
           final hasPermission = await FlutterBackground.hasPermissions;
           if (!hasPermission) {
             await FlutterBackground.initialize(
-              androidConfig: FlutterBackgroundAndroidConfig(
-                notificationTitle: "CheckMK Monitoring",
-                notificationText: "Background service running",
-                notificationIcon: AndroidResource(name: 'app_icon', defType: 'drawable'),
-              )
-            );
+                androidConfig: FlutterBackgroundAndroidConfig(
+              notificationTitle: "CheckMK Monitoring",
+              notificationText: "Background service running",
+              notificationIcon:
+                  AndroidResource(name: 'app_icon', defType: 'drawable'),
+            ));
           }
         } catch (e) {
           print('Error requesting background permissions: $e');
@@ -213,12 +213,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _showPermissionSetupDialog() async {
     print('_showPermissionSetupDialog called');
-    
+
     if (!mounted) {
       print('Widget not mounted, cannot show dialog');
       return;
     }
-    
+
     return showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -231,7 +231,8 @@ class _LoginScreenState extends State<LoginScreen> {
               children: <Widget>[
                 Text('Welcome to CheckMK Monitoring!'),
                 SizedBox(height: 12),
-                Text('To receive alerts about your system status, please enable notifications:'),
+                Text(
+                    'To receive alerts about your system status, please enable notifications:'),
                 SizedBox(height: 12),
                 Container(
                   padding: EdgeInsets.all(12),
@@ -248,11 +249,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            Text('Notification Alerts',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blue)),
                             Text(
-                              'Notification Alerts', 
-                              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)
-                            ),
-                            Text('Get notified about critical system issues and monitoring events'),
+                                'Get notified about critical system issues and monitoring events'),
                           ],
                         ),
                       ),
@@ -260,7 +262,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 SizedBox(height: 12),
-                Text('You can change these settings later in the app settings.'),
+                Text(
+                    'You can change these settings later in the app settings.'),
               ],
             ),
           ),
@@ -290,7 +293,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       // Request notification permissions
       print('Requesting notification permissions...');
-      
+
       // Create notification service instance if global one is null
       CheckmkNotificationService localNotificationService;
       if (notificationService != null) {
@@ -299,9 +302,9 @@ class _LoginScreenState extends State<LoginScreen> {
         print('Global notification service is null, creating new instance');
         localNotificationService = CheckmkNotificationService();
       }
-      
+
       await localNotificationService.requestNotificationsPermission();
-      
+
       // Show success message
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -316,7 +319,8 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Notification permissions could not be set up. You can enable them later in settings.'),
+            content: Text(
+                'Notification permissions could not be set up. You can enable them later in settings.'),
             backgroundColor: Colors.orange,
           ),
         );
@@ -408,9 +412,9 @@ class _LoginScreenState extends State<LoginScreen> {
         // Check for first run and show notification permission setup dialog
         final SharedPreferences prefs = await SharedPreferences.getInstance();
         final bool isFirstRun = prefs.getBool('firstRun') ?? true;
-        
+
         print('Login successful. First run: $isFirstRun');
-        
+
         if (isFirstRun) {
           print('Showing notification permission setup dialog...');
           // Show notification permission setup dialog for first-time users
@@ -425,10 +429,10 @@ class _LoginScreenState extends State<LoginScreen> {
             await prefs.setBool('firstRun', false);
           }
         }
-        
+
         // Add a small delay before navigation to ensure dialog is properly closed
         await Future.delayed(Duration(milliseconds: 100));
-        
+
         if (mounted) {
           Navigator.pushReplacementNamed(context, 'home_screen');
         }
