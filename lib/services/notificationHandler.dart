@@ -559,6 +559,7 @@ class CheckmkNotificationService {
       channelDescription: 'Notifications for CheckMK status changes',
       importance: Importance.high,
       priority: Priority.high,
+      icon: 'app_icon', // Use correct icon name
     );
 
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
@@ -603,6 +604,7 @@ class CheckmkNotificationService {
       ongoing: true,
       autoCancel: false,
       showWhen: false,
+      icon: 'app_icon', // Use correct icon name
     );
 
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(

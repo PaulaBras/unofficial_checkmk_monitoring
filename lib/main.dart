@@ -129,7 +129,7 @@ Future<void> _initializeBackgroundServices() async {
       notificationTitle: "CheckMK Monitoring",
       notificationText: "Background service running",
       notificationIcon:
-          AndroidResource(name: 'launcher_icon', defType: 'drawable'),
+          AndroidResource(name: 'app_icon', defType: 'drawable'),
     ));
 
     if (success) {

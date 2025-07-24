@@ -29,10 +29,7 @@ class SettingsDrawer extends StatelessWidget {
                   'images/checkmk-logo-white.svg',
                   height: 80,
                   width: 80,
-                  colorFilter: ColorFilter.mode(
-                    Colors.white, 
-                    BlendMode.srcIn
-                  ),
+                  colorFilter: ColorFilter.mode(Colors.white, BlendMode.srcIn),
                 ),
               ],
             ),
@@ -42,7 +39,8 @@ class SettingsDrawer extends StatelessWidget {
             title: Text('Settings'),
             onTap: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => UserScreen(fromDrawer: true)),
+                MaterialPageRoute(
+                    builder: (context) => UserScreen(fromDrawer: true)),
               );
             },
           ),
@@ -51,13 +49,15 @@ class SettingsDrawer extends StatelessWidget {
             title: Text('Help'),
             onTap: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => HelpScreen(fromDrawer: true)),
+                MaterialPageRoute(
+                    builder: (context) => HelpScreen(fromDrawer: true)),
               );
             },
           ),
           if (Platform.isAndroid)
             ListTile(
-              leading: Icon(Icons.battery_alert, color: lightColorScheme.primary),
+              leading:
+                  Icon(Icons.battery_alert, color: lightColorScheme.primary),
               title: Text('Battery Optimization'),
               onTap: () {
                 Navigator.of(context).pushNamed(batteryOptimizationScreenId);
@@ -69,10 +69,11 @@ class SettingsDrawer extends StatelessWidget {
             onTap: () async {
               var secureStorage = SecureStorage();
               var apiRequest = ApiRequest();
-              var authService = AuthenticationService(secureStorage, apiRequest);
-              
+              var authService =
+                  AuthenticationService(secureStorage, apiRequest);
+
               final shouldGoToLogin = await authService.logout();
-              
+
               if (shouldGoToLogin) {
                 // No more connections, go to login screen
                 Navigator.of(context).pushReplacement(

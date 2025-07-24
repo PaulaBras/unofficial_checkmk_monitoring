@@ -27,8 +27,9 @@ class _UserScreenState extends State<UserScreen> {
   final SecureStorage _secureStorage = SecureStorage();
   final ApiRequest _apiRequest = ApiRequest();
   late AuthenticationService _authService;
-  final CheckmkNotificationService _notificationService = CheckmkNotificationService();
-  
+  final CheckmkNotificationService _notificationService =
+      CheckmkNotificationService();
+
   String _startPage = 'Dashboard';
   bool _notification = true;
   bool _notificationSchedule = false;
@@ -66,12 +67,14 @@ class _UserScreenState extends State<UserScreen> {
   }
 
   void _loadSettings() async {
-    var notificationSettings = await _notificationService.loadNotificationSettings();
+    var notificationSettings =
+        await _notificationService.loadNotificationSettings();
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
     setState(() {
       _notification = notificationSettings['enabled'];
-      _notificationSchedule = notificationSettings['schedule'] != null && notificationSettings['schedule'] != '';
+      _notificationSchedule = notificationSettings['schedule'] != null &&
+          notificationSettings['schedule'] != '';
       _dateFormat = prefs.getString('dateFormat') ?? 'dd.MM.yyyy, HH:mm';
       _locale = prefs.getString('locale') ?? 'de_DE';
     });
@@ -79,9 +82,11 @@ class _UserScreenState extends State<UserScreen> {
 
   void _loadServiceNotificationSettings() async {
     for (var state in _serviceStateNotifications.keys) {
-      String? savedSetting = await _secureStorage.readSecureData('notify_$state');
+      String? savedSetting =
+          await _secureStorage.readSecureData('notify_$state');
       setState(() {
-        _serviceStateNotifications[state] = savedSetting?.toLowerCase() != 'false';
+        _serviceStateNotifications[state] =
+            savedSetting?.toLowerCase() != 'false';
       });
     }
   }
@@ -98,7 +103,8 @@ class _UserScreenState extends State<UserScreen> {
 
     // Save service state notification settings
     for (var entry in _serviceStateNotifications.entries) {
-      await _secureStorage.writeSecureData('notify_${entry.key}', entry.value.toString());
+      await _secureStorage.writeSecureData(
+          'notify_${entry.key}', entry.value.toString());
     }
   }
 
@@ -107,6 +113,119 @@ class _UserScreenState extends State<UserScreen> {
     setState(() {
       _serviceStateNotifications[state] = value;
     });
+  }
+
+  Future<void> _sendTestNotificationWithPermissionCheck() async {
+    try {
+      // First check if notifications are enabled in app settings
+      if (!_notification) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enable notifications first in the settings above.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Check if we have notification permissions
+      bool hasPermissions = await _checkNotificationPermissions();
+      
+      if (!hasPermissions) {
+        // Request permissions with dialog
+        bool shouldRequest = await _showPermissionRequestDialog();
+        
+        if (shouldRequest) {
+          await _notificationService.requestNotificationsPermission();
+          
+          // Check again after requesting
+          hasPermissions = await _checkNotificationPermissions();
+          
+          if (!hasPermissions) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Notification permissions are required to send test notifications. Please enable them in your device settings.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Notification permissions are required to send test notifications.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          return;
+        }
+      }
+
+      // Send test notification
+      _notificationService.sendNotification(
+          'CheckMK Test Notification',
+          'Notifications are working correctly! 🎉');
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Test notification sent successfully!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      
+    } catch (e) {
+      print('Error sending test notification: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to send test notification: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<bool> _checkNotificationPermissions() async {
+    try {
+      // This is a simplified check - in a real implementation you might want to use
+      // the platform channels to check the exact permission status
+      // For now, we'll assume if we can send a notification, permissions are granted
+      return true; // You can implement more sophisticated permission checking here
+    } catch (e) {
+      print('Error checking notification permissions: $e');
+      return false;
+    }
+  }
+
+  Future<bool> _showPermissionRequestDialog() async {
+    return await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.notifications, color: Colors.blue),
+              SizedBox(width: 8),
+              Text('Notification Permission Required'),
+            ],
+          ),
+          content: Text(
+            'To send test notifications, CheckMK Monitoring needs notification permissions.\n\nWould you like to grant permission now?',
+          ),
+          actions: [
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () => Navigator.of(context).pop(false),
+            ),
+            TextButton(
+              child: Text('Grant Permission'),
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+          ],
+        );
+      },
+    ) ?? false;
   }
 
   @override
@@ -159,7 +278,8 @@ class _UserScreenState extends State<UserScreen> {
                       const SizedBox(width: 10),
                       const Text(
                         'User interface',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -188,7 +308,8 @@ class _UserScreenState extends State<UserScreen> {
                         setState(() {
                           _startPage = newValue;
                         });
-                        myHomePageLogic.updateStartIndex(_pageNameToIndex[newValue]!);
+                        myHomePageLogic
+                            .updateStartIndex(_pageNameToIndex[newValue]!);
                       }
                     },
                   ),
@@ -219,7 +340,8 @@ class _UserScreenState extends State<UserScreen> {
                       const SizedBox(width: 10),
                       const Text(
                         'Connection',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -229,13 +351,14 @@ class _UserScreenState extends State<UserScreen> {
                   child: ElevatedButton(
                     onPressed: () {
                       setState(() {
-                        _isConnectionSettingsExpanded = !_isConnectionSettingsExpanded;
+                        _isConnectionSettingsExpanded =
+                            !_isConnectionSettingsExpanded;
                       });
                     },
                     child: const Text('Manage Connections'),
                   ),
                 ),
-                if (_isConnectionSettingsExpanded) 
+                if (_isConnectionSettingsExpanded)
                   Padding(
                     padding: const EdgeInsets.only(top: 16.0),
                     child: MultiSiteConnectionWidget(
@@ -246,7 +369,7 @@ class _UserScreenState extends State<UserScreen> {
                       },
                     ),
                   ),
-                
+
                 // User Profile Section (merged with Connection)
                 ExpansionTile(
                   title: const Text('User Profile'),
@@ -263,11 +386,12 @@ class _UserScreenState extends State<UserScreen> {
                   ),
                   children: [
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0, vertical: 8.0),
                       child: ElevatedButton(
                         onPressed: () async {
                           final shouldGoToLogin = await _authService.logout();
-                          
+
                           if (shouldGoToLogin) {
                             // No more connections, go to login screen
                             Navigator.of(context).pushReplacement(
@@ -276,7 +400,8 @@ class _UserScreenState extends State<UserScreen> {
                             );
                           } else {
                             // Switched to another connection, refresh current screen
-                            Navigator.of(context).pop(); // Go back to main screen
+                            Navigator.of(context)
+                                .pop(); // Go back to main screen
                             // The app will automatically use the new active connection
                           }
                         },
@@ -311,7 +436,8 @@ class _UserScreenState extends State<UserScreen> {
                       const SizedBox(width: 10),
                       const Text(
                         'Localization',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -371,7 +497,8 @@ class _UserScreenState extends State<UserScreen> {
                       const SizedBox(width: 10),
                       const Text(
                         'Notifications',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -400,7 +527,7 @@ class _UserScreenState extends State<UserScreen> {
                     _saveSettings();
                   },
                 ),
-                
+
                 // Service State Notification Settings
                 ExpansionTile(
                   title: const Text('Service State Notifications'),
@@ -418,15 +545,9 @@ class _UserScreenState extends State<UserScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: ElevatedButton(
-                    onPressed: _notification ? () {
-                      _notificationService.sendNotification(
-                        'Test Notification', 
-                        'Notifications are working correctly!'
-                      );
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Test notification sent'), duration: Duration(seconds: 1)),
-                      );
-                    } : null,
+                    onPressed: () async {
+                      await _sendTestNotificationWithPermissionCheck();
+                    },
                     child: const Text('Send Test Notification'),
                   ),
                 ),

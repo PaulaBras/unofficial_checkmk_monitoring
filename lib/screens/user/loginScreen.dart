@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_background/flutter_background.dart';
 
 import '/widgets/customTextField.dart';
 import '../../models/site_connection.dart';
@@ -7,6 +9,8 @@ import '../../services/apiRequest.dart';
 import '../../services/authService.dart';
 import '../../services/secureStorage.dart';
 import '../../services/site_connection_service.dart';
+import '../../services/notificationHandler.dart';
+import '../../main.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -75,11 +79,248 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     // If we get here, either we have no connections, login failed, or there was an error
+    // Check if this is first run and request permissions
+    await _checkAndRequestPermissions();
+    
     if (mounted) {
       setState(() {
         _showLoginForm = true;
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _checkAndRequestPermissions() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final bool isFirstRun = prefs.getBool('firstRun') ?? true;
+      
+      print('Checking permissions. First run: $isFirstRun');
+      
+      if (isFirstRun) {
+        print('First run detected, requesting background permissions...');
+        
+        // Only request background execution permissions during initial setup
+        await _requestBackgroundPermissionExplicitly();
+        
+        // NOTE: Don't set firstRun to false here - do it after login and notification permissions
+        print('Initial background permissions requested');
+      }
+    } catch (e) {
+      print('Error checking/requesting permissions: $e');
+    }
+  }
+
+  Future<void> _requestNotificationPermissionExplicitly() async {
+    // Show notification permission dialog first
+    final bool? shouldRequest = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.notifications, color: Colors.blue),
+              SizedBox(width: 8),
+              Text('Enable Notifications'),
+            ],
+          ),
+          content: Text(
+            'CheckMK Monitoring needs notification permissions to alert you about system issues and monitoring events.\n\nPlease allow notifications in the next dialog.',
+          ),
+          actions: [
+            TextButton(
+              child: Text('Allow Notifications'),
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+            TextButton(
+              child: Text('Skip'),
+              onPressed: () => Navigator.of(context).pop(false),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldRequest == true) {
+      try {
+        // Create notification service instance if global one is null
+        CheckmkNotificationService localNotificationService;
+        if (notificationService != null) {
+          localNotificationService = notificationService!;
+        } else {
+          print('Global notification service is null, creating new instance');
+          localNotificationService = CheckmkNotificationService();
+        }
+        
+        await localNotificationService.requestNotificationsPermission();
+      } catch (e) {
+        print('Error requesting notification permissions: $e');
+      }
+    }
+  }
+
+  Future<void> _requestBackgroundPermissionExplicitly() async {
+    if (Platform.isAndroid) {
+      // Show background permission dialog
+      final bool? shouldRequest = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.battery_full, color: Colors.green),
+                SizedBox(width: 8),
+                Text('Enable Background Operation'),
+              ],
+            ),
+            content: Text(
+              'CheckMK Monitoring needs to run in the background to continuously monitor your systems.\n\nPlease allow background operation in the next dialog.',
+            ),
+            actions: [
+              TextButton(
+                child: Text('Allow Background'),
+                onPressed: () => Navigator.of(context).pop(true),
+              ),
+              TextButton(
+                child: Text('Skip'),
+                onPressed: () => Navigator.of(context).pop(false),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (shouldRequest == true) {
+        try {
+          final hasPermission = await FlutterBackground.hasPermissions;
+          if (!hasPermission) {
+            await FlutterBackground.initialize(
+              androidConfig: FlutterBackgroundAndroidConfig(
+                notificationTitle: "CheckMK Monitoring",
+                notificationText: "Background service running",
+                notificationIcon: AndroidResource(name: 'app_icon', defType: 'drawable'),
+              )
+            );
+          }
+        } catch (e) {
+          print('Error requesting background permissions: $e');
+        }
+      }
+    }
+  }
+
+  Future<void> _showPermissionSetupDialog() async {
+    print('_showPermissionSetupDialog called');
+    
+    if (!mounted) {
+      print('Widget not mounted, cannot show dialog');
+      return;
+    }
+    
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        print('Dialog builder called');
+        return AlertDialog(
+          title: Text('Setup Notifications'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Welcome to CheckMK Monitoring!'),
+                SizedBox(height: 12),
+                Text('To receive alerts about your system status, please enable notifications:'),
+                SizedBox(height: 12),
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.notifications, color: Colors.blue, size: 24),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Notification Alerts', 
+                              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)
+                            ),
+                            Text('Get notified about critical system issues and monitoring events'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 12),
+                Text('You can change these settings later in the app settings.'),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Enable Notifications'),
+              onPressed: () async {
+                print('Enable Notifications button pressed');
+                Navigator.of(context).pop();
+                await _requestAllPermissions();
+              },
+            ),
+            TextButton(
+              child: Text('Skip for Now'),
+              onPressed: () {
+                print('Skip for Now button pressed');
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _requestAllPermissions() async {
+    try {
+      // Request notification permissions
+      print('Requesting notification permissions...');
+      
+      // Create notification service instance if global one is null
+      CheckmkNotificationService localNotificationService;
+      if (notificationService != null) {
+        localNotificationService = notificationService!;
+      } else {
+        print('Global notification service is null, creating new instance');
+        localNotificationService = CheckmkNotificationService();
+      }
+      
+      await localNotificationService.requestNotificationsPermission();
+      
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Notification permissions setup completed!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error requesting notification permissions: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Notification permissions could not be set up. You can enable them later in settings.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
     }
   }
 
@@ -164,7 +405,33 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (response) {
-        Navigator.pushReplacementNamed(context, 'home_screen');
+        // Check for first run and show notification permission setup dialog
+        final SharedPreferences prefs = await SharedPreferences.getInstance();
+        final bool isFirstRun = prefs.getBool('firstRun') ?? true;
+        
+        print('Login successful. First run: $isFirstRun');
+        
+        if (isFirstRun) {
+          print('Showing notification permission setup dialog...');
+          // Show notification permission setup dialog for first-time users
+          try {
+            await _showPermissionSetupDialog();
+            // Mark first run as complete
+            await prefs.setBool('firstRun', false);
+            print('First run marked as complete');
+          } catch (e) {
+            print('Error showing permission dialog: $e');
+            // Still mark first run as complete to avoid getting stuck
+            await prefs.setBool('firstRun', false);
+          }
+        }
+        
+        // Add a small delay before navigation to ensure dialog is properly closed
+        await Future.delayed(Duration(milliseconds: 100));
+        
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, 'home_screen');
+        }
       } else {
         setState(() {
           _isLoading = false;
@@ -172,7 +439,8 @@ class _LoginScreenState extends State<LoginScreen> {
         // Show a user-friendly error message for authentication failures
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('Incorrect username or password. Please try again.')),
+              content:
+                  Text('Incorrect username or password. Please try again.')),
         );
       }
     } catch (e) {

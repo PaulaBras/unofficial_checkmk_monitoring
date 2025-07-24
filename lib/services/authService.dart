@@ -26,10 +26,11 @@ class AuthenticationService {
 
       // Check if the response is null, which indicates an error
       if (response == null) {
-        print('Login failed: ${apiRequest.getErrorMessage() ?? "Unknown error"}');
+        print(
+            'Login failed: ${apiRequest.getErrorMessage() ?? "Unknown error"}');
         return false;
       }
-      
+
       // If we got a response, the credentials are valid
       return true;
     } catch (e) {
@@ -46,17 +47,17 @@ class AuthenticationService {
         print('No active connection found');
         return false;
       }
-      
+
       // Try to login with the active connection, including the site name
       final result = await login(
-        activeConnection.username, 
+        activeConnection.username,
         activeConnection.password,
       );
-      
+
       if (!result) {
         print('Login with active connection failed');
       }
-      
+
       return result;
     } catch (e) {
       print('Login with active connection exception: $e');
@@ -78,7 +79,7 @@ class AuthenticationService {
       password: password,
       ignoreCertificate: ignoreCertificate,
     );
-    
+
     // Add the connection
     await _connectionService.addConnection(connection);
   }
@@ -91,15 +92,15 @@ class AuthenticationService {
         print('No active connection found when loading credentials');
         return null;
       }
-      
+
       // Validate that we have the minimum required fields
-      if (activeConnection.protocol.isEmpty || 
-          activeConnection.server.isEmpty || 
+      if (activeConnection.protocol.isEmpty ||
+          activeConnection.server.isEmpty ||
           activeConnection.username.isEmpty) {
         print('Active connection is missing required fields');
         return null;
       }
-      
+
       return Credentials(
         activeConnection.protocol,
         activeConnection.server,
@@ -119,7 +120,7 @@ class AuthenticationService {
     // Returns true if should navigate to login screen, false if switched to next connection
     return await _connectionService.handleLogout();
   }
-  
+
   // Clear all data and connections
   Future<void> clearAllData(Function navigateToHomeScreen) async {
     await secureStorage.clearAll();
