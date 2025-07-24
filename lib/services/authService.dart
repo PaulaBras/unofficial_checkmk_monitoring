@@ -1,6 +1,6 @@
 import '../models/credentials.dart';
 import '../models/site_connection.dart';
-import '/services/secureStorage.dart';
+import '../services/secureStorage.dart';
 import 'apiRequest.dart';
 import 'site_connection_service.dart';
 
@@ -114,10 +114,10 @@ class AuthenticationService {
     }
   }
 
-  Future<void> logout(Function navigateToHomeScreen) async {
-    // We don't clear all data anymore, just log out the current user
-    // This allows us to keep the connection settings
-    navigateToHomeScreen();
+  Future<bool> logout() async {
+    // Handle logout logic through connection service
+    // Returns true if should navigate to login screen, false if switched to next connection
+    return await _connectionService.handleLogout();
   }
   
   // Clear all data and connections

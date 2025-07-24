@@ -200,4 +200,50 @@ class SiteConnectionService {
       // If there's an error during migration, just continue without migrating
     }
   }
+  
+  // Handle logout: remove current connection and switch to next, or return true if should go to login
+  Future<bool> handleLogout() async {
+    try {
+      final connections = await getAllConnections();
+      final activeConnectionId = await getActiveConnectionId();
+      
+      if (connections.isEmpty || activeConnectionId == null) {
+        // No connections or no active connection, should go to login
+        return true;
+      }
+      
+      if (connections.length == 1) {
+        // Only one connection, remove it and go to login
+        await deleteConnection(activeConnectionId);
+        return true;
+      }
+      
+      // Multiple connections, remove current and switch to next
+      final currentIndex = connections.indexWhere((c) => c.id == activeConnectionId);
+      if (currentIndex == -1) {
+        // Current connection not found, just set first as active
+        await setActiveConnection(connections.first.id);
+        return false;
+      }
+      
+      // Remove current connection
+      await deleteConnection(activeConnectionId);
+      
+      // Get updated connections list
+      final updatedConnections = await getAllConnections();
+      if (updatedConnections.isNotEmpty) {
+        // Set next connection as active (or first if we were at the end)
+        final nextIndex = currentIndex >= updatedConnections.length ? 0 : currentIndex;
+        await setActiveConnection(updatedConnections[nextIndex].id);
+        return false;
+      } else {
+        // No connections left, go to login
+        return true;
+      }
+    } catch (e) {
+      print('Error during logout handling: $e');
+      // On error, go to login screen
+      return true;
+    }
+  }
 }

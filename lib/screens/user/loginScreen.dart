@@ -169,11 +169,10 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() {
           _isLoading = false;
         });
-        // Show an error message with the actual error from the API
+        // Show a user-friendly error message for authentication failures
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(apiRequest.getErrorMessage() ??
-                  'Login failed. Please check your credentials.')),
+              content: Text('Incorrect username or password. Please try again.')),
         );
       }
     } catch (e) {

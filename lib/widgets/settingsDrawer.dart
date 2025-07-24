@@ -71,10 +71,18 @@ class SettingsDrawer extends StatelessWidget {
               var apiRequest = ApiRequest();
               var authService = AuthenticationService(secureStorage, apiRequest);
               
-              await authService.logout(() {});
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => LoginScreen()),
-              );
+              final shouldGoToLogin = await authService.logout();
+              
+              if (shouldGoToLogin) {
+                // No more connections, go to login screen
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                );
+              } else {
+                // Switched to another connection, refresh current screen
+                Navigator.of(context).pop(); // Close drawer
+                // The app will automatically use the new active connection
+              }
             },
           ),
         ],

@@ -266,11 +266,19 @@ class _UserScreenState extends State<UserScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                       child: ElevatedButton(
                         onPressed: () async {
-                          await _authService.logout(() {});
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(
-                                builder: (context) => LoginScreen()),
-                          );
+                          final shouldGoToLogin = await _authService.logout();
+                          
+                          if (shouldGoToLogin) {
+                            // No more connections, go to login screen
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(
+                                  builder: (context) => LoginScreen()),
+                            );
+                          } else {
+                            // Switched to another connection, refresh current screen
+                            Navigator.of(context).pop(); // Go back to main screen
+                            // The app will automatically use the new active connection
+                          }
                         },
                         child: const Text('Logout'),
                       ),
